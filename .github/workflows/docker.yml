@@ -1,0 +1,68 @@
+name: Docker Demo
+
+on:
+  push:
+    paths:
+      - 'infra/**'
+      - 'docker-compose.yml'
+      - 'compose.yaml'
+      - 'Dockerfile'
+      - 'apps/**'
+      - 'libs/**'
+      - '.github/workflows/docker.yml'
+  pull_request:
+    paths:
+      - 'infra/**'
+      - 'docker-compose.yml'
+      - 'compose.yaml'
+      - 'Dockerfile'
+      - 'apps/**'
+      - 'libs/**'
+      - '.github/workflows/docker.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-smoke:
+    name: Build & Smoke Test Docker Compose
+    runs-on: ubuntu-latest
+    
+    env:
+      APP_ENV: "demo"
+      RAZORPAY_MODE: "test"
+      LLM_ENABLED: "false"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify Compose Config
+        run: docker compose -f infra/compose/compose.yaml config
+
+      - name: Build Images
+        run: docker compose -f infra/compose/compose.yaml build
+
+      - name: Demo Up
+        run: make demo-up
+
+      - name: Wait for services to become healthy
+        run: |
+          echo "Waiting for api healthcheck..."
+          sleep 30
+          # We could loop docker inspect here, but a sleep provides baseline wait
+
+      - name: Demo Smoke
+        run: make demo-smoke
+
+      - name: Collect Logs on Failure
+        if: failure()
+        run: |
+          docker compose -f infra/compose/compose.yaml ps
+          docker compose -f infra/compose/compose.yaml logs --tail=100
+
+      - name: Demo Down
+        if: always()
+        run: make demo-down
