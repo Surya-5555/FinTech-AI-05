@@ -63,9 +63,9 @@ Evaluation is a core product feature for Track 03. The system must support repro
 Use representative or held-out synthetic data. Never fabricate metrics.
 
 ## 9. Git Branching Strategy
-- **main:** The stable integration branch. Must always be healthy and buildable. YOU MUST MAINTAIN EVERYTHING IN MAIN AND ALWAYS KEEP BRANCHES SYNCED.
-- **Feature Branches:** Use descriptive names (`feature/recovery-engine`, `fix/stale-payment-state`, `test/recovery-evaluation`, `docs/architecture`).
-- **Branch Management:** Never blindly switch branches if uncommitted work exists. Protect user work. Synchronize feature branches with `main` before integration, and always merge completed work into `main` promptly to keep it fully synced.
+- **main:** The primary and ONLY integration branch. Must always be healthy and buildable. YOU MUST MAINTAIN EVERYTHING IN MAIN.
+- **Direct Commits:** From this point forward, DO NOT create new feature branches. Commit all work directly to the `main` branch.
+- **Branch Management:** Protect user work. Since we work directly on `main`, ensure the branch is synced and healthy.
 
 ## 10. Commit Hygiene
 - **Rule:** ONE MEANINGFUL DEVELOPMENT UNIT = ONE COMMIT. Make sure you always do many meaningful commits AS YOU WORK (do not wait until the very end to do one giant commit).
