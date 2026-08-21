@@ -1,0 +1,23 @@
+{
+  "name": "@rr/evaluator",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@rr/evaluation": "workspace:*",
+    "@rr/contracts": "workspace:*",
+    "commander": "^12.0.0",
+    "zod": "^3.23.8",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
