@@ -14,3 +14,4 @@ export interface AuditLogRepository {
   appendAuditLog(log: AuditLog): Promise<void>;
 }
 // Further repository interfaces will be expanded in next phases.
+export * from './ingestion.js';

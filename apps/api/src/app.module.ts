@@ -8,6 +8,9 @@ import { MetricsModule } from './system/metrics.module';
 import configuration from './config/configuration';
 import { randomUUID } from 'crypto';
 
+import { EventsModule } from './modules/events/events.module.js';
+import { CasesModule } from './modules/cases/cases.module.js';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -32,6 +35,8 @@ import { randomUUID } from 'crypto';
     SystemModule,
     PersistenceModule,
     MetricsModule,
+    EventsModule,
+    CasesModule,
   ],
 })
 export class AppModule {}
