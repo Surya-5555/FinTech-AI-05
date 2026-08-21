@@ -31,3 +31,9 @@ pnpm install
 - `libs/evaluation` - Evaluation framework
 - `libs/llm` - AI integration abstractions
 - `libs/utils` - Shared utilities
+
+## Running the API Locally
+`pnpm --filter @rr/api dev`
+
+Required environment variables:
+- `DATABASE_URL` (in `.env`)
