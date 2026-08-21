@@ -1,10 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
-import { EvaluationCase, EvaluationManifest } from '@rr/evaluation/dataset/schemas.js';
-import { Baseline0Strategy, Baseline1Strategy, SystemUnderTestStrategy } from '@rr/evaluation/baselines/index.js';
-import { MetricsCalculator, IntegrityAssertions } from '@rr/evaluation/metrics/index.js';
-import { generateReport } from '@rr/evaluation/reporting/index.js';
+import { Dataset, Baselines, Metrics, Reporting } from '@rr/evaluation';
 
 export interface EvaluateOptions {
   dataset: string;
@@ -14,22 +11,23 @@ export interface EvaluateOptions {
 
 export async function runEvaluation(options: EvaluateOptions) {
   console.log(chalk.blue(`[1/5] Loading Dataset from ${options.dataset}...`));
-  const heldOutPath = path.join(process.cwd(), options.dataset, 'heldout.jsonl');
-  const manifestPath = path.join(process.cwd(), options.dataset, 'manifest.json');
+  const workspaceRoot = path.resolve(process.cwd(), '../../');
+  const heldOutPath = path.join(workspaceRoot, options.dataset, 'heldout.jsonl');
+  const manifestPath = path.join(workspaceRoot, options.dataset, 'manifest.json');
 
   if (!fs.existsSync(heldOutPath) || !fs.existsSync(manifestPath)) {
     throw new Error(`Dataset not found at ${options.dataset}`);
   }
 
-  const manifest: EvaluationManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const manifest: Dataset.EvaluationManifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const casesText = fs.readFileSync(heldOutPath, 'utf8');
-  const cases: EvaluationCase[] = casesText.trim().split('\n').map(line => JSON.parse(line));
+  const cases: Dataset.EvaluationCase[] = casesText.trim().split('\n').map(line => JSON.parse(line));
 
   console.log(chalk.green(`Loaded ${cases.length} cases (Manifest Checksum: ${manifest.checksum})`));
 
-  const baseline0 = new Baseline0Strategy();
-  const baseline1 = new Baseline1Strategy();
-  const sut = new SystemUnderTestStrategy();
+  const baseline0 = new Baselines.Baseline0Strategy();
+  const baseline1 = new Baselines.Baseline1Strategy();
+  const sut = new Baselines.SystemUnderTestStrategy();
 
   const b0Results = [];
   const b1Results = [];
@@ -46,17 +44,17 @@ export async function runEvaluation(options: EvaluateOptions) {
   }
   
   console.log(chalk.blue(`[3/5] Computing Metrics...`));
-  const metrics = MetricsCalculator.compute(cases, b0Results, b1Results, sutResults);
+  const metrics = Metrics.MetricsCalculator.compute(cases, b0Results, b1Results, sutResults);
 
   console.log(chalk.blue(`[4/5] Running Integrity Assertions...`));
-  IntegrityAssertions.assertValid(metrics);
+  Metrics.IntegrityAssertions.assertValid(metrics);
 
   console.log(chalk.blue(`[5/5] Generating Reports...`));
   const runId = `run-${Date.now()}`;
-  const outPath = path.join(process.cwd(), options.outputDir, runId);
+  const outPath = path.join(workspaceRoot, options.outputDir, runId);
   fs.mkdirSync(outPath, { recursive: true });
 
-  generateReport(outPath, manifest, metrics, {
+  Reporting.generateReport(outPath, manifest, metrics, {
     cases,
     b0Results,
     b1Results,
