@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.5",
-    "bullmq": "^6.2.0"
+    "bullmq": "^6.2.0",
+    "razorpay": "^2.9.8"
   }
 }
