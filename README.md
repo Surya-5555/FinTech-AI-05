@@ -1,45 +1,33 @@
-# Razorpay AI Buildathon â€” Track 03: AI Revenue Recovery
+# Razorpay AI Buildathon — Track 03: AI Revenue Recovery
 
-## Project Overview
-This project is an enterprise-quality, production-minded AI Revenue Recovery system designed for Track 03 of the Razorpay AI Buildathon.
+## Prerequisites
+- Node.js 22 LTS
+- pnpm (corepack enabled)
 
-**The Problem:** Merchants lose significant revenue due to failed payment mandates, degraded payment channels, subscription failures, and abandoned checkouts. 
+## Installation
+```bash
+make install
+# or
+pnpm install
+```
 
-**The Solution:** We provide an automated system that identifies "at-risk" revenue from payment events, determines the root cause, and executes bounded, deterministic intervention workflows to safely recover funds (e.g., safe retries, localized Hinglish payment link generation, or human operator escalation).
+## Workspace Commands
+- `pnpm dev` - Start development servers
+- `pnpm build` - Build all packages
+- `pnpm lint` - Run ESLint
+- `pnpm format` - Run Prettier
+- `pnpm typecheck` - Run TypeScript type checking
+- `pnpm test` - Run all tests
+- `make verify` - Run full verification suite (install, lint, typecheck, test)
 
-## Core System Capabilities
-- **Revenue Risk Detection:** Ingests payment events and identifies failed or at-risk transactions.
-- **AI-Assisted Root Cause Analysis:** Uses AI strictly to interpret error codes and determine the context of failure.
-- **Deterministic Interventions:** Enforces strict policies, stopping rules, and idempotency checks before any recovery action is taken.
-- **Bounded Messaging:** AI generates localized, highly contextual customer messages (e.g., Hinglish payment reminders) which are reviewed by deterministic rules before dispatch.
-- **Reproducible Evaluation:** Provides a batch evaluation framework to measure actual recovered monetary value, intervention precision, and false positive rates.
-- **Immutable Audit Trail:** Maintains a complete, observable record of all recovery decisions, API timeouts, retries, and escalations.
-
-## Architecture & Technology Stack
-Our stack is designed to reflect production fintech environments based on verifiable Razorpay engineering patterns:
-- **Frontend:** React 18, Vite, TypeScript, Tailwind CSS
-- **Backend:** NestJS (Node.js + TypeScript modular monolith)
-- **Database:** PostgreSQL (Durable source of truth)
-- **Cache & Queue:** Redis + BullMQ (For asynchronous workflow scheduling, retries, and transient state)
-- **AI Integration:** Hosted Claude/ChatGPT-class models via a strongly-typed `LLMClient` abstraction
-- **Observability:** Pino JSON structured logging and Prometheus-style metrics
-- **Deployment:** Docker + Docker Compose
-
-## Safety Model
-In a financial context, unrestricted AI execution is dangerous.
-- **AI Responsibility:** Classification, prioritization, root-cause interpretation, message generation.
-- **Deterministic Responsibility:** Validating limits, authorizing API calls, tracking idempotency, executing state transitions, stopping rules, and triggering Razorpay APIs.
-
-## Failure Handling
-The system explicitly accounts for and tests:
-- Duplicate payment events (via idempotency keys)
-- External API timeouts and degraded channels (via BullMQ retries with exponential backoff)
-- Stale states (via DB transactions and state machine validation)
-- Malformed inputs and invalid AI outputs (via Zod/class-validator)
-
-## Setup & Demo Instructions
-*(Development environment setup and run instructions will be populated here as the implementation progresses.)*
-
-## Development & Git Workflow
-- See `AGENTS.md` for strict engineering principles, commit hygiene, and branch management strategies.
-- Check `docs/decisions/razorpay-tech-stack-decisions.md` for architectural decision records.
+## Repository Packages Overview
+- `apps/api` - NestJS Backend
+- `apps/worker` - Background Processor
+- `apps/frontend` - React Dashboard
+- `libs/domain` - Shared domain logic & types
+- `libs/contracts` - API contracts/interfaces
+- `libs/config` - Shared configuration
+- `libs/observability` - Logging and metrics
+- `libs/evaluation` - Evaluation framework
+- `libs/llm` - AI integration abstractions
+- `libs/utils` - Shared utilities
