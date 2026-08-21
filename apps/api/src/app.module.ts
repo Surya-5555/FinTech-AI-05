@@ -10,6 +10,9 @@ import { randomUUID } from 'crypto';
 
 import { EventsModule } from './modules/events/events.module.js';
 import { CasesModule } from './modules/cases/cases.module.js';
+import { PlanningModule } from './modules/planning/planning.module.js';
+import { PoliciesModule } from './modules/policies/policies.module.js';
+import { OutboxPublisherModule } from './modules/outbox-publisher/outbox-publisher.module.js';
 
 @Module({
   imports: [

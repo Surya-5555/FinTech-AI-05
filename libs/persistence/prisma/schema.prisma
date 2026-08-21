@@ -89,11 +89,36 @@ model RecoveryPlan {
   idempotencyKey        String   @unique
   parametersJson        String   @db.Text
   planStatus            String
+  diagnosisJson         String   @db.Text
+  correlationId         String
+  supersededBy          String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   @@index([caseId, planStatus])
   @@index([plannedAt])
+  @@index([correlationId])
+}
+
+model OutboxEvent {
+  id              String    @id @default(cuid())
+  aggregateType   String
+  aggregateId     String
+  eventType       String
+  payloadJson     String    @db.Text
+  status          String    @default("PENDING") // PENDING, PUBLISHED, FAILED
+  idempotencyKey  String    @unique
+  attempts        Int       @default(0)
+  availableAt     DateTime  @default(now())
+  publishedAt     DateTime?
+  lastError       String?   @db.Text
+  lockedAt        DateTime?
+  lockedBy        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status, availableAt])
+  @@index([aggregateType, aggregateId])
 }
 
 model Intervention {
