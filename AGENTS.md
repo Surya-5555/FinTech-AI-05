@@ -63,13 +63,13 @@ Evaluation is a core product feature for Track 03. The system must support repro
 Use representative or held-out synthetic data. Never fabricate metrics.
 
 ## 9. Git Branching Strategy
-- **main:** The stable integration branch. Must always be healthy and buildable.
+- **main:** The stable integration branch. Must always be healthy and buildable. YOU MUST MAINTAIN EVERYTHING IN MAIN AND ALWAYS KEEP BRANCHES SYNCED.
 - **Feature Branches:** Use descriptive names (`feature/recovery-engine`, `fix/stale-payment-state`, `test/recovery-evaluation`, `docs/architecture`).
-- **Branch Management:** Never blindly switch branches if uncommitted work exists. Protect user work. Synchronize feature branches with `main` before integration.
+- **Branch Management:** Never blindly switch branches if uncommitted work exists. Protect user work. Synchronize feature branches with `main` before integration, and always merge completed work into `main` promptly to keep it fully synced.
 
 ## 10. Commit Hygiene
-- **Rule:** ONE MEANINGFUL DEVELOPMENT UNIT = ONE COMMIT.
-- **Granularity:** SMALL -> MEDIUM -> MEANINGFUL. Do not commit every line. Do not create one gigantic commit for an entire application.
+- **Rule:** ONE MEANINGFUL DEVELOPMENT UNIT = ONE COMMIT. Make sure you always do many meaningful commits AS YOU WORK (do not wait until the very end to do one giant commit).
+- **Granularity:** SMALL -> MEDIUM -> MEANINGFUL. Do not commit every line. Do not create one gigantic commit for an entire application. Commits must be made continuously during the workflow.
 - **Format:** Use conventional commit messages (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`). Describe *what* meaningful engineering change happened. Never use "update", "stuff", "final", or "fix" as a standalone message.
 
 ## 11. What Must NEVER Be Done
@@ -80,8 +80,8 @@ Use representative or held-out synthetic data. Never fabricate metrics.
 - NEVER claim a mock is a production integration without documenting that it is simulated.
 
 ## 12. Agent Self-Check Before Starting Work
-1. Read this `AGENTS.md` file.
-2. Inspect `git status` and determine the current branch.
+1. ALWAYS have a look on this `AGENTS.md` file before you begin any task.
+2. Inspect `git status` and determine the current branch. Verify that `main` is synced and merged.
 3. Read relevant documentation and understand the existing architecture.
 4. Plan the smallest coherent feature before editing.
-5. Execute the feature lifecycle, commit meaningfully, and verify the repository state.
+5. Execute the feature lifecycle, do many meaningful commits as you work, and verify the repository state.
