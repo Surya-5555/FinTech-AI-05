@@ -1,0 +1,135 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rr-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: razorpay_rr
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d razorpay_rr"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rr-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: rr-redis
+    restart: always
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rr-network
+
+  api:
+    build:
+      context: ../../
+      dockerfile: infra/docker/api.Dockerfile
+    container_name: rr-api
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../../infra/env/demo.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - rr-network
+
+  worker:
+    build:
+      context: ../../
+      dockerfile: infra/docker/worker.Dockerfile
+    container_name: rr-worker
+    restart: always
+    env_file:
+      - ../../infra/env/demo.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rr-network
+
+  frontend:
+    build:
+      context: ../../
+      dockerfile: infra/docker/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: "http://localhost:3000"
+    container_name: rr-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - rr-network
+
+  evaluator:
+    build:
+      context: ../../
+      dockerfile: infra/docker/evaluator.Dockerfile
+    container_name: rr-evaluator
+    profiles:
+      - evaluation
+    env_file:
+      - ../../infra/env/demo.env
+    volumes:
+      - ../../artifacts:/app/artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["smoke"]
+    networks:
+      - rr-network
+
+  failure-demo:
+    build:
+      context: ../../
+      dockerfile: infra/docker/evaluator.Dockerfile
+    container_name: rr-failure-demo
+    profiles:
+      - failure-demo
+    env_file:
+      - ../../infra/env/demo.env
+    volumes:
+      - ../../artifacts:/app/artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["failure"]
+    networks:
+      - rr-network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  rr-network:
+    driver: bridge
