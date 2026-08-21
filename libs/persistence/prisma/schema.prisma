@@ -1,0 +1,198 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Merchant {
+  id              String   @id @default(cuid())
+  externalReference String @unique
+  name            String
+  segment         String
+  status          String
+  configJson      String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Customer {
+  id                           String   @id @default(cuid())
+  merchantId                   String
+  externalReference            String
+  displayNameOrMaskedReference String
+  consentEmail                 String
+  consentSms                   String
+  consentVoice                 String
+  contactWindowMetadataJson    String   @db.Text
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+
+  @@unique([merchantId, externalReference])
+}
+
+model RevenueEvent {
+  id                       String   @id @default(cuid())
+  externalEventId          String
+  merchantId               String
+  customerId               String?
+  eventType                String
+  amountMinor              BigInt
+  currency                 String
+  failureReason            String?
+  occurredAt               DateTime
+  receivedAt               DateTime @default(now())
+  correlationId            String
+  rawPayloadVersion        String
+  metadataJson             String   @db.Text
+  ingestionIdempotencyKey  String   @unique
+  createdAt                DateTime @default(now())
+
+  @@unique([merchantId, externalEventId, eventType])
+  @@index([merchantId, occurredAt])
+  @@index([eventType, occurredAt])
+  @@index([correlationId])
+}
+
+model RevenueCase {
+  id                String    @id @default(cuid())
+  sourceEventId     String    @unique
+  merchantId        String
+  customerId        String?
+  amountAtRiskMinor BigInt
+  currency          String
+  state             String
+  attemptCount      Int
+  recoveryScore     Int?
+  rootCause         String?
+  version           Int
+  correlationId     String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  terminalAt        DateTime?
+
+  @@index([state, updatedAt])
+  @@index([merchantId, state])
+  @@index([correlationId])
+}
+
+model RecoveryPlan {
+  id                    String   @id @default(cuid())
+  caseId                String
+  interventionType      String
+  plannedAt             DateTime
+  reasonCodesJson       String   @db.Text
+  policyVersion         String
+  requiresHumanApproval Boolean
+  idempotencyKey        String   @unique
+  parametersJson        String   @db.Text
+  planStatus            String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([caseId, planStatus])
+  @@index([plannedAt])
+}
+
+model Intervention {
+  id                 String    @id @default(cuid())
+  planId             String
+  caseId             String
+  interventionType   String
+  attemptNumber      Int
+  status             String
+  idempotencyKey     String    @unique
+  executionStartedAt DateTime?
+  executionCompletedAt DateTime?
+  externalReference  String?
+  failureCode        String?
+  retryAfter         DateTime?
+  correlationId      String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([caseId, interventionType, attemptNumber])
+  @@index([status, retryAfter])
+  @@index([caseId, createdAt])
+  @@index([correlationId])
+}
+
+model InterventionOutcome {
+  id                   String   @id @default(cuid())
+  interventionId       String   @unique
+  status               String
+  recoveredAmountMinor BigInt?
+  currency             String?
+  resultMetadataJson   String   @db.Text
+  createdAt            DateTime @default(now())
+}
+
+model Escalation {
+  id                     String    @id @default(cuid())
+  caseId                 String
+  reasonCodesJson        String    @db.Text
+  priority               String
+  status                 String
+  createdAt              DateTime  @default(now())
+  resolvedAt             DateTime?
+  resolvedBy             String?
+  resolutionMetadataJson String?   @db.Text
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  timestamp     DateTime
+  actorType     String
+  action        String
+  entityType    String
+  entityId      String
+  correlationId String
+  previousState String?
+  nextState     String?
+  metadataJson  String   @db.Text
+
+  @@index([entityType, entityId, timestamp])
+  @@index([correlationId, timestamp])
+  @@index([action, timestamp])
+}
+
+model EvaluationRun {
+  id                      String    @id @default(cuid())
+  datasetVersion          String
+  systemVersion           String
+  policyVersion           String
+  status                  String
+  startedAt               DateTime
+  completedAt             DateTime?
+  totalCases              Int
+  totalAtRiskMinor        BigInt
+  baselineRecoveredMinor  BigInt
+  systemRecoveredMinor    BigInt
+  incrementalRecoveredMinor BigInt
+  recoveryRate            Float
+  interventionPrecision   Float?
+  falseInterventionCount  Int
+  escalationCount         Int
+  stoppedCaseCount        Int
+  averageAttemptsPerCase  Float
+  medianRecoveryLatencyMs Int?
+  totalInferenceCostMinor BigInt?
+  metricsJson             String    @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+}
+
+model EvaluationCaseResult {
+  id                   String   @id @default(cuid())
+  evaluationRunId      String
+  caseId               String?
+  sourceEventReference String
+  baselineOutcomeJson  String   @db.Text
+  systemOutcomeJson    String   @db.Text
+  wasRecovered         Boolean
+  recoveredAmountMinor BigInt
+  failureReason        String?
+  createdAt            DateTime @default(now())
+}
