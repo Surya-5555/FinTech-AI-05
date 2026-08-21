@@ -69,6 +69,9 @@ importers:
       '@rr/domain':
         specifier: workspace:*
         version: link:../../libs/domain
+      '@rr/llm':
+        specifier: workspace:^
+        version: link:../../libs/llm
       '@rr/persistence':
         specifier: workspace:*
         version: link:../../libs/persistence
@@ -206,7 +209,33 @@ importers:
 
   libs/evaluation: {}
 
-  libs/llm: {}
+  libs/llm:
+    dependencies:
+      '@rr/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@rr/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@rr/observability':
+        specifier: workspace:*
+        version: link:../observability
+      '@rr/utils':
+        specifier: workspace:*
+        version: link:../utils
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
+    devDependencies:
+      '@rr/config':
+        specifier: workspace:*
+        version: link:../config
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+      vitest:
+        specifier: ^1.3.1
+        version: 1.6.1(@types/node@26.2.0)(terser@5.50.0)
 
   libs/observability: {}
 
@@ -3260,6 +3289,9 @@ packages:
   yocto-queue@1.2.2:
     resolution: {integrity: sha512-4LCcse/U2MHZ63HAJVE+v71o7yOdIe4cZ70Wpf8D/IyjDKYQLV5GD46B+hSTjJsvV5PztjvHoU580EftxjDZFQ==}
     engines: {node: '>=12.20'}
+
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
 
@@ -6408,3 +6440,5 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   yocto-queue@1.2.2: {}
+
+  zod@3.25.76: {}

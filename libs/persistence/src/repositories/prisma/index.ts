@@ -70,3 +70,4 @@ export class PrismaAuditLogRepository implements AuditLogRepository {
   }
 }
 export * from './ingestion.js';
+export * from './ai.js';

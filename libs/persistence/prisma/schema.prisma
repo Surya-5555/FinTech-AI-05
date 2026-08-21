@@ -225,3 +225,25 @@ model EvaluationCaseResult {
   failureReason        String?
   createdAt            DateTime @default(now())
 }
+
+model AIInvocation {
+  id                 String    @id @default(cuid())
+  useCase            String
+  providerName       String?
+  modelName          String?
+  promptVersion      String
+  inputHash          String
+  outputHash         String?
+  status             String
+  latencyMs          Int?
+  estimatedCostMinor Int?
+  correlationId      String
+  caseId             String?
+  interventionId     String?
+  safeMetadataJson   String    @db.Text
+  createdAt          DateTime  @default(now())
+
+  @@index([useCase, status, createdAt])
+  @@index([correlationId])
+  @@index([caseId])
+}

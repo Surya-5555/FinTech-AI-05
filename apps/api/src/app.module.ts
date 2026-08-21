@@ -14,6 +14,7 @@ import { PlanningModule } from './modules/planning/planning.module.js';
 import { PoliciesModule } from './modules/policies/policies.module.js';
 import { OutboxPublisherModule } from './modules/outbox-publisher/outbox-publisher.module.js';
 import { InterventionsModule } from './modules/interventions/interventions.module.js';
+import { AiModule } from './modules/ai/ai.module.js';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { InterventionsModule } from './modules/interventions/interventions.modul
     EventsModule,
     CasesModule,
     InterventionsModule,
+    AiModule,
   ],
 })
 export class AppModule {}
