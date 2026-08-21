@@ -183,4 +183,129 @@ export class PrismaExecutionRepository implements ExecutionRepository {
       }
     });
   }
+
+  async claimExecutionLock(interventionId: string, workerId: string): Promise<boolean> {
+    const prisma = getPrismaClient();
+    try {
+      const updated = await prisma.intervention.updateMany({
+        where: {
+          id: interventionId,
+          lockedBy: null, // Only lock if not currently locked
+        },
+        data: {
+          lockedAt: new Date(),
+          lockedBy: workerId,
+        },
+      });
+      return updated.count > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  async persistExecutionResult(result: any, resultingCaseState: string): Promise<void> {
+    const prisma = getPrismaClient();
+    await prisma.$transaction(async (tx) => {
+      const intervention = await tx.intervention.findUnique({
+        where: { id: result.interventionId },
+      });
+      
+      if (!intervention) throw new Error(`Intervention ${result.interventionId} not found`);
+
+      // 1. Update Intervention Outcome
+      await tx.interventionOutcome.create({
+        data: {
+          id: generateId('outcome'),
+          interventionId: result.interventionId,
+          status: result.status,
+          recoveredAmountMinor: result.recoveredAmount?.amountMinor || null,
+          currency: result.recoveredAmount?.currency || null,
+          resultMetadataJson: JSON.stringify({ failureCode: result.failureCode, externalReference: result.externalReference }),
+        },
+      });
+
+      // 2. Update Intervention status
+      await tx.intervention.update({
+        where: { id: result.interventionId },
+        data: {
+          status: result.status,
+          executionCompletedAt: result.executedAt,
+          externalReference: result.externalReference,
+          failureCode: result.failureCode,
+          retryAfter: result.retryAfter,
+        }
+      });
+
+      // 3. Update Case State
+      const existingCase = await tx.revenueCase.findUnique({
+        where: { id: intervention.caseId },
+      });
+
+      if (existingCase && existingCase.state !== resultingCaseState) {
+        await tx.revenueCase.updateMany({
+          where: {
+            id: existingCase.id,
+            version: existingCase.version,
+          },
+          data: {
+            state: resultingCaseState,
+            version: existingCase.version + 1,
+            updatedAt: new Date(),
+          }
+        });
+
+        await tx.auditLog.create({
+          data: {
+            id: generateId('audit'),
+            timestamp: new Date(),
+            actorType: 'SYSTEM',
+            action: 'STATE_TRANSITIONED',
+            entityType: 'RevenueCase',
+            entityId: existingCase.id,
+            correlationId: existingCase.correlationId,
+            previousState: existingCase.state,
+            nextState: resultingCaseState,
+            metadataJson: JSON.stringify({ interventionId: result.interventionId }),
+          },
+        });
+      }
+    });
+  }
+
+  async scheduleRetry(interventionId: string, delayMs: number): Promise<void> {
+    const prisma = getPrismaClient();
+    await prisma.$transaction(async (tx) => {
+      const intervention = await tx.intervention.findUnique({ where: { id: interventionId } });
+      if (!intervention) return;
+      
+      // Update Intervention state
+      await tx.intervention.update({
+        where: { id: interventionId },
+        data: {
+          status: 'RETRY_SCHEDULED',
+          retryAfter: new Date(Date.now() + delayMs),
+        }
+      });
+
+      // Update case to RETRYABLE
+      const existingCase = await tx.revenueCase.findUnique({ where: { id: intervention.caseId } });
+      if (existingCase && existingCase.state !== RevenueCaseState.RETRYABLE) {
+         await tx.revenueCase.updateMany({
+           where: { id: existingCase.id, version: existingCase.version },
+           data: { state: RevenueCaseState.RETRYABLE, version: existingCase.version + 1, updatedAt: new Date() }
+         });
+      }
+    });
+  }
+
+  async blockExecution(interventionId: string, reason: string): Promise<void> {
+    const prisma = getPrismaClient();
+    await prisma.intervention.update({
+      where: { id: interventionId },
+      data: {
+        status: 'STOPPED',
+        failureCode: 'POLICY_BLOCKED',
+      }
+    });
+  }
 }

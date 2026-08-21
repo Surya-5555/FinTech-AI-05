@@ -135,8 +135,11 @@ model Intervention {
   failureCode        String?
   retryAfter         DateTime?
   correlationId      String
+  lockedAt           DateTime?
+  lockedBy           String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+  outcome            InterventionOutcome?
 
   @@unique([caseId, interventionType, attemptNumber])
   @@index([status, retryAfter])
@@ -147,6 +150,7 @@ model Intervention {
 model InterventionOutcome {
   id                   String   @id @default(cuid())
   interventionId       String   @unique
+  intervention         Intervention @relation(fields: [interventionId], references: [id])
   status               String
   recoveredAmountMinor BigInt?
   currency             String?
