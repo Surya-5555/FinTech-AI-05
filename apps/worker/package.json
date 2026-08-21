@@ -1,1 +1,31 @@
-{}
+{
+  "name": "@rr/worker",
+  "version": "1.0.0",
+  "description": "Recovery Worker",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/core": "^10.0.0",
+    "@nestjs/config": "^3.0.0",
+    "@nestjs/bullmq": "^11.0.5",
+    "bullmq": "^6.2.0",
+    "dotenv": "^16.3.1",
+    "@rr/contracts": "workspace:*",
+    "@rr/domain": "workspace:*",
+    "@rr/persistence": "workspace:*",
+    "@rr/utils": "workspace:*",
+    "@rr/observability": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.0",
+    "vitest": "^2.1.8"
+  }
+}
