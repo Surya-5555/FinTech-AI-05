@@ -1,16 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { IProviderFactory } from './provider.interface.js';
-import { ExecutionProvider } from '@rr/contracts';
+import { ExecutionProvider, ExecutionActionType } from '@rr/contracts';
 import { RazorpayAdapter } from './razorpay/razorpay.adapter.js';
-import { SimulatedCommunicationAdapter } from './simulators/simulated-communication.adapter.js';
-import { PaymentRetrySimulator } from './simulators/payment-retry.simulator.js';
+import { TwilioAdapter } from './twilio/twilio.adapter.js';
+import { ResendAdapter } from './email/resend.adapter.js';
+import { RazorpayRetryAdapter } from './razorpay/razorpay-retry.adapter.js';
 
 @Injectable()
 export class ProviderFactory implements IProviderFactory {
   constructor(
     private readonly razorpayAdapter: RazorpayAdapter,
-    private readonly simulatedCommunicationAdapter: SimulatedCommunicationAdapter,
-    private readonly paymentRetrySimulator: PaymentRetrySimulator,
+    private readonly twilioAdapter: TwilioAdapter,
+    private readonly emailAdapter: ResendAdapter,
+    private readonly razorpayRetryAdapter: RazorpayRetryAdapter,
   ) {}
 
   getProvider(actionType: string): ExecutionProvider {
@@ -18,11 +20,12 @@ export class ProviderFactory implements IProviderFactory {
       case 'CREATE_PAYMENT_LINK':
         return this.razorpayAdapter;
       case 'INITIATE_PAYMENT_RETRY':
-        return this.paymentRetrySimulator;
-      case 'SEND_SIMULATED_EMAIL':
-      case 'SEND_SIMULATED_SMS':
-      case 'SEND_SIMULATED_VOICE':
-        return this.simulatedCommunicationAdapter;
+        return this.razorpayRetryAdapter;
+      case ExecutionActionType.SEND_EMAIL_REMINDER:
+        return this.emailAdapter;
+      case ExecutionActionType.SEND_SMS_REMINDER:
+      case ExecutionActionType.SEND_VOICE_REMINDER:
+        return this.twilioAdapter;
       default:
         throw new Error(`No provider configured for action type: ${actionType}`);
     }

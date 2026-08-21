@@ -114,9 +114,9 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
       let actionType = plan.interventionType as any;
       if (plan.interventionType === 'PAYMENT_LINK') actionType = 'CREATE_PAYMENT_LINK';
       if (plan.interventionType === 'PAYMENT_RETRY') actionType = 'INITIATE_PAYMENT_RETRY';
-      if (plan.interventionType === 'EMAIL_REMINDER') actionType = 'SEND_SIMULATED_EMAIL';
-      if (plan.interventionType === 'SMS_REMINDER') actionType = 'SEND_SIMULATED_SMS';
-      if (plan.interventionType === 'VOICE_REMINDER') actionType = 'SEND_SIMULATED_VOICE';
+      if (plan.interventionType === 'EMAIL_REMINDER') actionType = 'SEND_EMAIL_REMINDER';
+      if (plan.interventionType === 'SMS_REMINDER') actionType = 'SEND_SMS_REMINDER';
+      if (plan.interventionType === 'VOICE_REMINDER') actionType = 'SEND_VOICE_REMINDER';
       if (plan.interventionType === 'HUMAN_ESCALATION') actionType = 'CREATE_HUMAN_ESCALATION';
 
       // 3. Select Provider
