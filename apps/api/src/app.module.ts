@@ -13,6 +13,7 @@ import { CasesModule } from './modules/cases/cases.module.js';
 import { PlanningModule } from './modules/planning/planning.module.js';
 import { PoliciesModule } from './modules/policies/policies.module.js';
 import { OutboxPublisherModule } from './modules/outbox-publisher/outbox-publisher.module.js';
+import { InterventionsModule } from './modules/interventions/interventions.module.js';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { OutboxPublisherModule } from './modules/outbox-publisher/outbox-publish
     MetricsModule,
     EventsModule,
     CasesModule,
+    InterventionsModule,
   ],
 })
 export class AppModule {}
