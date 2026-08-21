@@ -1,0 +1,10 @@
+export type MerchantId = string & { readonly __brand: 'MerchantId' };
+export type CustomerId = string & { readonly __brand: 'CustomerId' };
+export type EventId = string & { readonly __brand: 'EventId' };
+export type RevenueCaseId = string & { readonly __brand: 'RevenueCaseId' };
+export type RecoveryPlanId = string & { readonly __brand: 'RecoveryPlanId' };
+export type InterventionId = string & { readonly __brand: 'InterventionId' };
+export type EvaluationRunId = string & { readonly __brand: 'EvaluationRunId' };
+export type AuditLogId = string & { readonly __brand: 'AuditLogId' };
+export type IdempotencyKey = string & { readonly __brand: 'IdempotencyKey' };
+export type CorrelationId = string & { readonly __brand: 'CorrelationId' };

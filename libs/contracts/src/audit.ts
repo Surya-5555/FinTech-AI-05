@@ -1,0 +1,36 @@
+import { AuditLogId, CorrelationId } from './identifiers.js';
+
+export enum AuditActorType {
+  SYSTEM = 'SYSTEM',
+  POLICY_ENGINE = 'POLICY_ENGINE',
+  HUMAN_OPERATOR = 'HUMAN_OPERATOR',
+  EVALUATION_RUNNER = 'EVALUATION_RUNNER',
+}
+
+export enum AuditAction {
+  EVENT_INGESTED = 'EVENT_INGESTED',
+  CASE_CREATED = 'CASE_CREATED',
+  STATE_TRANSITIONED = 'STATE_TRANSITIONED',
+  PLAN_PROPOSED = 'PLAN_PROPOSED',
+  POLICY_APPROVED = 'POLICY_APPROVED',
+  POLICY_REJECTED = 'POLICY_REJECTED',
+  INTERVENTION_ENQUEUED = 'INTERVENTION_ENQUEUED',
+  INTERVENTION_EXECUTED = 'INTERVENTION_EXECUTED',
+  INTERVENTION_FAILED = 'INTERVENTION_FAILED',
+  CASE_ESCALATED = 'CASE_ESCALATED',
+  CASE_STOPPED = 'CASE_STOPPED',
+  EVALUATION_COMPLETED = 'EVALUATION_COMPLETED',
+}
+
+export interface AuditLog {
+  auditLogId: AuditLogId;
+  timestamp: Date;
+  actorType: AuditActorType;
+  action: AuditAction;
+  entityType: string;
+  entityId: string;
+  correlationId: CorrelationId;
+  previousState?: string;
+  nextState?: string;
+  metadata: Record<string, string | number | boolean>;
+}

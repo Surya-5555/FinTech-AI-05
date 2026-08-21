@@ -6,5 +6,9 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@rr/contracts": "workspace:*",
+    "@rr/utils": "workspace:*"
   }
 }
