@@ -14,4 +14,21 @@ export class SystemController {
       timestamp: new Date().toISOString(),
     };
   }
+
+  @Get('resilience/status')
+  getResilienceStatus() {
+    return {
+      status: 'OK',
+      circuitBreakers: {
+        razorpayApi: 'CLOSED',
+        llmProvider: 'CLOSED',
+        redis: 'CLOSED'
+      },
+      queueDepths: {
+        outbox: 0,
+        interventions: 0
+      },
+      timestamp: new Date().toISOString()
+    };
+  }
 }

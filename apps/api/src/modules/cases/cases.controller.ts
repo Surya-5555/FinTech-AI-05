@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param, NotFoundException } from '@nestjs/common';
 import { CasesService } from './cases.service.js';
 
 @Controller('cases')
@@ -18,5 +18,14 @@ export class CasesController {
     if (offsetNum !== undefined) query.offset = offsetNum;
     if (merchantId !== undefined) query.merchantId = merchantId;
     return this.casesService.getCases(query);
+  }
+
+  @Get(':id')
+  async getCaseById(@Param('id') id: string) {
+    const caseItem = await this.casesService.getCaseById(id);
+    if (!caseItem) {
+      throw new NotFoundException(`Case ${id} not found`);
+    }
+    return caseItem;
   }
 }

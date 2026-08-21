@@ -15,6 +15,9 @@ import { PoliciesModule } from './modules/policies/policies.module.js';
 import { OutboxPublisherModule } from './modules/outbox-publisher/outbox-publisher.module.js';
 import { InterventionsModule } from './modules/interventions/interventions.module.js';
 import { AiModule } from './modules/ai/ai.module.js';
+import { EvaluationModule } from './modules/evaluation/evaluation.module.js';
+import { DashboardModule } from './modules/dashboard/dashboard.module.js';
+import { FailuresModule } from './modules/failures/failures.module.js';
 
 @Module({
   imports: [
@@ -44,6 +47,8 @@ import { AiModule } from './modules/ai/ai.module.js';
     CasesModule,
     InterventionsModule,
     AiModule,
+    DashboardModule,
+    FailuresModule,
   ],
 })
 export class AppModule {}
