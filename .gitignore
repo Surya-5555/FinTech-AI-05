@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Python artifacts (for optional ML components)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env/
+env/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing and coverage
+coverage/
+.nyc_output/
+*.lcov
+
+# Logs and databases
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Data storage (local s3 abstraction / pg data)
+data/
+db-data/
+*.sqlite
+
+# Environment variables
+.env
+.env.test
+.env.production
+.env.local
+
+# IDEs and OS
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Docker
+docker-compose.override.yml
