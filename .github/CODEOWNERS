@@ -1,0 +1,9 @@
+# These owners will be the default owners for everything in the repo.
+*       @suryaravichandran5555
+
+# Order is important; the last matching pattern takes the most precedence.
+/docs/  @suryaravichandran5555
+/libs/domain/ @suryaravichandran5555
+/apps/api/ @suryaravichandran5555
+/apps/worker/ @suryaravichandran5555
+/apps/evaluator/ @suryaravichandran5555
