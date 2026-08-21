@@ -1,0 +1,19 @@
+node_modules
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+dist
+coverage
+tmp
+.vscode
+.idea
+*.log
+artifacts
+data
+# Keep only necessary parts of the workspace for building
+apps/*/node_modules
+apps/*/dist
+libs/*/node_modules
+libs/*/dist
