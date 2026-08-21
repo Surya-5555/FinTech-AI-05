@@ -11,9 +11,15 @@ export interface AppConfig {
 export default (): AppConfig => {
   const env = process.env.APP_ENV || 'development';
   const databaseUrl = process.env.DATABASE_URL;
+  const razorpayMode = process.env.RAZORPAY_MODE || 'test';
   
   if (!databaseUrl && env === 'production') {
     throw new Error('DATABASE_URL is required in production');
+  }
+
+  // Demo Environment Safety Guard
+  if (env === 'demo' && razorpayMode === 'live') {
+    throw new Error('SAFETY VIOLATION: Cannot run RAZORPAY_MODE=live in demo environment.');
   }
 
   return {
