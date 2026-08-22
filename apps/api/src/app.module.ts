@@ -31,7 +31,7 @@ import { FailuresModule } from './modules/failures/failures.module';
         genReqId: (req: any) => {
           return req.headers['x-correlation-id'] || randomUUID();
         },
-        redact: ['req.headers.authorization', 'req.headers.cookie'],
+        redact: ['req.headers.authorization', 'req.headers.cookie', 'req.body.token', 'req.body.apiKey'],
         customProps: (req: any, res: any) => ({
           context: 'HTTP',
           correlationId: req.headers['x-correlation-id'],
@@ -45,8 +45,12 @@ import { FailuresModule } from './modules/failures/failures.module';
     MetricsModule,
     EventsModule,
     CasesModule,
+    PlanningModule,
+    PoliciesModule,
+    OutboxPublisherModule,
     InterventionsModule,
     AiModule,
+    EvaluationModule,
     DashboardModule,
     FailuresModule,
   ],

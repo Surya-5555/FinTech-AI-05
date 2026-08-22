@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Param, Body, Headers } from '@nestjs/common';
+import { Controller, Post, Get, Param, Body, Headers, UseGuards } from '@nestjs/common';
+import { OperatorAuthGuard } from '../../common/guards/operator-auth.guard';
 import { PlanningService } from './planning.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 
@@ -7,6 +8,7 @@ export class PlanningController {
   constructor(private readonly planningService: PlanningService) {}
 
   @Post()
+  @UseGuards(OperatorAuthGuard)
   async createPlan(
     @Param('caseId') caseId: string,
     @Body() dto: CreatePlanDto,
@@ -30,6 +32,7 @@ export class PlanningController {
     };
   }
   @Post(':planId/enqueue')
+  @UseGuards(OperatorAuthGuard)
   async enqueuePlan(
     @Param('caseId') caseId: string,
     @Param('planId') planId: string,

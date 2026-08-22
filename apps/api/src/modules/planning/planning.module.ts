@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PlanningController } from './planning.controller';
 import { PlanningService } from './planning.service';
+import { PrismaPlanningRepository } from '@rr/persistence';
 
 @Module({
   controllers: [PlanningController],
@@ -8,7 +9,7 @@ import { PlanningService } from './planning.service';
     PlanningService,
     {
       provide: 'PlanningRepository',
-      useClass: require('@rr/persistence').PrismaPlanningRepository,
+      useClass: PrismaPlanningRepository,
     },
   ],
 })

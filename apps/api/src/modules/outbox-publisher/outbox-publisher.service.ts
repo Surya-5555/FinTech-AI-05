@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { OutboxRepository } from '@rr/persistence';
 
@@ -10,7 +10,7 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
   private isProcessing = false;
 
   constructor(
-    private readonly outboxRepo: OutboxRepository
+    @Inject('OutboxRepository') private readonly outboxRepo: OutboxRepository
   ) {}
 
   async onModuleInit() {

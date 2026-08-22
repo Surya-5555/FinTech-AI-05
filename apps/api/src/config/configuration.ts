@@ -25,6 +25,11 @@ export default (): AppConfig => {
     throw new Error('CONFIGURATION_ERROR: DATABASE_URL is required in production');
   }
 
+  const apiAuthToken = process.env.API_AUTH_TOKEN || '';
+  if (!apiAuthToken) {
+    throw new Error('CONFIGURATION_ERROR: API_AUTH_TOKEN is required');
+  }
+
   // Strict Environment Safety Guards
   const safeEnvironments = ['demo', 'test', 'ci', 'development'];
   if (safeEnvironments.includes(env)) {
