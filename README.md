@@ -1,127 +1,183 @@
-# Razorpay AI Buildathon - Track 03: AI Revenue Recovery
+# Razorpay AI Revenue Recovery
 
-[![CI](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/ci.yml)
-[![Evaluation](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/evaluation.yml/badge.svg)](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/evaluation.yml)
-[![Resilience](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/resilience.yml/badge.svg)](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/resilience.yml)
-[![Docker Demo](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/docker.yml/badge.svg)](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/docker.yml)
+**Detect failed payments, diagnose root causes with AI, select bounded recovery interventions, execute them safely, and measure the outcome — with a complete audit trail.**
 
-## 🛡️ Production-Grade Fintech Safety Guarantees (Verified ✅)
+## The Problem
 
-This repository is built with **strict deterministic financial safety** as its core principle. AI acts as a reasoning engine, while deterministic policy boundaries prevent unsafe actions.
+Indian merchants on Razorpay lose revenue when recurring payments fail — card expiry, insufficient funds, bank timeouts, CVV mismatches. Most merchants either do nothing (losing the revenue) or blindly retry (annoying customers, wasting API calls on fraud-flagged transactions). There is no intelligent, measured system that decides *which* recovery action to take, *whether* it is safe to take it, and *how much* revenue was actually recovered.
 
-We have successfully implemented and fully verified the following capabilities via exhaustive integration testing (pnpm test:integration):
+## What This System Does
 
-1. **Strict Idempotency (Duplicate Event Ingestion):** External events are mapped to unique idempotency keys. The persistence layer enforces strict database-level unique constraints, preventing duplicate webhook events from creating redundant cases or initiating phantom recovery loops.
-2. **At-Most-Once Intervention Execution:** Recovery interventions acquire distributed transaction locks. Concurrent workers attempting to execute the same recovery action are deterministically blocked by the locking mechanism, ensuring a customer never receives duplicate communication or redundant payment retries.
-3. **Optimistic Concurrency Control:** Workflow state transitions (e.g., from DETECTED to ACTIVE_RECOVERY) enforce strict version-matching (ersion: N -> version: N+1). Stale states are completely rejected, guaranteeing consistency even under heavy asynchronous load.
-4. **Deterministic Stopping Rules:** Hard boundaries prevent runaway logic. Merchant-configured thresholds (e.g., maxAttemptsPerCase) are strictly enforced. If an AI proposes an action beyond this limit, the system forcibly stops the workflow and flags it as POLICY_REJECTED.
-5. **Consent Enforcement:** Customer communication consents (Email, SMS, Voice) are evaluated prior to any intervention routing. If an intervention lacks the required consent, the policy evaluator safely blocks it with a CONSENT_MISSING reason code.
+This is an end-to-end revenue recovery pipeline for Razorpay Track 03:
 
-## 🚀 Buildathon Implementation Achievements
+1. **Ingest** failed payment events via REST API (simulating Razorpay webhooks)
+2. **Create** revenue-at-risk cases with idempotent duplicate detection
+3. **Diagnose** failure root cause and select recovery strategy (AI-assisted)
+4. **Plan** a bounded intervention (payment retry, payment link, SMS/email notification)
+5. **Validate** the plan against merchant policies, customer consent, and stopping rules
+6. **Execute** the intervention via external adapters (Razorpay Test Mode, Twilio, Resend)
+7. **Record** the outcome with full audit trail
+8. **Evaluate** recovery performance against baselines using reproducible batch metrics
 
-Beyond the core fintech safety constraints, our team successfully delivered and verified the following critical milestones for Track 03:
+## Where AI Is Used (and Where It Is Not)
 
-### 1. Robust Modular Architecture 
-- Implemented a clean, production-ready **NestJS Modular Monolith** separating API ingestion, background workers, and core domain logic.
-- Utilized **Prisma ORM** coupled with a PostgreSQL database as the absolute source of truth for all transactional states.
-- Integrated **Redis and BullMQ** to manage transient state, retry mechanisms, and reliable background task scheduling.
+| AI-Powered | Deterministic (Not AI) |
+|---|---|
+| Root-cause diagnosis explanation | Event ingestion and deduplication |
+| Recovery message drafting (empathetic customer comms) | State machine transitions |
+| Decision explanation for operator review | Policy validation and consent checks |
+| | Intervention execution and idempotency |
+| | Stopping rules and escalation |
+| | Financial calculations (BigInt, no floats) |
+| | Evaluation metrics computation |
 
-### 2. Comprehensive Domain Modeling & Bug Fixes
-- **Consent Handling Verification**: Fixed and solidified the transition boundary between Prisma's schema types and the business logic's boolean consent flags.
-- **Advanced Policy Evaluator**: Improved the evaluateRecoveryPolicy engine to flawlessly ingest complex customer consent constraints and map them dynamically against merchant intervention policies.
-- **Edge-Case Resilience**: Patched edge cases in diagnosis logic to prevent unhandled TypeErrors during unexpected payload structures, ensuring graceful degradation.
+AI acts as a **reasoning advisor**. It cannot directly execute financial actions, bypass policy gates, or mutate case state. If the AI provider is unavailable, the system falls back to deterministic templates and continues operating.
 
-### 3. Exhaustive Audit & Test Coverage
-- Conducted a comprehensive 29-point engineering implementation audit proving adherence to Track 03's strict safety guidelines.
-- Configured a powerful `vitest` workspace and wrote deterministic E2E integration tests that successfully connect to the active database.
-- Proved 100% compliance across our 5 core safety pillars (Idempotency, At-Most-Once Execution, Optimistic Concurrency, Stopping Rules, and Consent Enforcement).
+## Architecture
 
-### 4. Reviewer-First Operations Console
-- **Problem & Motivation:** A fully automated backend requires extreme transparency. We built a dedicated, evidence-driven frontend dashboard (React 18 / Vite / Tailwind) to prove our deterministic safety constraints and visualize exact revenue recovery workflows in under five minutes.
-- **Data-Driven Transparency:** Integrates real-time NestJS API endpoints to expose executive financial metrics (At-Risk vs. Recovered), exact AI precision bounds, and false intervention rates, completely avoiding "mocked" data.
-- **Immutable Audit Trails:** Exposes chronological timelines for every case. The AI's diagnostic and planning decisions are distinctly badged, proving that AI is bounded to *reasoning* while the execution state and policy constraints strictly govern the ultimate outcomes.
-- **BigInt Serialization Patch:** Proactively solved complex ORM boundaries by globally patching NestJS/JavaScript BigInt JSON serialization, allowing seamless transfer of high-precision minor-unit monetary values from Prisma to the React frontend.
+```
+┌─────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Frontend   │────▶│   NestJS API │────▶│  PostgreSQL  │
+│  React/Vite │     │  (REST)      │     │  (Prisma)    │
+└─────────────┘     └──────┬───────┘     └──────────────┘
+                           │
+                    ┌──────▼───────┐     ┌──────────────┐
+                    │   BullMQ     │────▶│    Redis      │
+                    │   Worker     │     │              │
+                    └──────┬───────┘     └──────────────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │ Razorpay │ │  Twilio  │ │  Resend  │
+        │ Test API │ │  (SMS)   │ │  (Email) │
+        └──────────┘ └──────────┘ └──────────┘
+```
 
-These robust controls, verified engineering practices, and transparent operations UI provide a production-ready foundation that satisfies the stringent requirements for Track 03 (AI Revenue Recovery).
+**Stack**: Node.js 22 · NestJS · TypeScript · Prisma · PostgreSQL · Redis · BullMQ · React 18 · Vite · Tailwind CSS
 
-## Continuous Integration & Quality Gates
-
-This repository uses GitHub Actions for CI to prove the system works safely:
-- **CI**: Runs lint, typechecks, builds, and unit tests against synthetic test DBs.
-- **Evaluation**: Computes deterministic evaluation metrics (pnpm evaluate-smoke).
-- **Resilience**: Verifies failure states and idempotency (pnpm failure-demo).
-- **Docker**: Proves the local make demo-up environment spins up cleanly.
-
-> [!IMPORTANT]
-> Please refer to our [SECURITY.md](file:///d:/projects/RazorPay-Buildathon/SECURITY.md) for full details on our API authentication model, authorization boundaries, and fail-closed configurations.
-
-*To verify all quality gates locally, run:*
-`ash
-make verify
-`
+**Monorepo packages**:
+- `apps/api` — NestJS REST API (ingestion, cases, planning, policies, dashboard, evaluation)
+- `apps/worker` — BullMQ background processor (intervention execution)
+- `apps/frontend` — React operations console (cases, dashboard, evaluation viewer)
+- `apps/evaluator` — CLI batch evaluation runner
+- `libs/domain` — State machine, policy engine, planning logic
+- `libs/contracts` — Shared TypeScript types and enums
+- `libs/persistence` — Prisma schema, repositories, mappers
+- `libs/evaluation` — Metrics calculator, baselines, dataset loader
+- `libs/llm` — LLM client abstraction with fallback templates
 
 ## Prerequisites
-- Node.js 22 LTS
-- pnpm (corepack enabled)
 
-## Installation
-`ash
-make install
-# or
+- Node.js ≥ 22 LTS
+- pnpm (via `corepack enable`)
+- PostgreSQL 16 (or use Docker Compose)
+- Redis 7 (or use Docker Compose)
+
+## Local Setup
+
+```bash
+# 1. Install dependencies
 pnpm install
-`
 
-## Workspace Commands
-- pnpm dev - Start development servers
-- pnpm build - Build all packages
-- pnpm lint - Run ESLint
-- pnpm format - Run Prettier
-- pnpm typecheck - Run TypeScript type checking
-- pnpm test - Run all tests
-- make verify - Run full verification suite (install, lint, typecheck, test)
+# 2. Copy environment file
+cp .env.example .env
+# Edit .env with your DATABASE_URL and REDIS_URL
 
-## Repository Packages Overview
-- pps/api - NestJS Backend
-- pps/worker - Background Processor
-- pps/frontend - React Dashboard
-- libs/domain - Shared domain logic & types
-- libs/contracts - API contracts/interfaces
-- libs/config - Shared configuration
-- libs/observability - Logging and metrics
-- libs/evaluation - Evaluation framework
-- libs/llm - AI integration abstractions
-- libs/utils - Shared utilities
+# 3. Run database migrations
+pnpm --filter @rr/persistence prisma migrate deploy
 
-## Running the API Locally
+# 4. Start the API
 pnpm --filter @rr/api dev
 
-Required environment variables:
-- DATABASE_URL (in .env)
-
-## Operations Dashboard
-The Operations Dashboard is available at http://localhost:5173 when running the frontend.
-To start the frontend locally:
-` ash
+# 5. Start the frontend (separate terminal)
 pnpm --filter @rr/frontend dev
-`
+# Dashboard at http://localhost:5173
+```
 
-## Quick Start (Demo Environment)
-To run the entire system locally in a simulated demo environment (No Razorpay or LLM keys required):
-` ash
-cp infra/env/demo.env.example infra/env/demo.env
-make demo-up
-make demo-smoke
-`
-The Operations Dashboard will be available at http://localhost:5173
+## Docker Compose (Full Stack)
 
-## Testing with Razorpay Test Mode (Live Sandboxed)
-To test the integration with Razorpay's live Test Mode securely without risking actual money movement, you must explicitly opt-in using the `ENABLE_RAZORPAY_TEST_MODE` environment variable.
+Brings up PostgreSQL, Redis, API, Worker, and Frontend in one command:
 
-1. Obtain your Razorpay Key ID and Key Secret from the Razorpay Dashboard (Make sure you are in **Test Mode**).
-2. Update your `.env` file:
+```bash
+# Start all services
+docker compose -f infra/compose/compose.yaml up --build -d
+
+# Check health
+docker compose -f infra/compose/compose.yaml ps
+
+# View logs
+docker compose -f infra/compose/compose.yaml logs -f api worker
+
+# Tear down
+docker compose -f infra/compose/compose.yaml down
+```
+
+The operations dashboard is available at `http://localhost:5173` and the API at `http://localhost:3000`.
+
+## Demo Mode vs Razorpay Test Mode
+
+| | Demo Mode | Razorpay Test Mode |
+|---|---|---|
+| **External calls** | None — all adapters are simulated | Calls Razorpay sandbox API |
+| **Requires keys** | No | Yes (`rzp_test_` prefixed keys) |
+| **Money movement** | Simulated amounts only | Sandbox — no real money |
+| **When to use** | Quick local review, CI | Testing Razorpay payment link creation |
+
+To enable Razorpay Test Mode:
 ```bash
 ENABLE_RAZORPAY_TEST_MODE=true
-RAZORPAY_KEY_ID=rzp_test_your_key_here
-RAZORPAY_KEY_SECRET=your_test_secret_here
+RAZORPAY_KEY_ID=rzp_test_your_key
+RAZORPAY_KEY_SECRET=your_test_secret
 ```
-3. Run the system. The `RazorpayTestModeRecoveryAdapter` will strictly map idempotency keys and is bounded to only support the `CREATE_PAYMENT_LINK` action. Any other actions or missing credentials will result in an immediate secure failure.
+
+## Test Commands
+
+```bash
+# E2E API tests (no database required — uses mocks)
+cd apps/api && npx vitest run -c vitest.e2e.config.ts
+
+# Integration tests (requires running PostgreSQL + Redis)
+pnpm test:integration
+
+# Batch evaluation (deterministic, no external calls)
+pnpm evaluate-smoke
+
+# All quality checks
+make verify
+```
+
+## Evaluation
+
+The evaluation framework compares the AI-powered recovery system against two baselines using a reproducible synthetic dataset (500 cases, seeded PRNG, SHA-256 checksummed):
+
+- **Baseline 0 (No Recovery)**: Do nothing. Measures organic recovery.
+- **Baseline 1 (Naive Retry)**: Blindly retry the first allowed channel.
+- **System Under Test**: AI-assisted diagnosis → policy-bounded intervention → measured outcome.
+
+All monetary calculations use `BigInt` to prevent floating-point precision loss. Integrity assertions reject any run where recovered > at-risk.
+
+See [docs/evaluation/EVALUATION.md](docs/evaluation/EVALUATION.md) for full methodology, metrics, and commands.
+
+## Security
+
+- **Auth**: Bearer token guard on all mutation endpoints. Read endpoints open for demo.
+- **LLM boundary**: AI cannot execute financial actions or bypass policy gates.
+- **Input validation**: `ValidationPipe` with `whitelist: true`, `forbidNonWhitelisted: true`.
+- **Log redaction**: Authorization headers, cookies, tokens, API keys redacted from Pino logs.
+- **Secrets**: Environment variables only. `.env.example` contains no real credentials.
+- **Fail-closed**: Missing auth token → 401. Invalid Razorpay key prefix → boot crash.
+
+See [SECURITY.md](SECURITY.md) for full details.
+
+## Documentation
+
+| Document | Path |
+|---|---|
+| Security & Auth Model | [SECURITY.md](SECURITY.md) |
+| Architecture | [docs/architecture/](docs/architecture/) |
+| Evaluation Methodology | [docs/evaluation/EVALUATION.md](docs/evaluation/EVALUATION.md) |
+| Failure & Resilience Scenarios | [docs/failures/FAILURES.md](docs/failures/FAILURES.md) |
+| Demo Script | [docs/demo/DEMO_SCRIPT.md](docs/demo/DEMO_SCRIPT.md) |
+| Architectural Decision Records | [docs/decisions/](docs/decisions/) |
+| Implementation Audit | [docs/project-status/IMPLEMENTATION-COMPLETENESS-AUDIT.md](docs/project-status/IMPLEMENTATION-COMPLETENESS-AUDIT.md) |
