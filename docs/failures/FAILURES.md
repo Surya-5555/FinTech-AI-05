@@ -1,52 +1,111 @@
-# Failure & Resilience Documentation
+# Failure & Resilience Scenarios
 
-This document outlines the failure scenarios the AI Revenue Recovery system is designed to handle, and how it safely recovers from them. All scenarios documented here are verified by deterministic integration tests (`tests/integration/resilience_flow.test.ts`).
+This document describes the failure scenarios the AI Revenue Recovery system handles, and how it safely recovers from each one. All scenarios are verified by deterministic integration tests in `tests/integration/resilience_flow.test.ts`.
 
-## 1. External Adapter Failures (Razorpay / Twilio / Resend)
+## 1. Duplicate Event Ingestion
 
 ### Scenario
-An external provider API times out, returns a transient 5xx error, or the action parameters are invalid/unsupported (e.g. attempting an unsupported Razorpay action).
+The same payment failure webhook is delivered multiple times (network retry, webhook replay, operator re-submission).
+
+### System Response
+1. **Database-Level Unique Constraint**: The persistence layer enforces a unique composite key on `(merchantId, externalEventId, eventType)`. Any duplicate event is deterministically rejected at the database level.
+2. **Idempotency Key**: Every ingestion request carries an idempotency key (either from the `Idempotency-Key` header or deterministically generated from `merchantReference + externalEventId`).
+3. **No Phantom Cases**: Duplicate events never create redundant revenue cases or trigger duplicate recovery workflows.
+
+### Evidence
+- Test: `tests/integration/recovery_flow.test.ts` — duplicate ingestion returns conflict, no new case created
+- Schema: `libs/persistence/prisma/schema.prisma` — `@@unique([merchantId, externalEventId, eventType])`
+
+## 2. Concurrent Execution (Worker Crash / Restart)
+
+### Scenario
+A worker picks up an intervention, acquires the execution lock, then crashes before marking the result. A second worker attempts to pick up the same intervention.
+
+### System Response
+1. **Distributed Lock**: Before execution, the worker claims a database-level lock (`lockedBy`, `lockedAt` fields) on the intervention record.
+2. **Lock Rejection**: A second worker attempting to claim the same lock is deterministically rejected — `claimExecutionLock()` returns `false`.
+3. **At-Most-Once Guarantee**: The external payment gateway or messaging endpoint is never hit twice for the same logical intervention attempt.
+
+### Evidence
+- Test: `tests/integration/resilience_flow.test.ts` — "Worker Failure/Restart: Idempotent execution lock prevents double execution"
+- Code: `libs/persistence/src/repositories/execution.repository.ts`
+
+## 3. Stale State / Optimistic Concurrency
+
+### Scenario
+Two concurrent processes attempt to transition the same revenue case from `DETECTED` to `ACTIVE_RECOVERY`. One will have a stale version.
+
+### System Response
+1. **Version Matching**: Workflow state transitions enforce strict version matching (`version: N → version: N+1`).
+2. **Stale Rejection**: The second process receives a concurrency conflict error and does not proceed.
+3. **No Partial Updates**: The case state remains consistent — no split-brain scenario.
+
+### Evidence
+- Code: `libs/domain/src/state-machine.ts` — version field enforcement
+- Schema: `libs/persistence/prisma/schema.prisma` — `version Int @default(0)` on `RevenueCase`
+
+## 4. External Adapter Failure (Razorpay / Twilio / Resend)
+
+### Scenario
+An external provider API times out, returns a transient 5xx error, or receives an unsupported action type.
 
 ### System Response
 1. **Bounded Execution**: The worker invokes the adapter with a timeout and retry wrapper.
-2. **Safe Fallback**: If the adapter fails, the failure code (e.g., `TIMEOUT`, `CONFIGURATION_ERROR`) is caught.
-3. **State Integrity**: No double execution occurs. The result is mapped correctly to a failure outcome.
-4. **Escalation**: The failure increments the attempt count. Once `maxAttemptsPerCase` is exhausted, the workflow is safely halted and marked as `ESCALATED`.
+2. **Safe Failure Mapping**: If the adapter fails, the failure is caught and mapped to a structured code (e.g., `TIMEOUT`, `CONFIGURATION_ERROR`).
+3. **No Double Execution**: The result is recorded atomically. The intervention cannot be re-executed.
+4. **Escalation Path**: The failure increments the attempt count. Once `maxAttemptsPerCase` is exhausted, the workflow halts and marks the case as `ESCALATED`.
 
-## 2. Worker Node Crash / Restart
+### Evidence
+- Test: `tests/integration/resilience_flow.test.ts` — "External Adapter Failure (Razorpay Timeout): Safely handles failure and maps code"
+- Code: `apps/worker/src/providers/razorpay/razorpay.adapter.ts`
 
-### Scenario
-A worker picks up a scheduled intervention, acquires the execution lock, but crashes (e.g., OOM, pod restart, network partition) before successfully marking the intervention as executed or failed in the database.
-
-### System Response
-1. **Idempotent Lock Generation**: Before execution, the system claims a distributed lock in the database (`lockedBy`, `lockedAt`).
-2. **Double Execution Prevention**: A secondary or restarted worker attempting to pick up the same execution payload will be rejected deterministically by the lock mechanism.
-3. **At-Most-Once Guarantee**: The target payment gateway or messaging endpoint will never be hit twice for the same logical intervention attempt.
-
-## 3. Database Persistence / Atomicity Failures
-
-### Scenario
-The system attempts to transition the case state and save the intervention result, but the underlying transaction fails (e.g., foreign key violation, temporary disconnect, or an invalid case state transition).
-
-### System Response
-1. **Transaction Rollback**: The persistence layer (`PrismaExecutionRepository`) wraps these operations in strict ACID transactions.
-2. **No Partial States**: A failure here results in a complete rollback. The intervention attempt is not recorded as successful, and the case state remains unchanged, meaning it can be safely retried or escalated by a supervisor process without corrupting business logic.
-
-## 4. Workflow Exhaustion
+## 5. Workflow Exhaustion (Stopping Rules)
 
 ### Scenario
 An external system continues to fail, or a customer repeatedly fails retries. The maximum allowed retries are exhausted.
 
 ### System Response
 1. **Deterministic Stopping Rules**: The execution engine detects that `attemptCount >= maxAttemptsPerCase`.
-2. **Audit & Escalation**: The system automatically adds an `ESCALATION_TRIGGERED` audit log and halts further automation.
-3. **Safety First**: The final state transitions to `ESCALATED`, ensuring no runaway looping or unrestricted automation drains funds or spams customers.
+2. **Audit & Escalation**: The system adds an `ESCALATION_TRIGGERED` audit log entry and halts further automation.
+3. **Terminal State**: The case transitions to `ESCALATED`, ensuring no runaway looping.
 
-## 5. LLM Unavailability
+### Evidence
+- Test: `tests/integration/resilience_flow.test.ts` — "Queue Retry Exhaustion: System marks case as escalated/terminal"
+- Code: `libs/domain/src/state-machine.ts` — `escalate()` transition
+
+## 6. Database Transaction Failure
 
 ### Scenario
-The AI reasoning engine (e.g., Gemini / Claude API) becomes unavailable, times out, or returns severely malformed JSON that fails validation.
+The system attempts to record an intervention result and transition the case state, but the underlying database transaction fails (e.g., foreign key violation, temporary disconnect).
 
 ### System Response
-1. **Circuit Breaking**: The `HostedLLMClient` applies a strict timeout.
-2. **Deterministic Fallbacks**: If the AI model fails, the fallback module provides static, safe reasoning templates. This ensures the fintech workflow continues processing cases deterministically rather than stalling entirely.
+1. **Transaction Rollback**: The persistence layer wraps these operations in strict ACID transactions via Prisma.
+2. **No Partial State**: A failure results in a complete rollback. The intervention is not recorded as successful, and the case state remains unchanged.
+3. **Safe Retry**: The intervention can be safely retried or escalated by a supervisor process without corrupting business logic.
+
+### Evidence
+- Test: `tests/integration/resilience_flow.test.ts` — "Database Persistence Failure: Atomicity via transactions"
+- Code: `libs/persistence/src/repositories/execution.repository.ts` — `persistExecutionResult()`
+
+## 7. LLM Unavailability
+
+### Scenario
+The AI reasoning engine becomes unavailable, times out, or returns malformed output that fails validation.
+
+### System Response
+1. **Timeout Enforcement**: The `HostedLLMClient` applies a strict timeout on all API calls.
+2. **Deterministic Fallback**: If the AI fails, `libs/llm/src/fallbacks/templates.ts` provides static, safe reasoning templates. The system continues processing cases without stalling.
+3. **No Safety Impact**: Since AI only provides reasoning and message drafts (never executes financial actions), its unavailability does not affect the safety or correctness of the recovery workflow.
+
+### Evidence
+- Code: `libs/llm/src/fallbacks/templates.ts`
+- Code: `libs/llm/src/client/llm.client.ts` — timeout configuration
+
+## How to Run the Resilience Tests
+
+```bash
+# Requires running PostgreSQL and Redis
+pnpm test:integration
+```
+
+All tests in `tests/integration/resilience_flow.test.ts` exercise these scenarios against a live database, verifying detection, containment, recovery, and audit evidence.
