@@ -37,7 +37,7 @@ export class RazorpayAdapter implements ExecutionProvider {
     }
 
     try {
-      if (request.actionType === 'CREATE_PAYMENT_LINK' || request.actionType === ExecutionActionType.CREATE_PAYMENT_LINK) {
+      if (request.actionType === ExecutionActionType.CREATE_PAYMENT_LINK) {
         return await this.createPaymentLink(request);
       } else {
         return {
