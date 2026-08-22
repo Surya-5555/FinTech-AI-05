@@ -52,6 +52,9 @@ This repository uses GitHub Actions for CI to prove the system works safely:
 - **Resilience**: Verifies failure states and idempotency (pnpm failure-demo).
 - **Docker**: Proves the local make demo-up environment spins up cleanly.
 
+> [!IMPORTANT]
+> Please refer to our [SECURITY.md](file:///d:/projects/RazorPay-Buildathon/SECURITY.md) for full details on our API authentication model, authorization boundaries, and fail-closed configurations.
+
 *To verify all quality gates locally, run:*
 `ash
 make verify
