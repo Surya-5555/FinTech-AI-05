@@ -39,9 +39,10 @@ db-data/
 
 # Environment variables
 .env
-.env.test
-.env.production
-.env.local
+.env.*
+!.env.example
+!infra/env/*.env.example
+
 
 # IDEs and OS
 .DS_Store

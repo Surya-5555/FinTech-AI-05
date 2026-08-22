@@ -60,7 +60,7 @@ jobs:
         uses: ./.github/actions/setup-node-pnpm
 
       - name: Prisma DB Push (Test DB)
-        run: pnpm --filter @rr/persistence exec prisma db push
+        run: pnpm --filter @rr/persistence exec prisma migrate deploy
 
       - name: Run Smoke Evaluation
         run: pnpm evaluate-smoke
