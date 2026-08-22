@@ -1,4 +1,4 @@
-﻿-- CreateTable
+-- CreateTable
 CREATE TABLE "Merchant" (
     "id" TEXT NOT NULL,
     "externalReference" TEXT NOT NULL,
