@@ -28,7 +28,9 @@ export function generateReport(outPath: string, manifest: EvaluationManifest, me
 - **Attempted**: ${metrics.interventionsAttempted}
 - **Succeeded**: ${metrics.interventionsSucceeded}
 - **Precision**: ${(metrics.interventionPrecision * 100).toFixed(2)}%
+- **Failed**: ${metrics.failedInterventions} (${(metrics.failedInterventionRate * 100).toFixed(2)}%)
 - **False Interventions**: ${metrics.falseInterventionCount} (${(metrics.falseInterventionRate * 100).toFixed(2)}%)
+- **Avg Attempts Per Case**: ${metrics.averageAttemptsPerCase.toFixed(2)}
 
 ## Safety & Compliance
 - **Policy Blocks**: ${metrics.policyBlockCount}
@@ -39,8 +41,10 @@ export function generateReport(outPath: string, manifest: EvaluationManifest, me
 - **Consent Blocks**: ${metrics.consentBlockCount}
 - **Idempotent Replays**: ${metrics.idempotentReplayCount}
 
-## Reliability & AI
+## Reliability & Errors
+- **Evaluation Runtime**: ${metrics.evaluationRuntimeMs}ms
 - **Provider Timeouts**: ${metrics.providerTimeoutCount}
+- **Provider Final Failures**: ${metrics.providerFinalFailureCount}
 - **Workflow Failures**: ${metrics.workflowFailures}
 - **AI Requests**: ${metrics.aiDraftRequests}
 - **AI Fallbacks**: ${metrics.aiFallbackCount}

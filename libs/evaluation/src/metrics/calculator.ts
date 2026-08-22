@@ -15,8 +15,11 @@ export interface EvaluationMetrics {
   interventionsAttempted: number;
   interventionsSucceeded: number;
   interventionPrecision: number; // percentage
+  failedInterventions: number;
+  failedInterventionRate: number; // percentage
   falseInterventionCount: number;
-  falseInterventionRate: number;
+  falseInterventionRate: number; // percentage
+  averageAttemptsPerCase: number;
   
   // Safety / Policy
   policyBlockCount: number;
@@ -38,6 +41,9 @@ export interface EvaluationMetrics {
   // AI
   aiDraftRequests: number;
   aiFallbackCount: number;
+
+  // Runtime
+  evaluationRuntimeMs: number;
 }
 
 export class MetricsCalculator {
@@ -45,7 +51,8 @@ export class MetricsCalculator {
     cases: EvaluationCase[],
     baseline0Results: StrategyResult[],
     baseline1Results: StrategyResult[],
-    sutResults: StrategyResult[]
+    sutResults: StrategyResult[],
+    evaluationRuntimeMs: number = 0
   ): EvaluationMetrics {
     
     // Total At Risk
@@ -106,10 +113,15 @@ export class MetricsCalculator {
     }
 
     const interventionPrecision = interventionsAttempted > 0 ? interventionsSucceeded / interventionsAttempted : 0;
+    const failedInterventions = interventionsAttempted - interventionsSucceeded;
+    const failedInterventionRate = interventionsAttempted > 0 ? failedInterventions / interventionsAttempted : 0;
+    
     const falseInterventionRate = interventionsAttempted > 0 ? falseInterventionCount / interventionsAttempted : 0;
     const totalCases = cases.length;
     const escalationRate = totalCases > 0 ? escalationCount / totalCases : 0;
     const stoppedCaseRate = totalCases > 0 ? stoppedCaseCount / totalCases : 0;
+    
+    const averageAttemptsPerCase = totalCases > 0 ? interventionsAttempted / totalCases : 0;
 
     return {
       totalAtRiskMinor: totalAtRisk.toString(),
@@ -122,8 +134,11 @@ export class MetricsCalculator {
       interventionsAttempted,
       interventionsSucceeded,
       interventionPrecision,
+      failedInterventions,
+      failedInterventionRate,
       falseInterventionCount,
       falseInterventionRate,
+      averageAttemptsPerCase,
       policyBlockCount,
       escalationCount,
       escalationRate,
@@ -138,7 +153,8 @@ export class MetricsCalculator {
       providerFinalFailureCount,
       workflowFailures,
       aiDraftRequests: aiRequests,
-      aiFallbackCount: aiFallbacks
+      aiFallbackCount: aiFallbacks,
+      evaluationRuntimeMs
     };
   }
 }

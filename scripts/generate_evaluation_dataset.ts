@@ -163,7 +163,8 @@ function run() {
       "Synthetic data generated via seeded LCG.",
       "Customer metadata is completely masked.",
       "Does not reflect true production volume or timing.",
-      "Requires explicit test adapters during evaluation runs."
+      "Requires explicit test adapters during evaluation runs.",
+      "No leakage: Ground truth 'recoverable' status is never passed to scoring inputs."
     ]
   };
 

@@ -37,14 +37,17 @@ export async function runEvaluation(options: EvaluateOptions) {
   // In a real environment, this isolates the database state between runs.
   // For the skeletal version, we just run sequentially.
   
+  const startTime = Date.now();
   for (const c of cases) {
     b0Results.push(await baseline0.evaluate(c));
     b1Results.push(await baseline1.evaluate(c));
     sutResults.push(await sut.evaluate(c));
   }
+  const endTime = Date.now();
+  const evaluationRuntimeMs = endTime - startTime;
   
   console.log(chalk.blue(`[3/5] Computing Metrics...`));
-  const metrics = Metrics.MetricsCalculator.compute(cases, b0Results, b1Results, sutResults);
+  const metrics = Metrics.MetricsCalculator.compute(cases, b0Results, b1Results, sutResults, evaluationRuntimeMs);
 
   console.log(chalk.blue(`[4/5] Running Integrity Assertions...`));
   Metrics.IntegrityAssertions.assertValid(metrics);
