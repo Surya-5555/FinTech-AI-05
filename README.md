@@ -178,6 +178,5 @@ See [SECURITY.md](SECURITY.md) for full details.
 | Architecture | [docs/architecture/](docs/architecture/) |
 | Evaluation Methodology | [docs/evaluation/EVALUATION.md](docs/evaluation/EVALUATION.md) |
 | Failure & Resilience Scenarios | [docs/failures/FAILURES.md](docs/failures/FAILURES.md) |
-| Demo Script | [docs/demo/DEMO_SCRIPT.md](docs/demo/DEMO_SCRIPT.md) |
 | Architectural Decision Records | [docs/decisions/](docs/decisions/) |
 | Implementation Audit | [docs/project-status/IMPLEMENTATION-COMPLETENESS-AUDIT.md](docs/project-status/IMPLEMENTATION-COMPLETENESS-AUDIT.md) |
