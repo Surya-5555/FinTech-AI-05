@@ -48,12 +48,21 @@ export function proposeRecoveryPlan(input: PlanProposalInput): RecoveryPlanPropo
   diagnosis.recommendedIntervention = recommended;
 
   // 4. Evaluate Policy
+  let hasConsentForIntervention = true;
+  if (sourceEvent.metadata?.customerConsents) {
+    const consents = sourceEvent.metadata.customerConsents as any;
+    if (recommended === 'EMAIL_REMINDER' && consents.email === false) hasConsentForIntervention = false;
+    if (recommended === 'SMS_REMINDER' && consents.sms === false) hasConsentForIntervention = false;
+    if (recommended === 'VOICE_REMINDER' && consents.voice === false) hasConsentForIntervention = false;
+  }
+
   const policyDecision = evaluateRecoveryPolicy({
     revCase,
     diagnosis,
     proposedIntervention: recommended,
     merchantPolicy,
     activeInterventionSummary,
+    hasConsentForIntervention,
     now,
   });
 
