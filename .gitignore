@@ -60,3 +60,4 @@ docker-compose.override.yml
 # Audits & Internal Tracking
 docs/project-status/
 docs/EVIDENCE_MAP.md
+razorpay_final_research.md
