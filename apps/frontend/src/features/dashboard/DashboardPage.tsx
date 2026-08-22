@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ApiClient } from '../../api/client';
 import { formatMoneyMinor } from '../../lib/money';
-import { Activity, CheckCircle, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle, AlertCircle, TrendingUp, XCircle, ShieldOff } from 'lucide-react';
 
 export function DashboardPage() {
   const { data: summary, isLoading } = useQuery({
@@ -18,44 +18,75 @@ export function DashboardPage() {
     return <div className="p-8 text-center text-gray-500">Loading dashboard...</div>;
   }
 
+  const falseInterventionRate = summary?.interventionsByStatus?.FAILED 
+    ? (summary.interventionsByStatus.FAILED / (Object.values(summary.interventionsByStatus) as number[]).reduce((a, b) => a + b, 0) * 100).toFixed(1)
+    : '0.0';
+
+  const stoppedCount = funnel?.STOPPED?.count || 0;
+  const escalatedCount = funnel?.ESCALATED?.count || summary?.activeEscalations || 0;
+  const policyBlockedCount = funnel?.POLICY_BLOCKED?.count || 0; // Using funnel data or 0
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Operations Console</h1>
-          <p className="text-gray-500 mt-1">Real-time revenue recovery metrics</p>
+          <h1 className="text-2xl font-bold text-gray-900">Executive Recovery Dashboard</h1>
+          <p className="text-gray-500 mt-1">Real-time AI revenue recovery metrics (Track 03)</p>
         </div>
-        <div className="text-sm text-gray-400">
-          Last updated: {new Date().toLocaleTimeString()}
+        <div className="text-sm font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+          ● Data Mode: {summary?.dataMode || 'LIVE'}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard 
-          title="Revenue at Risk" 
+          title="Total Revenue at Risk" 
           value={formatMoneyMinor(summary?.totalAtRiskMinor || 0)} 
           icon={<AlertCircle className="h-5 w-5 text-amber-500" />} 
         />
         <MetricCard 
-          title="Total Recovered" 
+          title="Baseline Recovered" 
+          value={formatMoneyMinor(summary?.baselineRecoveredMinor || 0)} 
+          icon={<CheckCircle className="h-5 w-5 text-gray-400" />} 
+        />
+        <MetricCard 
+          title="System Recovered" 
           value={formatMoneyMinor(summary?.totalRecoveredMinor || 0)} 
           icon={<CheckCircle className="h-5 w-5 text-emerald-500" />} 
         />
+        <MetricCard 
+          title="Incremental Recovery" 
+          value={formatMoneyMinor(summary?.incrementalRecoveredMinor || 0)} 
+          icon={<TrendingUp className="h-5 w-5 text-blue-500" />} 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
         <MetricCard 
           title="Recovery Rate" 
           value={`${((summary?.recoveryRate || 0) * 100).toFixed(1)}%`} 
           icon={<Activity className="h-5 w-5 text-blue-500" />} 
         />
         <MetricCard 
+          title="False Intervention Rate" 
+          value={`${falseInterventionRate}%`} 
+          icon={<XCircle className="h-5 w-5 text-red-500" />} 
+        />
+        <MetricCard 
           title="Active Escalations" 
-          value={summary?.activeEscalations || 0} 
-          icon={<AlertTriangle className="h-5 w-5 text-red-500" />} 
+          value={escalatedCount} 
+          icon={<AlertTriangle className="h-5 w-5 text-amber-500" />} 
+        />
+        <MetricCard 
+          title="Stopped / Policy Blocked" 
+          value={`${stoppedCount} / ${policyBlockedCount}`} 
+          icon={<ShieldOff className="h-5 w-5 text-red-600" />} 
         />
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h2 className="text-lg font-medium text-gray-900">Recovery Funnel</h2>
+          <h2 className="text-lg font-medium text-gray-900">System Recovery Funnel</h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">

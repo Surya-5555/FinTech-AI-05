@@ -78,14 +78,49 @@ export function CaseDetailPage() {
                 <div className="text-sm text-gray-500">Source Event ID</div>
                 <div className="text-sm font-mono text-gray-900">{data.sourceEventId}</div>
               </div>
+              <div>
+                <div className="text-sm text-gray-500">Correlation ID</div>
+                <div className="text-sm font-mono text-gray-900">{data.correlationId}</div>
+              </div>
             </div>
           </div>
+
+          {/* AI Diagnosis and Planning */}
+          {data.plans && data.plans.length > 0 && (
+            <div className="bg-blue-50/50 rounded-xl shadow-sm border border-blue-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-blue-100 bg-blue-100/50 flex justify-between items-center">
+                <h2 className="text-lg font-medium text-blue-900">AI Diagnosis & Plan</h2>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-200 text-blue-800">
+                  ✨ AI-Generated
+                </span>
+              </div>
+              <div className="p-6 space-y-4">
+                {data.plans.map((plan: any, idx: number) => (
+                  <div key={plan.id} className={idx > 0 ? "pt-4 border-t border-blue-100" : ""}>
+                    <div className="flex justify-between">
+                      <div className="text-sm font-medium text-gray-900">Plan: {plan.interventionType}</div>
+                      <div className="text-xs text-gray-500">{formatDate(plan.createdAt)}</div>
+                    </div>
+                    <div className="mt-2 text-sm text-gray-700 bg-white p-3 rounded border border-blue-50">
+                      <strong>Diagnosis:</strong> {plan.diagnosisJson || 'N/A'}
+                    </div>
+                    <div className="mt-2 text-sm text-gray-700 bg-white p-3 rounded border border-blue-50">
+                      <strong>Policy Gate Decision:</strong> {plan.planStatus}
+                      {plan.requiresHumanApproval && ' (Requires Human Approval)'}
+                      <br/>
+                      <strong>Reason Codes:</strong> {plan.reasonCodesJson || 'None'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
               <h2 className="text-lg font-medium text-gray-900 flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-gray-400" />
-                Interventions
+                Interventions & Executions
               </h2>
             </div>
             <div className="divide-y divide-gray-100">
@@ -95,14 +130,33 @@ export function CaseDetailPage() {
               {data.interventions?.map((inv: any) => (
                 <div key={inv.id} className="p-4">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-900">{inv.interventionType}</span>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${inv.status === 'SUCCESS' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                    <span className="text-sm font-medium text-gray-900">{inv.interventionType} (Attempt {inv.attemptNumber})</span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      inv.status === 'SUCCESS' ? 'bg-green-100 text-green-800' : 
+                      inv.status === 'FAILED' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                    }`}>
                       {inv.status}
                     </span>
                   </div>
+                  {inv.externalReference && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Adapter Ref: {inv.externalReference}
+                    </div>
+                  )}
+                  {inv.failureCode && (
+                    <div className="text-xs text-red-500 mt-1">
+                      Failure Code: {inv.failureCode}
+                    </div>
+                  )}
                   {inv.outcome && (
-                    <div className="text-sm text-gray-500 mt-2">
-                      Recovered: {formatMoneyMinor(inv.outcome.recoveredAmountMinor || 0)}
+                    <div className="text-sm text-gray-500 mt-2 bg-gray-50 p-2 rounded">
+                      <div><strong>Outcome Status:</strong> {inv.outcome.status}</div>
+                      {inv.outcome.recoveredAmountMinor && (
+                        <div><strong>Recovered:</strong> {formatMoneyMinor(inv.outcome.recoveredAmountMinor || 0, inv.outcome.currency)}</div>
+                      )}
+                      {inv.outcome.resultMetadataJson && (
+                        <div className="text-xs mt-1"><strong>Details:</strong> {inv.outcome.resultMetadataJson}</div>
+                      )}
                     </div>
                   )}
                 </div>
