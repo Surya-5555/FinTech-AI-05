@@ -1,4 +1,5 @@
-import { Controller, Get, Put, Param, Body, Headers, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Put, Param, Body, UseGuards } from '@nestjs/common';
+import { OperatorAuthGuard } from '../../common/guards/operator-auth.guard';
 import { PoliciesService } from './policies.service';
 
 @Controller('policies/merchants/:merchantId')
@@ -11,14 +12,11 @@ export class PoliciesController {
   }
 
   @Put()
+  @UseGuards(OperatorAuthGuard)
   async updateMerchantPolicy(
     @Param('merchantId') merchantId: string,
-    @Body() policyData: any,
-    @Headers('authorization') authHeader?: string
+    @Body() policyData: any
   ) {
-    if (!authHeader || authHeader !== 'Bearer API_AUTH_TOKEN') {
-      throw new UnauthorizedException('Missing or invalid authorization token');
-    }
     return this.policiesService.updateMerchantPolicy(merchantId, policyData);
   }
 }

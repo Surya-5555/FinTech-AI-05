@@ -1,14 +1,17 @@
+process.env.API_AUTH_TOKEN = 'test-auth-token';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { PlanningModule } from '../src/modules/planning/planning.module';
 import { PoliciesModule } from '../src/modules/policies/policies.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { vi, describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { RecoveryPlanStatus, RevenueCaseState, InterventionType } from '@rr/contracts';
 
 // Mock dependencies
 vi.mock('@rr/persistence', () => {
   return {
+    PlanningRepository: class {},
     getPrismaClient: () => ({
       $connect: vi.fn(),
       $disconnect: vi.fn(),
@@ -61,8 +64,11 @@ describe('PlanningController (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [PlanningModule, PoliciesModule],
-    }).compile();
+      imports: [PlanningModule, PoliciesModule, ConfigModule.forRoot({ isGlobal: true, load: [() => ({ API_AUTH_TOKEN: 'test-auth-token' })] })],
+    })
+    .overrideProvider(ConfigService)
+    .useValue({ get: () => 'test-auth-token' })
+    .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
@@ -76,6 +82,7 @@ describe('PlanningController (e2e)', () => {
   it('/cases/:caseId/plans (POST) - Success', async () => {
     const response = await request(app.getHttpServer())
       .post('/cases/case_1/plans')
+      .set('Authorization', 'Bearer test-auth-token')
       .send({ policyVersion: 'v1' })
       .expect(201);
 

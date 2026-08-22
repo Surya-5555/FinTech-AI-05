@@ -2,8 +2,8 @@
   "name": "@rr/persistence",
   "version": "1.0.0",
   "private": true,
-
-  "main": "./src/index.ts",
+  "type": "commonjs",
+  "main": "src/index.ts",
   "scripts": {
     "generate": "prisma generate",
     "db:deploy": "prisma migrate deploy",

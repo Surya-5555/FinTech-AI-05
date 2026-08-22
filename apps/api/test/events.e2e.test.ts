@@ -1,12 +1,21 @@
+process.env.API_AUTH_TOKEN = 'test-auth-token';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
-vi.mock('@rr/persistence', async (importOriginal) => {
-  const actual = await importOriginal() as any;
+vi.mock('@rr/persistence', () => {
   return {
-    ...actual,
+    PlanningRepository: class {},
+    IngestionRepository: class {},
+    OutboxRepository: class {},
+    ExecutionRepository: class {},
+    PrismaPlanningRepository: class {},
+    PrismaOutboxRepository: class {},
+    PrismaExecutionRepository: class {},
+    AIInvocationRepository: class {},
+    PrismaAIInvocationRepository: class {},
+    ConcurrencyConflictError: class ConcurrencyConflictError extends Error {},
     getPrismaClient: () => ({
       $connect: vi.fn(),
       $disconnect: vi.fn(),
@@ -86,6 +95,7 @@ describe('EventsController (e2e)', () => {
 
     const response = await request(app.getHttpServer())
       .post('/events/ingest')
+      .set('Authorization', `Bearer ${process.env.API_AUTH_TOKEN}`)
       .set('Idempotency-Key', `idemp_${Date.now()}`)
       .send(payload)
       .expect(200);

@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards } from '@nestjs/common';
+import { OperatorAuthGuard } from '../../common/guards/operator-auth.guard';
 import { AiService } from './ai.service';
 import { DraftRequestDto } from './dto/draft-request.dto';
 
@@ -17,6 +18,7 @@ export class CaseAiController {
   constructor(private readonly aiService: AiService) {}
 
   @Post('message-draft')
+  @UseGuards(OperatorAuthGuard)
   async getMessageDraft(
     @Param('caseId') caseId: string,
     @Body() dto: DraftRequestDto,

@@ -1,3 +1,4 @@
+process.env.API_AUTH_TOKEN = 'test-auth-token';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -5,6 +6,24 @@ import { AppModule } from '../src/app.module';
 
 import { PrismaService } from '../src/persistence/prisma.service';
 import { vi } from 'vitest';
+
+vi.mock('@rr/persistence', () => ({
+  PrismaHealthIndicator: class {
+    isHealthy = vi.fn().mockResolvedValue({ db: { status: 'up' } });
+  },
+  PlanningRepository: class {},
+  IngestionRepository: class {},
+  OutboxRepository: class {},
+  ExecutionRepository: class {},
+  PrismaIngestionRepository: class {},
+  PrismaPlanningRepository: class {},
+  PrismaOutboxRepository: class {},
+  PrismaExecutionRepository: class {},
+  AIInvocationRepository: class {},
+  PrismaAIInvocationRepository: class {},
+  ConcurrencyConflictError: class ConcurrencyConflictError extends Error {},
+  getPrismaClient: () => ({}),
+}));
 
 describe('HealthController (e2e)', () => {
   let app: INestApplication;
