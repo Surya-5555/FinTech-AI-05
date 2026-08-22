@@ -1,4 +1,4 @@
-import { InterventionType } from './plan.js';
+import { InterventionType } from './plan';
 
 export enum ConsentStatus {
   GRANTED = 'GRANTED',

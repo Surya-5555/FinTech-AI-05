@@ -10,9 +10,9 @@ import {
   RecoveryPlanId,
 } from '@rr/contracts';
 import { generateId } from '@rr/utils';
-import { diagnoseRevenueCase } from './diagnosis.js';
-import { ActiveInterventionSummary, recommendIntervention, selectCandidateInterventions } from './intervention.js';
-import { evaluateRecoveryPolicy } from './policy.js';
+import { diagnoseRevenueCase } from './diagnosis';
+import { ActiveInterventionSummary, recommendIntervention, selectCandidateInterventions } from './intervention';
+import { evaluateRecoveryPolicy } from './policy';
 
 export interface PlanProposalInput {
   revCase: RecoveryCase;

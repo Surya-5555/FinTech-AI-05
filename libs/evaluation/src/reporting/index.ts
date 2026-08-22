@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { EvaluationManifest } from '../dataset/schemas.js';
-import { EvaluationMetrics } from '../metrics/calculator.js';
+import { EvaluationManifest } from '../dataset/schemas';
+import { EvaluationMetrics } from '../metrics/calculator';
 
 export function generateReport(outPath: string, manifest: EvaluationManifest, metrics: EvaluationMetrics, rawData: any) {
   // Save JSON summary

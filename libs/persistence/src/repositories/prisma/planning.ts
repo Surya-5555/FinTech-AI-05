@@ -6,8 +6,8 @@ import {
   InterventionType,
   RecoveryPlanStatus,
 } from '@rr/contracts';
-import { CreatePlanCommand, PlanningRepository } from '../contracts/planning.js';
-import { getPrismaClient } from '../../client/index.js';
+import { CreatePlanCommand, PlanningRepository } from '../contracts/planning';
+import { getPrismaClient } from '../../client/index';
 import { generateId } from '@rr/utils';
 
 export class PrismaPlanningRepository implements PlanningRepository {

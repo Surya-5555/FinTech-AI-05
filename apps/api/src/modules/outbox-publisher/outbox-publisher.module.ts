@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { OutboxPublisherService } from './outbox-publisher.service.js';
+import { OutboxPublisherService } from './outbox-publisher.service';
 import { PrismaOutboxRepository } from '@rr/persistence';
 
 @Module({

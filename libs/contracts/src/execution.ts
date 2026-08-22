@@ -1,5 +1,5 @@
-import { InterventionId, RevenueCaseId, MerchantId, IdempotencyKey } from './identifiers.js';
-import { Money } from './money.js';
+import { InterventionId, RevenueCaseId, MerchantId, IdempotencyKey } from './identifiers';
+import { Money } from './money';
 
 export enum ExecutionActionType {
   CREATE_PAYMENT_LINK = 'CREATE_PAYMENT_LINK',

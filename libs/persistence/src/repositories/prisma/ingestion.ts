@@ -1,8 +1,8 @@
-import { IngestionCommand, IngestionRepository } from '../contracts/ingestion.js';
+import { IngestionCommand, IngestionRepository } from '../contracts/ingestion';
 import { IngestionResult, MerchantConfig, RevenueEvent, RecoveryCase, AuditLog } from '@rr/contracts';
-import { getPrismaClient } from '../../client/index.js';
+import { getPrismaClient } from '../../client/index';
 import { generateId } from '@rr/utils';
-import { ConcurrencyConflictError } from '../../errors/index.js';
+import { ConcurrencyConflictError } from '../../errors/index';
 
 export class PrismaIngestionRepository implements IngestionRepository {
   async ingestEventAndCreateCaseIfEligible(

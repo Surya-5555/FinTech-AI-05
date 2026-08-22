@@ -1,16 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IngestEventDto } from './dto/ingest-event.dto.js';
+import { IngestEventDto } from './dto/ingest-event.dto';
 import { PrismaIngestionRepository, IngestionCommand } from '@rr/persistence';
 import { generateStableHash } from '@rr/utils';
 import { qualifyRevenueEvent } from '@rr/domain';
+import { RevenueCaseState } from '@rr/contracts';
 
 @Injectable()
 export class EventsService {
   private readonly logger = new Logger(EventsService.name);
   private ingestionRepository = new PrismaIngestionRepository();
-
-  // keeping constructor empty or using DI if module provides it. 
-  // Wait, I will just mock getPrismaClient in the test.
 
   async ingestEvent(dto: IngestEventDto, idempotencyKey: string) {
     this.logger.log(`Ingesting event ${dto.externalEventId} with idempotency key ${idempotencyKey}`);
@@ -28,7 +26,7 @@ export class EventsService {
         correlationId: generateStableHash(`${dto.externalEventId}-${idempotencyKey}`),
         rawPayloadVersion: '1.0',
         metadata: dto.metadata || {}
-      } as any, // ID and other fields will be set by repository
+      } as any, 
       idempotencyKey,
       merchantReference: dto.merchant.externalReference,
       customerReference: dto.customer.externalReference,
@@ -45,6 +43,9 @@ export class EventsService {
       qualifyRevenueEvent
     );
 
+    const isRecovered = result.revenueCase?.state === RevenueCaseState.RECOVERED;
+    const isCreated = !!result.revenueCase && !isRecovered && !result.idempotentReplay;
+
     return {
       success: true,
       correlationId: result.correlationId,
@@ -53,7 +54,8 @@ export class EventsService {
         eligible: result.qualification.eligible,
         reasons: result.qualification.reasonCodes
       },
-      caseCreated: !!result.revenueCase,
+      caseCreated: isCreated,
+      caseRecovered: isRecovered,
       caseId: result.revenueCase?.caseId
     };
   }

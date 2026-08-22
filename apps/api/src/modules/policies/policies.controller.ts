@@ -1,5 +1,5 @@
 import { Controller, Get, Put, Param, Body, Headers, UnauthorizedException } from '@nestjs/common';
-import { PoliciesService } from './policies.service.js';
+import { PoliciesService } from './policies.service';
 
 @Controller('policies/merchants/:merchantId')
 export class PoliciesController {

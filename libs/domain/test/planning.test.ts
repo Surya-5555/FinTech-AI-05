@@ -5,7 +5,7 @@ import {
   recommendIntervention,
   evaluateRecoveryPolicy,
   proposeRecoveryPlan,
-} from '../src/index.js';
+} from '../src/index';
 import {
   RecoveryCase,
   RevenueEvent,

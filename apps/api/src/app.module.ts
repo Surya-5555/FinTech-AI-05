@@ -8,16 +8,16 @@ import { MetricsModule } from './system/metrics.module';
 import configuration from './config/configuration';
 import { randomUUID } from 'crypto';
 
-import { EventsModule } from './modules/events/events.module.js';
-import { CasesModule } from './modules/cases/cases.module.js';
-import { PlanningModule } from './modules/planning/planning.module.js';
-import { PoliciesModule } from './modules/policies/policies.module.js';
-import { OutboxPublisherModule } from './modules/outbox-publisher/outbox-publisher.module.js';
-import { InterventionsModule } from './modules/interventions/interventions.module.js';
-import { AiModule } from './modules/ai/ai.module.js';
-import { EvaluationModule } from './modules/evaluation/evaluation.module.js';
-import { DashboardModule } from './modules/dashboard/dashboard.module.js';
-import { FailuresModule } from './modules/failures/failures.module.js';
+import { EventsModule } from './modules/events/events.module';
+import { CasesModule } from './modules/cases/cases.module';
+import { PlanningModule } from './modules/planning/planning.module';
+import { PoliciesModule } from './modules/policies/policies.module';
+import { OutboxPublisherModule } from './modules/outbox-publisher/outbox-publisher.module';
+import { InterventionsModule } from './modules/interventions/interventions.module';
+import { AiModule } from './modules/ai/ai.module';
+import { EvaluationModule } from './modules/evaluation/evaluation.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { FailuresModule } from './modules/failures/failures.module';
 
 @Module({
   imports: [

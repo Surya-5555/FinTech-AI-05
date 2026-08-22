@@ -1,5 +1,5 @@
 import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
-import { EvaluationService } from './evaluation.service.js';
+import { EvaluationService } from './evaluation.service';
 
 @Controller('evaluation')
 export class EvaluationController {

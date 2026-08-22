@@ -1,5 +1,5 @@
 import { AIRequestContext } from '@rr/contracts';
-import { SharedSafetyPolicyV1 } from './shared-safety-policy.v1.js';
+import { SharedSafetyPolicyV1 } from './shared-safety-policy.v1';
 
 export function getRecoveryMessagePrompt(context: AIRequestContext): string {
   return `

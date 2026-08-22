@@ -1,4 +1,4 @@
-import { EvaluationCase } from '../dataset/schemas.js';
+import { EvaluationCase } from '../dataset/schemas';
 
 export interface StrategyResult {
   interventionsAttempted: number;

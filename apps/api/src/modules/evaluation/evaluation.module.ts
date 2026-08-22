@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { EvaluationController } from './evaluation.controller.js';
-import { EvaluationService } from './evaluation.service.js';
-import { PersistenceModule } from '../../persistence/persistence.module.js';
+import { EvaluationController } from './evaluation.controller';
+import { EvaluationService } from './evaluation.service';
+import { PersistenceModule } from '../../persistence/persistence.module';
 
 @Module({
   imports: [PersistenceModule],

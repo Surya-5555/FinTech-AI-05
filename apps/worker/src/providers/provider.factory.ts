@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { IProviderFactory } from './provider.interface.js';
+import { IProviderFactory } from './provider.interface';
 import { ExecutionProvider, ExecutionActionType } from '@rr/contracts';
-import { RazorpayAdapter } from './razorpay/razorpay.adapter.js';
-import { TwilioAdapter } from './twilio/twilio.adapter.js';
-import { ResendAdapter } from './email/resend.adapter.js';
-import { RazorpayRetryAdapter } from './razorpay/razorpay-retry.adapter.js';
+import { RazorpayAdapter } from './razorpay/razorpay.adapter';
+import { TwilioAdapter } from './twilio/twilio.adapter';
+import { ResendAdapter } from './email/resend.adapter';
+import { RazorpayRetryAdapter } from './razorpay/razorpay-retry.adapter';
 
 @Injectable()
 export class ProviderFactory implements IProviderFactory {

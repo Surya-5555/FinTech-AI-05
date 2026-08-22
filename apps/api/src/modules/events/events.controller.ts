@@ -1,6 +1,6 @@
 import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, UsePipes, ValidationPipe } from '@nestjs/common';
-import { EventsService } from './events.service.js';
-import { IngestEventDto } from './dto/ingest-event.dto.js';
+import { EventsService } from './events.service';
+import { IngestEventDto } from './dto/ingest-event.dto';
 import { generateStableHash } from '@rr/utils';
 
 @Controller('events')

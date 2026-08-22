@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Param, Body, Headers } from '@nestjs/common';
-import { PlanningService } from './planning.service.js';
-import { CreatePlanDto } from './dto/create-plan.dto.js';
+import { PlanningService } from './planning.service';
+import { CreatePlanDto } from './dto/create-plan.dto';
 
 @Controller('cases/:caseId/plans')
 export class PlanningController {

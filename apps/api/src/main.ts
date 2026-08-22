@@ -49,14 +49,14 @@ async function bootstrap() {
   // Swagger
   const env = configService.get<string>('APP_ENV');
   if (env === 'development' || env === 'test') {
-    const config = new DocumentBuilder()
-      .setTitle('Revenue Recovery API')
-      .setDescription('API for AI Revenue Recovery System')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+    // const config = new DocumentBuilder()
+    //   .setTitle('Revenue Recovery API')
+    //   .setDescription('API for AI Revenue Recovery System')
+    //   .setVersion('1.0')
+    //   .addBearerAuth()
+    //   .build();
+    // const document = SwaggerModule.createDocument(app, config);
+    // SwaggerModule.setup('api/docs', app, document);
   }
 
   // Graceful shutdown

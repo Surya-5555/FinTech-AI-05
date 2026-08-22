@@ -1,2 +1,2 @@
-export * from './calculator.js';
-export * from './integrity.js';
+export * from './calculator';
+export * from './integrity';

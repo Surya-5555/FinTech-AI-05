@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { runEvaluation } from './commands/evaluate.js';
+import { runEvaluation } from './commands/evaluate';
 
 const program = new Command();
 

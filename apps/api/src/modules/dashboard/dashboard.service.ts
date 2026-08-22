@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../persistence/prisma.service.js';
+import { PrismaService } from '../../persistence/prisma.service';
 
 @Injectable()
 export class DashboardService {

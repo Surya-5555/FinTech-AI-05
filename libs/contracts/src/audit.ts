@@ -1,4 +1,4 @@
-import { AuditLogId, CorrelationId } from './identifiers.js';
+import { AuditLogId, CorrelationId } from './identifiers';
 
 export enum AuditActorType {
   SYSTEM = 'SYSTEM',

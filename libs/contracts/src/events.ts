@@ -1,5 +1,5 @@
-import { EventId, MerchantId, CustomerId, CorrelationId } from './identifiers.js';
-import { Money } from './money.js';
+import { EventId, MerchantId, CustomerId, CorrelationId } from './identifiers';
+import { Money } from './money';
 
 export enum EventType {
   PAYMENT_FAILED = 'PAYMENT_FAILED',

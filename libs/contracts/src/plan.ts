@@ -1,6 +1,6 @@
-import { RecoveryPlanId, RevenueCaseId, IdempotencyKey } from './identifiers.js';
-import { DiagnosisResult, PolicyDecision } from './policy.js';
-import { RevenueCaseState } from './case.js';
+import { RecoveryPlanId, RevenueCaseId, IdempotencyKey } from './identifiers';
+import { DiagnosisResult, PolicyDecision } from './policy';
+import { RevenueCaseState } from './case';
 export enum InterventionType {
   PAYMENT_RETRY = 'PAYMENT_RETRY',
   PAYMENT_LINK = 'PAYMENT_LINK',

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
-import { RecoveryPlanExecutionProcessor } from './processors/recovery-plan-execution.processor.js';
+import { RecoveryPlanExecutionProcessor } from './processors/recovery-plan-execution.processor';
 import { PrismaExecutionRepository, PrismaPlanningRepository } from '@rr/persistence';
 
 @Module({

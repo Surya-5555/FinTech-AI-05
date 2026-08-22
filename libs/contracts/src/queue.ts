@@ -1,4 +1,4 @@
-import { IdempotencyKey, RevenueCaseId, RecoveryPlanId, CorrelationId } from './identifiers.js';
+import { IdempotencyKey, RevenueCaseId, RecoveryPlanId, CorrelationId } from './identifiers';
 
 export enum QueueJobStatus {
   PENDING = 'PENDING',

@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
-import { canTransition, assertTransition, transitionRevenueCase, isTerminal } from '../src/state-machine.js';
-import { InvalidStateTransitionError } from '../src/errors.js';
+import { canTransition, assertTransition, transitionRevenueCase, isTerminal } from '../src/state-machine';
+import { InvalidStateTransitionError } from '../src/errors';
 import { RevenueCaseState, RecoveryCase } from '@rr/contracts';
-import { createMoney } from '../src/money-helpers.js';
+import { createMoney } from '../src/money-helpers';
 
 test('isTerminal', () => {
   expect(isTerminal(RevenueCaseState.RECOVERED)).toBe(true);

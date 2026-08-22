@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { generateEventIngestionKey, generateRecoveryPlanKey, generateInterventionExecutionKey } from '../src/idempotency.js';
-import { InvalidIdempotencyInputError } from '../src/errors.js';
+import { generateEventIngestionKey, generateRecoveryPlanKey, generateInterventionExecutionKey } from '../src/idempotency';
+import { InvalidIdempotencyInputError } from '../src/errors';
 
 test('generateEventIngestionKey', () => {
   expect(generateEventIngestionKey('e1', 'm1')).toBe(generateEventIngestionKey('e1', 'm1'));

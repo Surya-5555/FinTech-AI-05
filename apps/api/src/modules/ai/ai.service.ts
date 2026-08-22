@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { DraftRequestDto } from './dto/draft-request.dto.js';
+import { DraftRequestDto } from './dto/draft-request.dto';
 import { 
   AIRequestContext, 
   AIUseCase, 

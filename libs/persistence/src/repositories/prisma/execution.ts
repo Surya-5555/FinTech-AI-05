@@ -1,5 +1,5 @@
-import { ExecutionRepository, PrepareInterventionCommand } from '../contracts/execution.js';
-import { getPrismaClient } from '../../client/index.js';
+import { ExecutionRepository, PrepareInterventionCommand } from '../contracts/execution';
+import { getPrismaClient } from '../../client/index';
 import { generateId } from '@rr/utils';
 import { RevenueCaseState } from '@rr/contracts';
 

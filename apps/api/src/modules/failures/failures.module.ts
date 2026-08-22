@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { FailuresController } from './failures.controller.js';
-import { FailuresService } from './failures.service.js';
+import { FailuresController } from './failures.controller';
+import { FailuresService } from './failures.service';
 
 @Module({
   controllers: [FailuresController],

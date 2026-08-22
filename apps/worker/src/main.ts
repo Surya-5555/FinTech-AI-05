@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { WorkerModule } from './worker.module.js';
+import { WorkerModule } from './worker.module';
 import { config } from 'dotenv';
 
 config();

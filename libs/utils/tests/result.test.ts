@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { success, failure } from '../src/result.js';
+import { success, failure } from '../src/result';
 
 test('success result', () => {
   const r = success('ok');

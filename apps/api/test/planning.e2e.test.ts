@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { PlanningModule } from '../src/modules/planning/planning.module.js';
-import { PoliciesModule } from '../src/modules/policies/policies.module.js';
+import { PlanningModule } from '../src/modules/planning/planning.module';
+import { PoliciesModule } from '../src/modules/policies/policies.module';
 import { vi, describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { RecoveryPlanStatus, RevenueCaseState, InterventionType } from '@rr/contracts';
 

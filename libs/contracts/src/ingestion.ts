@@ -1,6 +1,6 @@
-import { EventType, RevenueEvent } from './events.js';
-import { RecoveryCase, RevenueCaseState } from './case.js';
-import { Money } from './money.js';
+import { EventType, RevenueEvent } from './events';
+import { RecoveryCase, RevenueCaseState } from './case';
+import { Money } from './money';
 
 export interface MerchantConfig {
   supportedEventTypes: EventType[];

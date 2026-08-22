@@ -1,5 +1,5 @@
-import { EvaluationCase } from '../dataset/schemas.js';
-import { EvaluationStrategy, StrategyResult } from './strategy.js';
+import { EvaluationCase } from '../dataset/schemas';
+import { EvaluationStrategy, StrategyResult } from './strategy';
 
 /**
  * System Under Test (SUT) Strategy:

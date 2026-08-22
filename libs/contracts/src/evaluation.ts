@@ -1,5 +1,5 @@
-import { EvaluationRunId } from './identifiers.js';
-import { Money } from './money.js';
+import { EvaluationRunId } from './identifiers';
+import { Money } from './money';
 
 export interface EvaluationRun {
   evaluationRunId: EvaluationRunId;

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PlanningController } from './planning.controller.js';
-import { PlanningService } from './planning.service.js';
+import { PlanningController } from './planning.controller';
+import { PlanningService } from './planning.service';
 
 @Module({
   controllers: [PlanningController],

@@ -1,5 +1,5 @@
-import { StrategyResult } from '../baselines/strategy.js';
-import { EvaluationCase } from '../dataset/schemas.js';
+import { StrategyResult } from '../baselines/strategy';
+import { EvaluationCase } from '../dataset/schemas';
 
 export interface EvaluationMetrics {
   // Money

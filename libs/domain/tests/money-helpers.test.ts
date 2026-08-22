@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
-import { createMoney, addMoney, subtractMoney, compareMoney } from '../src/money-helpers.js';
-import { CurrencyMismatchError, InvalidMoneyError } from '../src/errors.js';
+import { createMoney, addMoney, subtractMoney, compareMoney } from '../src/money-helpers';
+import { CurrencyMismatchError, InvalidMoneyError } from '../src/errors';
 
 test('createMoney', () => {
   const m = createMoney(100n, 'INR');

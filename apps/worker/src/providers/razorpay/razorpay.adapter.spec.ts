@@ -1,4 +1,4 @@
-import { RazorpayAdapter } from './razorpay.adapter.js';
+import { RazorpayAdapter } from './razorpay.adapter';
 import { ExternalActionErrorCode, InterventionExecutionRequest } from '@rr/contracts';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 

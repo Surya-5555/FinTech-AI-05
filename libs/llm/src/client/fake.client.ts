@@ -1,4 +1,4 @@
-import { LLMClient, LLMProviderHealth, StructuredGenerationRequest, LLMGenerationResult } from './llm.client.js';
+import { LLMClient, LLMProviderHealth, StructuredGenerationRequest, LLMGenerationResult } from './llm.client';
 import { AIInvocationStatus, AIInvocationRecord, AIUseCase } from '@rr/contracts';
 import { generateId } from '@rr/utils';
 import { createHash } from 'crypto';

@@ -1,4 +1,4 @@
-import { EvaluationMetrics } from './calculator.js';
+import { EvaluationMetrics } from './calculator';
 
 export class IntegrityAssertions {
   static assertValid(metrics: EvaluationMetrics): void {

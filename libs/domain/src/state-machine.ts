@@ -1,5 +1,5 @@
 import { RecoveryCase, RevenueCaseState } from '@rr/contracts';
-import { InvalidStateTransitionError } from './errors.js';
+import { InvalidStateTransitionError } from './errors';
 
 export function isTerminal(state: RevenueCaseState): boolean {
   return [

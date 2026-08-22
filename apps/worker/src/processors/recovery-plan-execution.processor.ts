@@ -4,7 +4,7 @@ import { Inject, Logger } from '@nestjs/common';
 import { ExecutionRepository, PlanningRepository } from '@rr/persistence';
 import { RecoveryPlanExecutionJob, InterventionExecutionResult, RevenueCaseState, InterventionExecutionRequest } from '@rr/contracts';
 import { proposeRecoveryPlan } from '@rr/domain';
-import { ProviderFactory } from '../providers/provider.factory.js';
+import { ProviderFactory } from '../providers/provider.factory';
 import { randomUUID } from 'crypto';
 
 @Processor('recovery-plan-execution', {

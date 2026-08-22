@@ -1,6 +1,6 @@
 import { generateStableHash } from '@rr/utils';
 import { IdempotencyKey } from '@rr/contracts';
-import { InvalidIdempotencyInputError } from './errors.js';
+import { InvalidIdempotencyInputError } from './errors';
 
 export function generateEventIngestionKey(eventId: string, merchantId: string): IdempotencyKey {
   if (!eventId || !merchantId) throw new InvalidIdempotencyInputError('Missing required inputs');

@@ -1,8 +1,8 @@
-import { RevenueCaseRepository, RevenueEventRepository, AuditLogRepository } from '../contracts/index.js';
-import { getPrismaClient } from '../../client/index.js';
+import { RevenueCaseRepository, RevenueEventRepository, AuditLogRepository } from '../contracts/index';
+import { getPrismaClient } from '../../client/index';
 import { RecoveryCase, RevenueEvent, AuditLog } from '@rr/contracts';
-import { prismaRevenueCaseToContract, prismaRevenueEventToContract } from '../../mappers/index.js';
-import { ConcurrencyConflictError } from '../../errors/index.js';
+import { prismaRevenueCaseToContract, prismaRevenueEventToContract } from '../../mappers/index';
+import { ConcurrencyConflictError } from '../../errors/index';
 
 export class PrismaRevenueCaseRepository implements RevenueCaseRepository {
   async findById(id: string): Promise<RecoveryCase | null> {
@@ -69,5 +69,5 @@ export class PrismaAuditLogRepository implements AuditLogRepository {
     });
   }
 }
-export * from './ingestion.js';
-export * from './ai.js';
+export * from './ingestion';
+export * from './ai';

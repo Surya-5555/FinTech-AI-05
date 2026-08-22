@@ -1,5 +1,5 @@
 import { Money } from '@rr/contracts';
-import { CurrencyMismatchError, InvalidMoneyError } from './errors.js';
+import { CurrencyMismatchError, InvalidMoneyError } from './errors';
 
 export function createMoney(amountMinor: bigint, currency: string): Money {
   if (amountMinor < 0n) {

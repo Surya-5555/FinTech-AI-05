@@ -1,4 +1,4 @@
-import { RevenueCaseId, InterventionId, CorrelationId } from './identifiers.js';
+import { RevenueCaseId, InterventionId, CorrelationId } from './identifiers';
 
 export enum AIUseCase {
   RECOVERY_MESSAGE_DRAFT = 'RECOVERY_MESSAGE_DRAFT',

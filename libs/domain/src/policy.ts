@@ -7,7 +7,7 @@ import {
   RecoveryReasonCode,
   RevenueCaseState,
 } from '@rr/contracts';
-import { ActiveInterventionSummary } from './intervention.js';
+import { ActiveInterventionSummary } from './intervention';
 
 export interface PolicyEvaluationInput {
   revCase: RecoveryCase;

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AiController, CaseAiController } from './ai.controller.js';
-import { AiService } from './ai.service.js';
+import { AiController, CaseAiController } from './ai.controller';
+import { AiService } from './ai.service';
 
 @Module({
   controllers: [AiController, CaseAiController],

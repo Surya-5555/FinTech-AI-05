@@ -1,5 +1,5 @@
-import { InterventionId, CorrelationId } from './identifiers.js';
-import { Money } from './money.js';
+import { InterventionId, CorrelationId } from './identifiers';
+import { Money } from './money';
 
 export enum InterventionStatus {
   PENDING = 'PENDING',

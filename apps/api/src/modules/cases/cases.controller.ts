@@ -1,5 +1,5 @@
 import { Controller, Get, Query, Param, NotFoundException } from '@nestjs/common';
-import { CasesService } from './cases.service.js';
+import { CasesService } from './cases.service';
 
 @Controller('cases')
 export class CasesController {

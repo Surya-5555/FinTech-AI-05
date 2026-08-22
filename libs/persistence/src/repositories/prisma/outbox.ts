@@ -1,5 +1,5 @@
-import { OutboxRepository, OutboxEventRecord } from '../contracts/outbox.js';
-import { getPrismaClient } from '../../client/index.js';
+import { OutboxRepository, OutboxEventRecord } from '../contracts/outbox';
+import { getPrismaClient } from '../../client/index';
 import { randomUUID } from 'crypto';
 
 export class PrismaOutboxRepository implements OutboxRepository {
