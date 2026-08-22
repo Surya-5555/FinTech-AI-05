@@ -115,9 +115,9 @@ export class PrismaIngestionRepository implements IngestionRepository {
               merchantId: merchant.id,
               externalReference: command.customerReference,
               displayNameOrMaskedReference: command.customerMaskedReference,
-              consentEmail: command.customerConsents.email,
-              consentSms: command.customerConsents.sms,
-              consentVoice: command.customerConsents.voice,
+              consentEmail: String(command.customerConsents.email),
+              consentSms: String(command.customerConsents.sms),
+              consentVoice: String(command.customerConsents.voice),
               contactWindowMetadataJson: '{}'
             }
           });
