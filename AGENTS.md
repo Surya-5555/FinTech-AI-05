@@ -78,6 +78,7 @@ Use representative or held-out synthetic data. Never fabricate metrics.
 - NEVER allow AI to directly execute unrestricted money movement.
 - NEVER game the Git history by fabricating commits or splitting trivial changes.
 - NEVER claim a mock is a production integration without documenting that it is simulated.
+- NEVER commit, stage, or push temporary audit, benchmark, or scratch files (e.g., security audits or benchmark reports) to the repository.
 
 ## 12. Agent Self-Check Before Starting Work
 1. ALWAYS have a look on this `AGENTS.md` file before you begin any task.
