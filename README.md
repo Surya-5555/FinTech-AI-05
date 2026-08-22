@@ -1,4 +1,4 @@
-﻿# Razorpay AI Buildathon - Track 03: AI Revenue Recovery
+# Razorpay AI Buildathon - Track 03: AI Revenue Recovery
 
 [![CI](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/ci.yml)
 [![Evaluation](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/evaluation.yml/badge.svg)](https://github.com/your-org/razorpay-revenue-recovery/actions/workflows/evaluation.yml)
@@ -92,15 +92,27 @@ Required environment variables:
 ## Operations Dashboard
 The Operations Dashboard is available at http://localhost:5173 when running the frontend.
 To start the frontend locally:
-`ash
+` ash
 pnpm --filter @rr/frontend dev
 `
 
 ## Quick Start (Demo Environment)
 To run the entire system locally in a simulated demo environment (No Razorpay or LLM keys required):
-`ash
+` ash
 cp infra/env/demo.env.example infra/env/demo.env
 make demo-up
 make demo-smoke
 `
 The Operations Dashboard will be available at http://localhost:5173
+
+## Testing with Razorpay Test Mode (Live Sandboxed)
+To test the integration with Razorpay's live Test Mode securely without risking actual money movement, you must explicitly opt-in using the `ENABLE_RAZORPAY_TEST_MODE` environment variable.
+
+1. Obtain your Razorpay Key ID and Key Secret from the Razorpay Dashboard (Make sure you are in **Test Mode**).
+2. Update your `.env` file:
+```bash
+ENABLE_RAZORPAY_TEST_MODE=true
+RAZORPAY_KEY_ID=rzp_test_your_key_here
+RAZORPAY_KEY_SECRET=your_test_secret_here
+```
+3. Run the system. The `RazorpayTestModeRecoveryAdapter` will strictly map idempotency keys and is bounded to only support the `CREATE_PAYMENT_LINK` action. Any other actions or missing credentials will result in an immediate secure failure.

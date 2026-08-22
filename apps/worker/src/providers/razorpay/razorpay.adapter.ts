@@ -1,4 +1,4 @@
-import { ExecutionProvider, InterventionExecutionRequest, ProviderExecutionResult, ExternalActionErrorCode } from '@rr/contracts';
+import { ExecutionProvider, InterventionExecutionRequest, ProviderExecutionResult, ExternalActionErrorCode, ExecutionActionType } from '@rr/contracts';
 import { Injectable, Logger } from '@nestjs/common';
 import Razorpay from 'razorpay';
 import { randomUUID } from 'crypto';
@@ -37,8 +37,8 @@ export class RazorpayAdapter implements ExecutionProvider {
     }
 
     try {
-      if (request.actionType === 'CREATE_PAYMENT_LINK') {
-        return this.createPaymentLink(request);
+      if (request.actionType === 'CREATE_PAYMENT_LINK' || request.actionType === ExecutionActionType.CREATE_PAYMENT_LINK) {
+        return await this.createPaymentLink(request);
       } else {
         return {
           success: false,

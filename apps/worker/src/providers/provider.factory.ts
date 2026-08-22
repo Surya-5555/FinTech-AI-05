@@ -5,11 +5,13 @@ import { RazorpayAdapter } from './razorpay/razorpay.adapter';
 import { TwilioAdapter } from './twilio/twilio.adapter';
 import { ResendAdapter } from './email/resend.adapter';
 import { RazorpayRetryAdapter } from './razorpay/razorpay-retry.adapter';
+import { RazorpayTestModeRecoveryAdapter } from './razorpay/razorpay-test-mode-recovery.adapter';
 
 @Injectable()
 export class ProviderFactory implements IProviderFactory {
   constructor(
     private readonly razorpayAdapter: RazorpayAdapter,
+    private readonly razorpayTestModeAdapter: RazorpayTestModeRecoveryAdapter,
     private readonly twilioAdapter: TwilioAdapter,
     private readonly emailAdapter: ResendAdapter,
     private readonly razorpayRetryAdapter: RazorpayRetryAdapter,
@@ -18,7 +20,9 @@ export class ProviderFactory implements IProviderFactory {
   getProvider(actionType: string): ExecutionProvider {
     switch (actionType) {
       case 'CREATE_PAYMENT_LINK':
-        return this.razorpayAdapter;
+        return process.env.ENABLE_RAZORPAY_TEST_MODE === 'true' 
+          ? this.razorpayTestModeAdapter 
+          : this.razorpayAdapter;
       case 'INITIATE_PAYMENT_RETRY':
         return this.razorpayRetryAdapter;
       case ExecutionActionType.SEND_EMAIL_REMINDER:

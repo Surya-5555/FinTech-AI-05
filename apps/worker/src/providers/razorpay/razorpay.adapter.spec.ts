@@ -1,5 +1,5 @@
 import { RazorpayAdapter } from './razorpay.adapter';
-import { ExternalActionErrorCode, InterventionExecutionRequest } from '@rr/contracts';
+import { ExternalActionErrorCode, InterventionExecutionRequest, ExecutionActionType } from '@rr/contracts';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 const mockCreate = vi.fn();
@@ -35,7 +35,7 @@ describe('RazorpayAdapter', () => {
       interventionId: 'int_1' as any,
       caseId: 'case_1' as any,
       merchantId: 'merch_1' as any,
-      actionType: 'CREATE_PAYMENT_LINK' as any,
+      actionType: ExecutionActionType.CREATE_PAYMENT_LINK,
       amountMinor: 1000n,
       currency: 'INR',
       parameters: {
@@ -51,13 +51,15 @@ describe('RazorpayAdapter', () => {
   });
 
   it('should handle api errors appropriately', async () => {
-    mockCreate.mockRejectedValue({ statusCode: 401, message: 'Invalid keys' });
+    const error = new Error('Invalid keys') as any;
+    error.statusCode = 401;
+    mockCreate.mockRejectedValue(error);
 
     const request: InterventionExecutionRequest = {
       interventionId: 'int_1' as any,
       caseId: 'case_1' as any,
       merchantId: 'merch_1' as any,
-      actionType: 'CREATE_PAYMENT_LINK' as any,
+      actionType: ExecutionActionType.CREATE_PAYMENT_LINK,
       amountMinor: 1000n,
       currency: 'INR',
       parameters: {},
@@ -77,7 +79,7 @@ describe('RazorpayAdapter', () => {
       interventionId: 'int_1' as any,
       caseId: 'case_1' as any,
       merchantId: 'merch_1' as any,
-      actionType: 'CREATE_PAYMENT_LINK' as any,
+      actionType: ExecutionActionType.CREATE_PAYMENT_LINK,
       amountMinor: 1000n,
       currency: 'INR',
       parameters: {},

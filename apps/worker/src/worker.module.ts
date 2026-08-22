@@ -4,6 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { RecoveryPlanExecutionProcessor } from './processors/recovery-plan-execution.processor';
 import { PrismaExecutionRepository, PrismaPlanningRepository } from '@rr/persistence';
 
+import { ProviderFactory } from './providers/provider.factory';
+import { RazorpayAdapter } from './providers/razorpay/razorpay.adapter';
+import { RazorpayTestModeRecoveryAdapter } from './providers/razorpay/razorpay-test-mode-recovery.adapter';
+import { RazorpayRetryAdapter } from './providers/razorpay/razorpay-retry.adapter';
+import { TwilioAdapter } from './providers/twilio/twilio.adapter';
+import { ResendAdapter } from './providers/email/resend.adapter';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -13,13 +20,15 @@ import { PrismaExecutionRepository, PrismaPlanningRepository } from '@rr/persist
       },
       prefix: process.env.QUEUE_PREFIX || 'rr',
     }),
-    // If you need to explicitly register the queue here, you can do it like this:
-    // BullModule.registerQueue({
-    //   name: 'recovery-plan-execution',
-    // }),
   ],
   providers: [
     RecoveryPlanExecutionProcessor,
+    ProviderFactory,
+    RazorpayAdapter,
+    RazorpayTestModeRecoveryAdapter,
+    RazorpayRetryAdapter,
+    TwilioAdapter,
+    ResendAdapter,
     {
       provide: 'ExecutionRepository',
       useClass: PrismaExecutionRepository,
