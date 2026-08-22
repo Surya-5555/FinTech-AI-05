@@ -13,7 +13,7 @@ This document is the permanent operating manual for every coding-agent session i
 - **Production-First:** Think like a principal engineer working on financial infrastructure. Prioritize correctness, reliability, observability, idempotency, and deterministic execution over superficial complexity.
 - **Bounded AI Usage:** AI assists reasoning (classification, prioritization, root-cause interpretation, intervention recommendation, message generation). AI MUST NOT directly control unrestricted money movement.
 - **Deterministic Controls:** All financial actions must pass through deterministic policy validation, consent validation, idempotency checks, stopping rules, and authorization.
-- **Fault Tolerance:** Explicitly design for and test external API timeouts, duplicate events, stale states, retry exhaustion, and malformed inputs. The system must fail safely and gracefully degrade.
+- **Fault Tolerance & Resilience:** Explicitly design for and test external API timeouts, duplicate events, stale states, retry exhaustion, and malformed inputs. Any interaction with an external service or LLM must include error handling, timeouts, and safe fallback states so the app doesn't crash on an API failure. The system must fail safely and gracefully degrade.
 
 ## 3. Technology Decisions
 See `docs/decisions/razorpay-tech-stack-decisions.md` for full context.
@@ -31,6 +31,8 @@ See `docs/decisions/razorpay-tech-stack-decisions.md` for full context.
 For each meaningful feature, you MUST follow this lifecycle:
 `UNDERSTAND` -> `DESIGN` -> `IMPLEMENT` -> `TEST` -> `EVALUATE` -> `DOCUMENT` -> `REVIEW` -> `COMMIT` -> `INTEGRATE`
 
+- **Sequential Development:** Everything must be fully functioning and verified in one feature before jumping to the next. Do not leave features half-finished.
+
 1. **Understand & Design:** Identify requirements, interfaces, data flow, failure cases, and safety constraints.
 2. **Implement:** Write code adhering to the architecture. AI handles reasoning; deterministic code handles state changes and financial actions.
 3. **Test:** Add unit/integration/workflow tests. Explicitly test failure recovery scenarios.
@@ -38,21 +40,23 @@ For each meaningful feature, you MUST follow this lifecycle:
 5. **Sync README:** If capabilities, APIs, or evaluation changes, update `README.md` in the *same* cycle.
 
 ## 5. Documentation Requirements
-- Documentation must evolve *with* the implementation.
-- Place relevant documentation in `docs/architecture/`, `docs/features/`, `docs/decisions/`, `docs/evaluation/`, `docs/operations/`, etc.
+- **Local Documentation:** For any meaningful feature or change, a markdown documentation file must be created *inside that specific feature's folder itself*. Documentation must evolve *with* the implementation.
+- Documentation must be completely honest but positive—avoid critical/flagging language and stick to praising the implemented capabilities.
+- Place relevant high-level documentation in `docs/architecture/`, `docs/features/`, `docs/decisions/`, `docs/evaluation/`, `docs/operations/`, etc.
 - Docs must explain the *engineering reasoning* (Problem, Motivation, Design, Data Flow, AI Involvement, Safety Constraints, Failure Cases), not just restate code.
-- `README.md` must ALWAYS be current. Do not let it describe an older version of the system.
+- **Global `README.md` (CRITICAL):** The root `README.md` is the most important document. It must ALWAYS be kept perfectly in sync with all other local readmes and feature docs. It must act as the central source of truth containing all relevant documentation content, accompanied by detailed explanations of decision choices and the resulting improvements to the system. Do not let it describe an older version of the system.
 
 ## 6. Coding Standards & Inline Comments
-- **Code Quality:** Use clear module boundaries, strong types, deterministic logic, testable services, clear naming, and minimal hidden state. Avoid giant files or magical abstractions.
-- **Comments:** Do NOT comment obvious code. Comments must explain the "WHY": non-obvious business rules, safety constraints, idempotency reasoning, retry behavior, or why a simpler approach was rejected.
+- **Code Quality:** Use clear module boundaries, strict typing, deterministic logic, testable services, clear naming, and minimal hidden state. Avoid giant files or magical abstractions.
+- **Strict Typing:** Rely on strict typing (e.g., strict TypeScript). Never use `any` or untyped dictionaries when schemas are available.
+- **Comments:** Do NOT comment obvious code. Always write small, helpful inline comments to explain non-obvious logic throughout the codebase. Comments must explain the "WHY": non-obvious business rules, safety constraints, idempotency reasoning, retry behavior, or why a simpler approach was rejected.
 
 ## 7. Fintech Safety Rules
 Never allow:
 - Unrestricted AI-controlled financial actions.
 - Uncontrolled retries or duplicate payment actions.
 - Unbounded automation or missing audit records.
-- Secret leakage or unsafe defaults.
+- Secret leakage or unsafe defaults. Never log, hardcode, or commit secrets (API keys, DB credentials). Always use environment variables (`.env`) and maintain the `.env.example` file.
 
 ## 8. Evaluation Requirements
 Evaluation is a core product feature for Track 03. The system must support reproducible batch evaluation measuring:
@@ -78,7 +82,7 @@ Use representative or held-out synthetic data. Never fabricate metrics.
 - NEVER allow AI to directly execute unrestricted money movement.
 - NEVER game the Git history by fabricating commits or splitting trivial changes.
 - NEVER claim a mock is a production integration without documenting that it is simulated.
-- NEVER commit, stage, or push temporary audit, benchmark, or scratch files (e.g., security audits or benchmark reports) to the repository.
+- NEVER keep benchmark, temporary, or mock files locally or commit them to the repository, as this can trigger flagging. They must be automatically deleted after the test runs.
 
 ## 12. Agent Self-Check Before Starting Work
 1. ALWAYS have a look on this `AGENTS.md` file before you begin any task.
