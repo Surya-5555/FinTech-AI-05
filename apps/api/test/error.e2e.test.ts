@@ -2,9 +2,26 @@ import { INestApplication, Controller, Get } from '@nestjs/common';
 import request from 'supertest';
 import { createTestApp } from './setup';
 import { PolicyViolationError } from '@rr/domain';
+process.env.API_AUTH_TOKEN = 'test-auth-token';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/all-exceptions.filter';
+import { vi } from 'vitest';
+
+vi.mock('@rr/persistence', () => ({
+  PlanningRepository: class {},
+  IngestionRepository: class {},
+  OutboxRepository: class {},
+  ExecutionRepository: class {},
+  PrismaIngestionRepository: class {},
+  PrismaPlanningRepository: class {},
+  PrismaOutboxRepository: class {},
+  PrismaExecutionRepository: class {},
+  AIInvocationRepository: class {},
+  PrismaAIInvocationRepository: class {},
+  ConcurrencyConflictError: class ConcurrencyConflictError extends Error {},
+  getPrismaClient: () => ({}),
+}));
 import { CorrelationIdInterceptor } from '../src/common/interceptors/correlation-id.interceptor';
 import { Logger } from 'nestjs-pino';
 
@@ -21,7 +38,6 @@ class TestController {
 }
 
 import { PrismaService } from '../src/persistence/prisma.service';
-import { vi } from 'vitest';
 
 describe('Error Handling (e2e)', () => {
   let app: INestApplication;

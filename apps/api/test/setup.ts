@@ -1,3 +1,4 @@
+process.env.API_AUTH_TOKEN = 'test-auth-token';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
@@ -7,6 +8,7 @@ import { CorrelationIdInterceptor } from '../src/common/interceptors/correlation
 import { Logger } from 'nestjs-pino';
 
 export async function createTestApp(): Promise<INestApplication> {
+  process.env.API_AUTH_TOKEN = 'test-auth-token';
   const moduleFixture: TestingModule = await Test.createTestingModule({
     imports: [AppModule],
   }).compile();
