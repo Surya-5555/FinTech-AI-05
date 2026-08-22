@@ -2,7 +2,7 @@
   "name": "@rr/persistence",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
+
   "main": "./src/index.ts",
   "scripts": {
     "generate": "prisma generate",
