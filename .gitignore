@@ -57,5 +57,6 @@ db-data/
 # Docker
 docker-compose.override.yml
 
-# Audits
-docs/project-status/IMPLEMENTATION-COMPLETENESS-AUDIT.md
+# Audits & Internal Tracking
+docs/project-status/
+docs/EVIDENCE_MAP.md
