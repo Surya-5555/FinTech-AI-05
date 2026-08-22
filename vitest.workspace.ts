@@ -1,4 +1,5 @@
 export default [
   'apps/*',
-  'libs/*'
+  'libs/*',
+  'tests/*'
 ];
