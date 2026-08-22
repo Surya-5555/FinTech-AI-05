@@ -56,3 +56,10 @@ demo-verify: demo-up
 	make demo-status
 	make demo-smoke
 	@echo "Demo frontend available at http://localhost:5173"
+
+load-test:
+	pnpm load-test
+
+failure-demo:
+	pnpm failure-demo
+
