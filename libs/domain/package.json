@@ -2,6 +2,7 @@
   "name": "@rr/domain",
   "version": "1.0.0",
   "private": true,
+  "type": "commonjs",
   "main": "src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",

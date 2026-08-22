@@ -11,6 +11,4 @@ export * from './repositories/prisma/outbox';
 export * from './repositories/prisma/execution';
 export * from './mappers/index';
 export * from './errors/index';
-
-export * from './repositories/contracts/index';
-export * from './repositories/prisma/index';
+console.log('HELLO FROM PERSISTENCE');
