@@ -13,9 +13,7 @@ COPY apps/frontend/package.json ./apps/frontend/
 # We also need any libs if frontend depends on them (e.g., domain/contracts for types)
 # Assuming frontend only depends on itself or we copy all
 COPY libs/ ./libs/
-
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
-
+RUN pnpm install --frozen-lockfile
 # ----- Build Stage -----
 COPY apps/frontend ./apps/frontend
 

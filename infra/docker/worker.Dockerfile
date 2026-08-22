@@ -20,8 +20,7 @@ COPY libs/observability/package.json ./libs/observability/
 COPY libs/persistence/package.json ./libs/persistence/
 COPY libs/utils/package.json ./libs/utils/
 
-# Install dependencies
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # ----- Build Stage -----
 FROM base AS build
@@ -44,8 +43,7 @@ RUN pnpm --filter @rr/worker build
 # ----- Prune Stage (Production Dependencies Only) -----
 FROM base AS prune
 COPY --from=build /app /app
-WORKDIR /app
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
+RUN pnpm install --prod --frozen-lockfile
 
 # ----- Production Stage -----
 FROM node:22-alpine AS production
