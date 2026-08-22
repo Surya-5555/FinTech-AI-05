@@ -4,9 +4,9 @@ services:
     container_name: rr-postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "12345678"
-      POSTGRES_DB: razorpay_rr
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-razorpay_rr}
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
