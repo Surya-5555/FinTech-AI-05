@@ -114,4 +114,11 @@ make evaluate
 
 Output is written to `artifacts/` as a JSON report containing all metrics above.
 
+## Limitations
+
+- **Synthetic Data:** The evaluation dataset and recovery outcomes are fully synthetic (simulated) to ensure reproducibility without exposing real merchant data.
+- **Simulated Execution:** The Razorpay test-mode adapter is opt-in and separate from the default local evaluation runs.
+- **Future Scope:** Production High-Availability (HA), actual merchant POS integration, and real customer communications (live SMS/email) are future scope.
+- **Demo Boundary:** This repository demonstrates the *architecture, safety, and evaluation framework* of an AI Revenue Recovery system. It does not claim live production deployment, live merchant financial impact, or regulatory compliance certification.
+
 

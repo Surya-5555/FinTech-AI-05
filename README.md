@@ -159,6 +159,13 @@ All monetary calculations use `BigInt` to prevent floating-point precision loss.
 
 See [docs/evaluation/EVALUATION.md](docs/evaluation/EVALUATION.md) for full methodology, metrics, and commands.
 
+## Limitations
+
+- **Synthetic Data:** The evaluation dataset and recovery outcomes are fully synthetic (simulated) to ensure reproducibility without exposing real merchant data.
+- **Simulated Execution:** The Razorpay test-mode adapter is opt-in and separate from the default local evaluation runs.
+- **Future Scope:** Production High-Availability (HA), actual merchant POS integration, and real customer communications (live SMS/email) are future scope.
+- **Demo Boundary:** This repository demonstrates the *architecture, safety, and evaluation framework* of an AI Revenue Recovery system. It does not claim live production deployment, live merchant financial impact, or regulatory compliance certification.
+
 ## Security
 
 - **Auth**: Bearer token guard on all mutation endpoints. Read endpoints open for demo.
