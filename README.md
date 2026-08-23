@@ -1,157 +1,230 @@
-# Razorpay AI Revenue Recovery — Track 03
+# Razorpay AI Revenue Recovery Architecture
+
 An evaluation-first, causal-AI revenue recovery system designed with enterprise-grade deterministic financial safety.
 
-## Why this exists
-Indian merchants on Razorpay lose revenue when recurring payments fail (e.g., card expiry, insufficient funds, bank timeouts, CVV mismatches). Most merchants either do nothing (losing the revenue) or blindly retry (annoying customers, wasting API calls on fraud-flagged transactions). 
+## 1. System Overview
 
-This system solves this by using a **Causal AI Architecture (T-Learner)** to estimate the Net Expected Incremental Value (Net EIV) of different interventions, passing those recommendations through a **Deterministic Policy Engine** that enforces strict financial safety, and executing them via reliable queues.
+**What is this system?** 
+This is a comprehensive, asynchronous revenue recovery architecture for processing failed payment events (e.g., card expiry, bank timeouts, insufficient funds). It ingest webhooks, utilizes AI to diagnose and plan interventions, strictly enforces financial safety rules via a deterministic policy engine, and executes recovery actions through resilient queue workers.
 
----
+**What problem does it solve?** 
+Merchants lose significant revenue when recurring payments fail. Blindly retrying cards wastes API calls, triggers fraud alerts, and annoys customers. Doing nothing loses the customer. 
 
-## 🏆 The "Dual-Validation" Architecture
-
-Because real payment failure datasets contain highly sensitive PII and financial data, we designed this system using a **Federated Dual-Validation Architecture** to prove it is production-ready today:
-
-1. **Proof of AI Math (Offline Benchmark):** 
-   We trained our native Python Causal ML Pipeline (`apps/ml-pipeline`) on the public **Hillstrom MineThatData RCT**. This proves our mathematical architecture works: we successfully built a Multi-Treatment T-Learner, implemented Inverse Probability Weighting (IPW), calculated Net EIV by subtracting intervention costs, and proved the policy evaluation logic.
-   
-2. **Proof of Financial Execution (Razorpay Sandbox):** 
-   We connected the execution backend directly to the **Razorpay Test-Mode Sandbox**. This proves our engineering architecture works: we ingest real webhooks, enforce safety rules (max attempts, consent), handle idempotency, and execute simulated SMS links or API Retries via Razorpay adapters.
-
-**The Result:** Razorpay can swap out the offline Hillstrom benchmark model for their own proprietary ML model tomorrow, and **zero backend code needs to change**. The pipes are fully connected and mathematically verified.
+**Why does it exist?** 
+To maximize recovered revenue by personalizing the recovery intervention (e.g., silent API retry vs. SMS payment link) based on the specific context of the failure, while guaranteeing that AI hallucinations or ML errors can never trigger unsafe financial operations.
 
 ---
 
-## The Core Idea: Dual-Validation Flow
+## 2. Global Architecture Diagram
 
 ```mermaid
-flowchart TD
-    %% Define Styles
-    classDef offline fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px,stroke-dasharray: 5 5
-    classDef online fill:#ecfdf5,stroke:#10b981,stroke-width:2px
-    classDef model fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
-    classDef razorpay fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#fff
+flowchart TB
+    %% Definitions
+    classDef external fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#fff
+    classDef api fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px
+    classDef domain fill:#f0fdf4,stroke:#86efac,stroke-width:2px
+    classDef ai fill:#eff6ff,stroke:#93c5fd,stroke-width:2px
+    classDef data fill:#fefce8,stroke:#fde047,stroke-width:2px
 
-    subgraph OFFLINE["Part 1: Offline Methodology Validation (Hillstrom RCT)"]
-        direction LR
-        HData[(Public RCT Data)] --> TLearn[Multi-Treatment T-Learner]
-        TLearn --> EIV[Net EIV Calculation]
-        EIV --> Eval[Policy Evaluator]
-        Eval --> MathProof((Proves Causal Math))
+    %% Subgraphs
+    subgraph EXTERNAL ["External Boundaries"]
+        Webhook["Razorpay Webhook"]
+        Provider["Razorpay Test-Mode Sandbox"]
     end
-    class OFFLINE offline
+    class Webhook,Provider external
 
-    subgraph ONLINE["Part 2: Online Execution Engine (Razorpay Sandbox)"]
-        direction LR
-        Webhook[Razorpay Webhook] --> Ingest[Idempotent Ingestion]
-        Ingest --> ML_Bridge{Shadow ML Bridge}
-        ML_Bridge --> Policy[Deterministic Policy Engine]
-        Policy --> Queue[(BullMQ)]
-        Queue --> Execute[Adapter Executes via API]
+    subgraph API_LAYER ["Application / API Layer"]
+        Ingestion["Webhook Ingestion Controller"]
+        DashboardUI["React Operations Dashboard"]
     end
-    class ONLINE online
+    class Ingestion,DashboardUI api
+
+    subgraph DOMAIN_LAYER ["Domain & Orchestration"]
+        Orchestrator["Recovery Orchestrator"]
+        Idempotency["Idempotency Guards"]
+        Planning["Recovery Planning Service"]
+        Policy["Deterministic Policy Engine"]
+        StateMachine["Lifecycle State Machine"]
+    end
+    class Orchestrator,Idempotency,Planning,Policy,StateMachine domain
+
+    subgraph AI_SERVICES ["AI & ML Services"]
+        ML_FastAPI["Causal ML Inference Service (FastAPI)"]
+        LLM_Client["Generative AI Service (LLM)"]
+        Eval["Offline ML Evaluation Pipeline"]
+    end
+    class ML_FastAPI,LLM_Client,Eval ai
+
+    subgraph EXECUTION_LAYER ["Worker Execution Layer"]
+        BullMQ[("BullMQ / Redis Queue")]
+        Worker["Execution Worker"]
+        Adapter["Razorpay Execution Adapter"]
+    end
+    class BullMQ,Worker,Adapter api
+
+    subgraph PERSISTENCE ["Persistence & Audit"]
+        Postgres[("PostgreSQL (Prisma)")]
+        AuditLog["Immutable Audit Trail"]
+    end
+    class Postgres,AuditLog data
 
     %% Connections
-    TLearn -. "Plugs in as Advisor" .-> ML_Bridge
-    Execute --> RZ_API[Razorpay Test-Mode]
+    Webhook --> Ingestion
+    Ingestion --> Idempotency
+    Idempotency --> Orchestrator
     
-    class TLearn,ML_Bridge model
-    class Webhook,RZ_API razorpay
+    Orchestrator <--> StateMachine
+    Orchestrator --> Planning
+
+    Planning <--> ML_FastAPI
+    Planning <--> LLM_Client
+    
+    Planning --> Policy
+    Policy --> Orchestrator
+    
+    Orchestrator --> BullMQ
+    BullMQ --> Worker
+    Worker --> Adapter
+    Adapter --> Provider
+    
+    Orchestrator --> Postgres
+    Worker --> Postgres
+    Policy --> AuditLog
+    Worker --> AuditLog
+    
+    Eval --> ML_FastAPI
+    DashboardUI <--> Ingestion
+    Postgres -.-> DashboardUI
 ```
 
-### How a Single Case Flows (Text View)
-1. **Trigger:** A webhook arrives from Razorpay indicating a payment failure.
-2. **Safety Check 1:** Database checks if we've already processed this exact failure (Idempotency).
-3. **AI Advises:** The ML model calculates the Net Expected Incremental Value (Net EIV) of retrying vs sending an SMS. The LLM drafts an SMS just in case.
-4. **Safety Check 2:** The Deterministic Policy Engine checks if the user has consented to SMS, and if we haven't exceeded the max retry limit.
-5. **Execution:** If approved, a worker safely executes the Razorpay API call or sends the SMS.
-6. **Audit:** Every step is immutably logged for the dashboard.
+---
+
+## 3. End-to-End Execution Flow
+
+1. **Webhook Arrival:** A payment failure event enters the system.
+2. **Idempotency Guard:** The system checks database unique constraints to drop duplicates.
+3. **State Machine:** The case transitions to `DETECTED`.
+4. **AI Planning:** The LLM diagnoses the failure reason and drafts SMS copy. The ML pipeline provides Causal Propensity Scores (Net Expected Incremental Value).
+5. **Deterministic Policy:** The policy engine intercepts the AI plan. It enforces consent, cooldowns, and maximum retry attempts. 
+6. **Approval/Rejection:** If approved, the case transitions to `PLANNED`. If rejected, it moves to `STOPPED` or `ESCALATED`.
+7. **Queuing:** The approved intervention is dispatched to BullMQ.
+8. **Execution:** The worker pulls the job, delegates to the Razorpay adapter, and executes the bounded action (e.g., sending a payment link).
+9. **Outcome:** The result is persisted, logging to the immutable audit trail, transitioning the state to `RECOVERED` or `FAILED`.
 
 ---
 
-## What is implemented
-| Capability | What it does | Evidence / Where to inspect |
-|---|---|---|
-| Causal ML Pipeline | Multi-Treatment T-Learner calculating Net EIV. | `apps/ml-pipeline/src/train.py` |
-| ML API Service | Serves Propensity Scores via FastAPI. | `apps/ml-pipeline/src/predict.py` |
-| LLM Diagnosis | Uses LLMs to diagnose failure reasons and draft empathetic SMS. | `libs/domain/src/planning.ts` |
-| Policy Enforcement | Deterministic gates check consent, fraud, and retry limits. | `libs/domain/src/policy.ts` |
-| Duplicate Handling | Enforces strict DB unique constraints to block duplicates. | `libs/domain/src/idempotency.ts` |
-| Async Execution | Outbox pattern + BullMQ ensures reliable execution. | `apps/worker` |
-| Razorpay Adapter | Safely executes bounded test-mode actions. | `razorpay-test-mode-recovery.adapter.ts` |
-| Statistical Audit | Forensic evaluation of model calibration and policy value. | `statistical_audit.py` |
+## 4. Feature Inventory
+
+### Core Platform
+- **Webhook Ingestion:** Express/NestJS endpoints parsing JSON payloads.
+- **Event Processing & Case Creation:** Mapping raw payloads to typed `RecoveryCase` entities.
+- **State Machine:** Enforces strict lifecycle transitions (`DETECTED` → `PLANNED` → `RECOVERED` / `FAILED` / `STOPPED` / `ESCALATED`).
+- **Terminal States:** Prevents execution on cases that have already resolved.
+
+### Financial Safety Controls
+- **Idempotency:** Strict PostgreSQL `UNIQUE` constraints prevent duplicate webhook processing.
+- **Optimistic Concurrency Control (OCC):** Row-versioning ensures stale cases cannot be updated or executed.
+- **Distributed Locking:** Workers execute via atomic BullMQ jobs.
+- **Maximum-Attempt Enforcement:** Policy engine blocks interventions if `attemptCount` exceeds thresholds.
+- **Consent Enforcement:** Blocks SMS/Email plans if customer opted out.
+- **Failure Isolation:** AI or execution failures do not crash the ingestion layer; bounded contexts handle degradation.
+
+### Causal Machine Learning (AI)
+- **Architecture:** Multi-Treatment T-Learner (XGBoost).
+- **Treatments:** Control, T1 (Retry), T2 (Payment Link).
+- **Uplift Estimation (CATE):** Estimates $\hat{\tau}_t(x) = \hat{\mu}_t(x) - \hat{\mu}_0(x)$.
+- **Net Expected Incremental Value (Net EIV):** Subtracts intervention costs (e.g., API vs SMS cost) to optimize for profitability.
+- **Inference API:** Python FastAPI service answering to the NestJS domain.
+- **Fallback Behavior:** Gracefully falls back to mock heuristic scores if the ML service is down.
+- **Evaluation Pipeline:** Offline script calculating AUROC, PR-AUC, Brier scores, Bootstrap CIs, and policy simulation.
+- **Provenance:** Trained on the Hillstrom public RCT dataset to validate causal methodology mathematically.
+
+### Generative AI (LLM)
+- **Failure Diagnosis:** Reads Razorpay decline codes (e.g., `insufficient_funds`) and maps to human-readable root causes.
+- **Customer Communication:** Drafts empathetic, context-aware SMS/Email reminders.
+- **Structured Output:** Strictly enforced via Zod schema validation.
+- **Fallback Templates:** Hardcoded deterministic text templates take over instantly if the LLM provider times out.
+
+### Execution Engine
+- **Asynchronous Workers:** BullMQ manages background jobs with automatic retries for transient network errors.
+- **Provider Abstraction:** Code executes via a strictly bounded `ExecutionProvider` interface.
+- **Razorpay Adapter:** Executes simulated test-mode recovery actions against the Razorpay API.
+- **Outcome Logging:** Appends execution results directly to the case's audit history.
+
+### Dashboard UI (React)
+- **Data Mode Transparency:** Explicitly labels data as `RAZORPAY_TEST` and AI scores as `Offline Benchmark Model`.
+- **Funnels & Metrics:** Visualizes Total At Risk, System Recovered, False Intervention Rate, and Active Escalations.
+- **Case Pipeline:** Table view with rich filtering by case state.
+- **Audit Trail:** Clicking a case reveals its entire lifecycle: webhook payload, ML Propensity Scores, LLM Diagnosis, Policy Gate Decisions (Approved/Rejected), and Worker Execution Results.
 
 ---
 
-## Financial Safety Model
-- **Money Representation:** All monetary values are strictly represented in minor units (paisa) using `BigInt` to prevent floating-point precision loss.
-- **Idempotency:** Unique constraints in Postgres block duplicate processing at the ingestion layer.
-- **Concurrency:** Optimistic Concurrency Control (OCC) using versioned rows prevents stale state execution.
-- **Policy Checks:** Hard gates on customer consent and fraud flags.
-- **Stopping Rules:** Maximum retry attempts per case are enforced deterministically.
-- **Audit Trail:** Append-only transition history ensures every AI decision is reconstructable.
+## 5. Directory Structure & Services
 
----
+The system is managed as a pnpm monorepo.
 
-## Evaluation and Measurable Outcomes
-We built a rigorous offline evaluation suite (`statistical_audit.py` & `evaluate_policy.py`) to prove the causal methodology:
-
-- **Scientifically Defensible Metrics:** We explicitly reject "99% accuracy" claims (which are meaningless in highly imbalanced datasets) in favor of **AUROC**, **Brier Skill Scores**, and **Bootstrap Confidence Intervals**.
-- **Net EIV Economics:** The system calculates Gross Expected Incremental Value and explicitly subtracts intervention costs (e.g., SMS cost vs API retry cost) to optimize for *profitable* recovery.
-- **No Target Leakage:** Verified pre-treatment feature isolation.
-- **Dashboard Integrity:** The UI explicitly labels data modes (`RAZORPAY_TEST`) and ML provenance so synthetic metrics are never passed off as production revenue.
-
-*(Run `python apps/ml-pipeline/src/statistical_audit.py` to see the full forensic audit).*
-
----
-
-## Architecture Stack
-- **Frontend:** React 18, Vite, Tailwind CSS, Recharts.
-- **API:** NestJS REST modular monolith.
-- **Domain:** Framework-independent core logic, state machine, policy engine.
-- **Persistence:** PostgreSQL via Prisma (Source of Truth).
-- **Worker/Queue:** Redis + BullMQ for transient state and scheduling.
-- **AI/ML:** Python 3, XGBoost, Pandas, FastAPI.
-- **Observability:** Pino JSON structured logs.
-
----
-
-## Quick start
-1. **Prerequisites:** Node.js 22 LTS, pnpm, Docker, Python 3.10+.
-2. **Clone:** `git clone ...`
-3. **Environment:** `cp .env.example .env`
-4. **Install Node:** `pnpm install`
-5. **Install Python:** `cd apps/ml-pipeline && pip install -r requirements.txt`
-6. **Start Infrastructure:** `docker compose -f infra/compose/compose.yaml up -d`
-7. **Migrate DB:** `pnpm --filter @rr/persistence prisma migrate deploy`
-8. **Start Backend & Worker:** `pnpm --filter @rr/api dev` & `pnpm --filter @rr/worker dev` (in separate terminals)
-9. **Start Frontend:** `pnpm --filter @rr/frontend dev`
-10. **Dashboard:** Open `http://localhost:5173`
-
----
-
-## Documentation map
-- [FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md)
-- [Architecture](docs/architecture/)
-- [Security Model](SECURITY.md)
-- [Architectural Decision Records](docs/decisions/)
-
----
-
-## Repository map
 ```text
 ├── apps/
-│   ├── api/          # NestJS backend
-│   ├── evaluator/    # CLI batch evaluation
-│   ├── frontend/     # React Operations UI
+│   ├── api/          # NestJS backend (Ingestion, Webhooks, API)
+│   ├── evaluator/    # CLI batch evaluation runner
+│   ├── frontend/     # React Operations Dashboard
 │   ├── ml-pipeline/  # Python FastAPI XGBoost Microservice
-│   └── worker/       # BullMQ job executor
+│   └── worker/       # NestJS/BullMQ job executor
 ├── libs/
-│   ├── contracts/    # Shared DTOs and types
-│   ├── domain/       # Core business logic and policies
-│   ├── llm/          # LLM client abstraction
-│   └── persistence/  # Prisma schema and adapters
-├── docs/             # Architecture and decisions
-├── infra/            # Docker compose and deployment configs
-└── tests/            # Integration and E2E tests
+│   ├── contracts/    # Shared DTOs, interfaces, and enums
+│   ├── domain/       # Core state machine, policy engine, planning
+│   ├── evaluation/   # Financial metrics calculation engine
+│   ├── llm/          # LLM client abstraction and fallbacks
+│   └── persistence/  # Prisma schema, DB migrations, adapters
+├── docs/             # Architecture, decisions, and documentation
+├── infra/            # Docker compose and deployment configurations
+└── tests/            # Integration and E2E testing suites
 ```
+
+---
+
+## 6. Developer Guide
+
+### Installation
+1. **Prerequisites:** Node.js 22 LTS, pnpm, Docker, Python 3.10+.
+2. **Clone the repository.**
+3. **Environment setup:** Copy `.env.example` to `.env` and fill in necessary keys.
+4. **Install Node dependencies:** `pnpm install`
+5. **Install Python dependencies:** `cd apps/ml-pipeline && pip install -r requirements.txt`
+
+### Infrastructure & Database
+1. **Start Services (Postgres, Redis):** `docker compose -f infra/compose/compose.yaml up -d`
+2. **Run Migrations:** `pnpm --filter @rr/persistence prisma migrate deploy`
+3. **Generate Prisma Client:** `pnpm --filter @rr/persistence prisma generate`
+
+### Running the System
+Run these in separate terminals to start the entire distributed system:
+1. **API Server:** `pnpm --filter @rr/api dev`
+2. **Worker Node:** `pnpm --filter @rr/worker dev`
+3. **ML Service:** `cd apps/ml-pipeline/src && python main.py`
+4. **Dashboard UI:** `pnpm --filter @rr/frontend dev` (Opens on `http://localhost:5173`)
+
+### Testing & Evaluation
+- **Integration Tests:** `pnpm test:integration` (Verifies state machine and idempotency against DB).
+- **Linting:** `pnpm lint` (Runs oxlint across the monorepo).
+- **Offline Batch Evaluation:** `pnpm evaluate-smoke` (Runs the Node.js batch evaluator).
+- **ML Statistical Audit:** `cd apps/ml-pipeline/src && python statistical_audit.py` (Outputs the forensic causal AI audit report).
+
+---
+
+## 7. Documentation Index
+
+The following critical technical documents detail specific subsystems:
+
+- **[FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md)**
+  *The forensic assessment of the Causal ML implementation, evaluation results, statistical limitations, and safety controls.*
+- **[Architecture & Systems Design](docs/architecture/)**
+  *Detailed diagrams and sequence flows of the ingestion and execution pipelines.*
+- **[Architectural Decision Records (ADRs)](docs/decisions/)**
+  *Immutable records of why specific technologies (NestJS, XGBoost, Prisma) were chosen.*
+- **[Security & Resilience Model](SECURITY.md)**
+  *How the system handles duplicate webhooks, stale states, LLM hallucinations, and API timeouts.*
+- **[Failure Mode Recovery](docs/failures/FAILURES.md)**
+  *Documentation on degradation fallbacks.*
+- **[Evaluation Methodology](docs/evaluation/EVALUATION.md)**
+  *How policy value is calculated and simulated offline.*
