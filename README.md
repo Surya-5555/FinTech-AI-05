@@ -52,12 +52,13 @@ sequenceDiagram
 ```
 
 ## Architecture
-- **Frontend:** React 18, Vite, Tailwind CSS, Recharts for dashboard UI.
+- **Frontend:** React 18, Vite, Tailwind CSS, Recharts for dashboard UI with high-performance cursor pagination and multi-tenant merchant filtering.
 - **API:** NestJS REST modular monolith.
 - **Domain:** Framework-independent core logic, state machine, policy engine.
 - **Persistence:** PostgreSQL via Prisma (Source of Truth), Outbox table.
 - **Worker/Queue:** Redis + BullMQ for transient state and scheduling.
-- **AI Layer:** Abstracted `llm-client` connecting to external LLMs.
+- **Event Relay:** PostgreSQL `LISTEN/NOTIFY` outbox publisher for zero-latency, low-CPU message propagation.
+- **AI Layer:** Abstracted `llm-client` connecting to external LLMs, and a Shadow ML Propensity Pipeline (XGBoost logic simulator) that evaluates risk without overriding determinism.
 - **Evaluation Runner:** CLI batch evaluator tool for synthetic datasets.
 - **Observability:** Pino JSON structured logs.
 
@@ -66,7 +67,7 @@ sequenceDiagram
 - **Justification:** LLMs are excellent at unstructured text analysis and generating polite, context-aware messages based on decline codes.
 - **Fallback:** If the LLM provider times out or fails, the system automatically falls back to deterministic hardcoded templates.
 - **Restraint:** The LLM output is heavily validated. It cannot execute actions; it only outputs structured `Decision` objects that the deterministic policy engine then reviews.
-- **Scope:** No ML model (e.g. XGBoost for propensity scoring) is currently implemented; this is future scope.
+- **Scope:** Includes a Shadow ML pipeline (simulated XGBoost) to score `P(Recovery)` offline for future architectural transitions.
 
 ## Financial safety model
 - **Money Representation:** All monetary values are strictly represented in minor units (paisa) using `BigInt` to prevent floating-point precision loss.
