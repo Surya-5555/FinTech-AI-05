@@ -1,19 +1,30 @@
 import { RecoveryCase, RevenueEvent } from '@rr/contracts';
 
+/**
+ * Propensity scores from the offline causal benchmark model.
+ *
+ * PROVENANCE: Trained on public Hillstrom MineThatData RCT (email marketing).
+ * NOT trained on Razorpay production data. Scores are advisory only and do NOT
+ * represent actual Razorpay payment recovery probabilities.
+ */
 export interface PropensityScore {
+  /** Incremental uplift probability from the offline benchmark model (NOT a Razorpay recovery probability) */
   probabilityOfRecoveryWithRetry: number;
+  /** Incremental uplift probability from the offline benchmark model (NOT a Razorpay recovery probability) */
   probabilityOfRecoveryWithLink: number;
   recommendedIntervention: 'PAYMENT_RETRY' | 'PAYMENT_LINK';
   shadowFeatureVector: Record<string, number>;
 }
 
 /**
- * Shadow ML Propensity Pipeline
- * 
- * In a real environment, this would call a FastAPI microservice serving an XGBoost model,
- * or run an ONNX runtime directly. Here we simulate the pipeline to prove the boundary
- * and architectural capability. The returned scores should NOT override deterministic 
- * domain rules until holdout evaluation proves positive uplift (Phase 4).
+ * Shadow ML Propensity Pipeline — Offline Benchmark Model
+ *
+ * Model provenance: XGBoost T-Learner trained on public Hillstrom RCT.
+ * NOT trained on Razorpay production data.
+ *
+ * Scores are logged for audit but do NOT override deterministic domain rules.
+ * In production, this would call a FastAPI microservice serving a model trained
+ * on Razorpay's own payment-recovery RCT data.
  */
 export async function scorePropensity(revCase: RecoveryCase, event: RevenueEvent): Promise<PropensityScore> {
   // Feature Engineering for Hillstrom

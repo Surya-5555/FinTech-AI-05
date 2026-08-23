@@ -47,10 +47,10 @@ class MultiTreatmentTLearner:
         eiv_t1 = uplift_t1 * invoice_amount_proxy
         eiv_t2 = uplift_t2 * invoice_amount_proxy
         
-        # Define Intervention Costs
+        # Define Intervention Costs (ASSUMED / DEMO values — not from authoritative Razorpay pricing)
         cost_t0 = 0.0
-        cost_t1 = 0.10 # Retry cost
-        cost_t2 = 2.00 # SMS Payment Link cost
+        cost_t1 = 0.10  # Assumed retry API cost
+        cost_t2 = 2.00  # Assumed SMS payment link cost
         
         # Calculate Net Expected Incremental Value
         net_eiv_t1 = eiv_t1 - cost_t1

@@ -31,10 +31,10 @@ export function DashboardPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Executive Recovery Dashboard</h1>
-          <p className="text-gray-500 mt-1">Real-time AI revenue recovery metrics (Track 03)</p>
+          <p className="text-gray-500 mt-1">Razorpay Test-Mode execution metrics · AI scores from offline benchmark model</p>
         </div>
         <div className="text-sm font-medium text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-          ● Data Mode: {summary?.dataMode || 'LIVE'}
+          ● Data Mode: {summary?.dataMode || 'RAZORPAY_TEST'}
         </div>
       </div>
 
