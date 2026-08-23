@@ -32,7 +32,7 @@ export class PlanningService {
     const now = new Date();
 
     try {
-      const proposal = proposeRecoveryPlan({
+      const proposal = await proposeRecoveryPlan({
         revCase,
         sourceEvent,
         merchantPolicy,

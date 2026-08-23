@@ -63,7 +63,7 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
 
       // Re-evaluate policy to ensure it's still valid
       const activeInterventionSummary = await this.planningRepo.getActiveInterventionSummary(payload.caseId);
-      const proposal = proposeRecoveryPlan({
+      const proposal = await proposeRecoveryPlan({
         revCase: { ...revCase, state: RevenueCaseState.DETECTED },
         sourceEvent,
         merchantPolicy,

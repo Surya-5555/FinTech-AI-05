@@ -31,7 +31,7 @@ export interface RecoveryPlanProposal {
   resultingCaseState: RevenueCaseState;
 }
 
-export function proposeRecoveryPlan(input: PlanProposalInput): RecoveryPlanProposal {
+export async function proposeRecoveryPlan(input: PlanProposalInput): Promise<RecoveryPlanProposal> {
   const { revCase, sourceEvent, merchantPolicy, activeInterventionSummary, now } = input;
 
   if (revCase.state !== RevenueCaseState.DETECTED && revCase.state !== RevenueCaseState.RETRYABLE) {
@@ -39,7 +39,7 @@ export function proposeRecoveryPlan(input: PlanProposalInput): RecoveryPlanPropo
   }
 
   // 0. Shadow ML Propensity Scoring
-  const shadowPropensity = scorePropensity(revCase, sourceEvent);
+  const shadowPropensity = await scorePropensity(revCase, sourceEvent);
 
   // 1. Diagnose
   const diagnosis = diagnoseRevenueCase(revCase, sourceEvent, merchantPolicy, now);

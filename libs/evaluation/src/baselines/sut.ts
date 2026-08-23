@@ -133,7 +133,7 @@ export class SystemUnderTestStrategy implements EvaluationStrategy {
     while (revCase.attemptCount < gt.maximumAttempts && revCase.state !== RevenueCaseState.RECOVERED && revCase.state !== RevenueCaseState.STOPPED && revCase.state !== RevenueCaseState.ESCALATED) {
       
       // Propose Plan
-      const proposal = proposeRecoveryPlan({
+      const proposal = await proposeRecoveryPlan({
         revCase,
         sourceEvent,
         merchantPolicy,
