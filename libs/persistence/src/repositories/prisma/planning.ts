@@ -219,8 +219,32 @@ export class PrismaPlanningRepository implements PlanningRepository {
     });
 
     return {
-      revCase: caseRow,
-      sourceEvent: eventRow,
+      revCase: {
+        caseId: caseRow.id as any,
+        sourceEventId: caseRow.sourceEventId as any,
+        merchantId: caseRow.merchantId as any,
+        customerId: caseRow.customerId as any,
+        amountAtRisk: { amountMinor: caseRow.amountAtRiskMinor, currency: caseRow.currency },
+        state: caseRow.state as any,
+        attemptCount: caseRow.attemptCount,
+        version: caseRow.version,
+        correlationId: caseRow.correlationId as any,
+        createdAt: caseRow.createdAt,
+        updatedAt: caseRow.updatedAt
+      },
+      sourceEvent: eventRow ? {
+        eventId: eventRow.id as any,
+        externalEventId: eventRow.externalEventId,
+        merchantId: eventRow.merchantId as any,
+        customerId: eventRow.customerId as any,
+        eventType: eventRow.eventType as any,
+        occurredAt: eventRow.occurredAt,
+        amount: { amountMinor: eventRow.amountMinor, currency: eventRow.currency },
+        failureReason: eventRow.failureReason as any,
+        correlationId: eventRow.correlationId as any,
+        rawPayloadVersion: eventRow.rawPayloadVersion,
+        metadata: JSON.parse(eventRow.metadataJson)
+      } : null,
       merchantPolicy: merchantRow ? JSON.parse(merchantRow.configJson) : null,
     };
   }

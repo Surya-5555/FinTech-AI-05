@@ -23,15 +23,20 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@nestjs/common": "^10.0.0",
+    "@nestjs/testing": "^10.0.0",
     "@types/node": "^26.2.0",
+    "@types/supertest": "^6.0.0",
     "eslint": "^9.0.0",
     "prettier": "^3.2.5",
+    "supertest": "^6.3.3",
     "typescript": "^5.4.5",
     "vitest": "^1.6.0"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.5",
     "bullmq": "^6.2.0",
+    "ioredis": "^6.0.0",
     "razorpay": "^2.9.8",
     "resend": "^6.21.0",
     "twilio": "^6.1.0"

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { OperatorAuthGuard } from './common/guards/operator-auth.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { HealthModule } from './health/health.module';
 import { SystemModule } from './system/system.module';
@@ -54,5 +55,6 @@ import { FailuresModule } from './modules/failures/failures.module';
     DashboardModule,
     FailuresModule,
   ],
+  providers: [OperatorAuthGuard],
 })
 export class AppModule {}

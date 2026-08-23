@@ -94,7 +94,14 @@ export class PrismaIngestionRepository implements IngestionRepository {
               name: 'Demo Merchant',
               segment: 'subscription',
               status: 'ACTIVE',
-              configJson: '{}'
+              configJson: JSON.stringify({
+                policyVersion: '1.0',
+                supportedEventTypes: ['PAYMENT_FAILED', 'SUBSCRIPTION_FAILED', 'INVOICE_OVERDUE', 'CHECKOUT_ABANDONED'],
+                minimumAmountMinor: 100,
+                eventMaxAgeHours: 24,
+                excludedMerchantSegments: [],
+                supportedCurrencies: ['INR', 'USD']
+              })
             }
           });
         }

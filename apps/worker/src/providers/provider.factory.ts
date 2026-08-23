@@ -24,7 +24,9 @@ export class ProviderFactory implements IProviderFactory {
           ? this.razorpayTestModeAdapter 
           : this.razorpayAdapter;
       case 'INITIATE_PAYMENT_RETRY':
-        return this.razorpayRetryAdapter;
+        return process.env.ENABLE_RAZORPAY_TEST_MODE === 'true'
+          ? this.razorpayTestModeAdapter
+          : this.razorpayRetryAdapter;
       case ExecutionActionType.SEND_EMAIL_REMINDER:
         return this.emailAdapter;
       case ExecutionActionType.SEND_SMS_REMINDER:

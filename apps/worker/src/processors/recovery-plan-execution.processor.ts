@@ -62,7 +62,7 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
       // Re-evaluate policy to ensure it's still valid
       const activeInterventionSummary = await this.planningRepo.getActiveInterventionSummary(payload.caseId);
       const proposal = proposeRecoveryPlan({
-        revCase,
+        revCase: { ...revCase, state: RevenueCaseState.DETECTED },
         sourceEvent,
         merchantPolicy,
         activeInterventionSummary,
@@ -130,9 +130,9 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
         amountMinor: BigInt(revCase.amountAtRisk.amountMinor),
         currency: revCase.amountAtRisk.currency,
         parameters: {
-          customerName: sourceEvent.payload.customerName,
-          customerEmail: sourceEvent.payload.customerEmail,
-          customerPhone: sourceEvent.payload.customerPhone,
+          customerName: sourceEvent.metadata?.customerName || revCase.customerId,
+          customerEmail: sourceEvent.metadata?.customerEmail,
+          customerPhone: sourceEvent.metadata?.customerPhone,
         },
         idempotencyKey: interventionIdempotencyKey as any,
       };

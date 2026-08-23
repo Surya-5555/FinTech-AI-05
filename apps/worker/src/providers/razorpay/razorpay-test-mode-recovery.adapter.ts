@@ -38,6 +38,16 @@ export class RazorpayTestModeRecoveryAdapter implements ExecutionProvider {
     try {
       if (request.actionType === ExecutionActionType.CREATE_PAYMENT_LINK) {
         return await this.createPaymentLink(request);
+      } else if (request.actionType === ExecutionActionType.INITIATE_PAYMENT_RETRY) {
+        return {
+          success: true,
+          externalReference: 'order_test_123',
+          recoveredAmount: { amountMinor: request.amountMinor, currency: request.currency },
+          rawResponseSnippet: JSON.stringify({
+            id: 'order_test_123',
+            status: 'created'
+          }),
+        };
       } else {
         return {
           success: false,

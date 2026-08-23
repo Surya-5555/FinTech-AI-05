@@ -236,6 +236,19 @@ export class PrismaExecutionRepository implements ExecutionRepository {
         }
       });
 
+      await tx.auditLog.create({
+        data: {
+          id: generateId('audit'),
+          timestamp: new Date(),
+          actorType: 'SYSTEM',
+          action: result.status === 'SUCCEEDED' ? 'INTERVENTION_SUCCESS' : 'INTERVENTION_FAILED',
+          entityType: 'Intervention',
+          entityId: result.interventionId,
+          correlationId: intervention.correlationId,
+          metadataJson: JSON.stringify({ status: result.status }),
+        }
+      });
+
       // 3. Update Case State
       const existingCase = await tx.revenueCase.findUnique({
         where: { id: intervention.caseId },

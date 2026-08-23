@@ -28,9 +28,11 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
 
     const queuePrefix = process.env.QUEUE_PREFIX || 'rr';
 
+    const Redis = require('ioredis');
+
     // We initialize the BullMQ queue
     this.queue = new Queue('recovery-plan-execution', {
-      connection: new URL(redisUrl) as any, // ioredis parses it or pass directly
+      connection: new Redis(redisUrl, { maxRetriesPerRequest: null }),
       prefix: queuePrefix,
     });
 
