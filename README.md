@@ -18,83 +18,58 @@ To maximize recovered revenue by personalizing the recovery intervention (e.g., 
 ## 2. Global Architecture Diagram
 
 ```mermaid
-flowchart TB
-    %% Definitions
-    classDef external fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#fff
-    classDef api fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px
-    classDef domain fill:#f0fdf4,stroke:#86efac,stroke-width:2px
-    classDef ai fill:#eff6ff,stroke:#93c5fd,stroke-width:2px
-    classDef data fill:#fefce8,stroke:#fde047,stroke-width:2px
+flowchart LR
+    %% Styles for visibility
+    classDef external fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#fff,font-size:16px
+    classDef api fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px,font-size:16px
+    classDef domain fill:#f0fdf4,stroke:#86efac,stroke-width:2px,font-size:16px
+    classDef ai fill:#eff6ff,stroke:#93c5fd,stroke-width:2px,font-size:16px
+    classDef data fill:#fefce8,stroke:#fde047,stroke-width:2px,font-size:16px
 
-    %% Subgraphs
-    subgraph EXTERNAL ["External Boundaries"]
-        Webhook["Razorpay Webhook"]
-        Provider["Razorpay Test-Mode Sandbox"]
-    end
-    class Webhook,Provider external
-
-    subgraph API_LAYER ["Application / API Layer"]
-        Ingestion["Webhook Ingestion Controller"]
-        DashboardUI["React Operations Dashboard"]
-    end
-    class Ingestion,DashboardUI api
-
-    subgraph DOMAIN_LAYER ["Domain & Orchestration"]
-        Orchestrator["Recovery Orchestrator"]
-        Idempotency["Idempotency Guards"]
-        Planning["Recovery Planning Service"]
-        Policy["Deterministic Policy Engine"]
-        StateMachine["Lifecycle State Machine"]
-    end
-    class Orchestrator,Idempotency,Planning,Policy,StateMachine domain
-
-    subgraph AI_SERVICES ["AI & ML Services"]
-        ML_FastAPI["Causal ML Inference Service (FastAPI)"]
-        LLM_Client["Generative AI Service (LLM)"]
-        Eval["Offline ML Evaluation Pipeline"]
-    end
-    class ML_FastAPI,LLM_Client,Eval ai
-
-    subgraph EXECUTION_LAYER ["Worker Execution Layer"]
-        BullMQ[("BullMQ / Redis Queue")]
-        Worker["Execution Worker"]
-        Adapter["Razorpay Execution Adapter"]
-    end
-    class BullMQ,Worker,Adapter api
-
-    subgraph PERSISTENCE ["Persistence & Audit"]
-        Postgres[("PostgreSQL (Prisma)")]
-        AuditLog["Immutable Audit Trail"]
-    end
-    class Postgres,AuditLog data
-
-    %% Connections
-    Webhook --> Ingestion
-    Ingestion --> Idempotency
-    Idempotency --> Orchestrator
+    %% Nodes
+    Webhook["Razorpay Webhook"]:::external
+    Ingest["Webhook Ingestion"]:::api
     
-    Orchestrator <--> StateMachine
-    Orchestrator --> Planning
+    subgraph DOMAIN ["Core Domain"]
+        direction TB
+        Idempotency["Idempotency Guards"]:::domain
+        Plan["AI Planning Service"]:::domain
+        Policy["Deterministic Policy"]:::domain
+    end
 
-    Planning <--> ML_FastAPI
-    Planning <--> LLM_Client
+    subgraph AI ["AI Services"]
+        direction TB
+        ML["Causal ML (FastAPI)"]:::ai
+        LLM["Generative AI"]:::ai
+    end
+
+    subgraph EXECUTION ["Execution"]
+        direction TB
+        Queue[("BullMQ / Redis")]:::api
+        Worker["Execution Worker"]:::api
+    end
+
+    Adapter["Razorpay Adapter"]:::api
+    Provider["Razorpay Sandbox"]:::external
+    DB[("PostgreSQL (Audit)")]:::data
+
+    %% Flow
+    Webhook --> Ingest
+    Ingest --> Idempotency
+    Idempotency --> Plan
     
-    Planning --> Policy
-    Policy --> Orchestrator
+    Plan <--> ML
+    Plan <--> LLM
     
-    Orchestrator --> BullMQ
-    BullMQ --> Worker
+    Plan --> Policy
+    Policy --> Queue
+    Queue --> Worker
     Worker --> Adapter
     Adapter --> Provider
     
-    Orchestrator --> Postgres
-    Worker --> Postgres
-    Policy --> AuditLog
-    Worker --> AuditLog
-    
-    Eval --> ML_FastAPI
-    DashboardUI <--> Ingestion
-    Postgres -.-> DashboardUI
+    %% Audit paths
+    Policy -.-> DB
+    Worker -.-> DB
 ```
 
 *(or in text format below)*
