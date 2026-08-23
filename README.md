@@ -22,17 +22,50 @@ Because real payment failure datasets contain highly sensitive PII and financial
 
 ---
 
-## The core idea
+## The Core Idea: Dual-Validation Flow
+
 ```mermaid
-flowchart LR
-    A[Causal ML & LLM Proposes] --> B[Deterministic Policy Engine]
-    B --> C[Idempotent Worker Executes]
-    C --> D[Audit Trail Records]
-    D --> E[Offline Policy Evaluator]
+flowchart TD
+    %% Define Styles
+    classDef offline fill:#f8fafc,stroke:#cbd5e1,stroke-width:2px,stroke-dasharray: 5 5
+    classDef online fill:#ecfdf5,stroke:#10b981,stroke-width:2px
+    classDef model fill:#eff6ff,stroke:#3b82f6,stroke-width:2px
+    classDef razorpay fill:#1e293b,stroke:#0f172a,stroke-width:2px,color:#fff
+
+    subgraph OFFLINE["Part 1: Offline Methodology Validation (Hillstrom RCT)"]
+        direction LR
+        HData[(Public RCT Data)] --> TLearn[Multi-Treatment T-Learner]
+        TLearn --> EIV[Net EIV Calculation]
+        EIV --> Eval[Policy Evaluator]
+        Eval --> MathProof((Proves Causal Math))
+    end
+    class OFFLINE offline
+
+    subgraph ONLINE["Part 2: Online Execution Engine (Razorpay Sandbox)"]
+        direction LR
+        Webhook[Razorpay Webhook] --> Ingest[Idempotent Ingestion]
+        Ingest --> ML_Bridge{Shadow ML Bridge}
+        ML_Bridge --> Policy[Deterministic Policy Engine]
+        Policy --> Queue[(BullMQ)]
+        Queue --> Execute[Adapter Executes via API]
+    end
+    class ONLINE online
+
+    %% Connections
+    TLearn -. "Plugs in as Advisor" .-> ML_Bridge
+    Execute --> RZ_API[Razorpay Test-Mode]
+    
+    class TLearn,ML_Bridge model
+    class Webhook,RZ_API razorpay
 ```
 
-**Why AI is intentionally RESTRICTED:**
-AI is strictly an advisor for root-cause diagnosis, expected uplift calculation, and message drafting. It is intentionally **excluded** from policy enforcement, retry limits, idempotency checks, state transitions, direct money movement, and bypassing consent/fraud controls. These tasks are strictly handled by deterministic code. AI failure never equals financial failure.
+### How a Single Case Flows (Text View)
+1. **Trigger:** A webhook arrives from Razorpay indicating a payment failure.
+2. **Safety Check 1:** Database checks if we've already processed this exact failure (Idempotency).
+3. **AI Advises:** The ML model calculates the Net Expected Incremental Value (Net EIV) of retrying vs sending an SMS. The LLM drafts an SMS just in case.
+4. **Safety Check 2:** The Deterministic Policy Engine checks if the user has consented to SMS, and if we haven't exceeded the max retry limit.
+5. **Execution:** If approved, a worker safely executes the Razorpay API call or sends the SMS.
+6. **Audit:** Every step is immutably logged for the dashboard.
 
 ---
 
