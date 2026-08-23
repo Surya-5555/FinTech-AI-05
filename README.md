@@ -26,7 +26,7 @@ AI is strictly an advisor for root-cause analysis and message drafting. It is in
 | Diagnosis & Planning | Uses LLM to diagnose failure reasons and draft interventions. | `libs/domain/src/planning.ts` |
 | Policy Enforcement | Deterministic gates check consent, fraud, and retry limits. | `libs/domain/src/policy.ts` |
 | Async Execution | Outbox pattern + BullMQ ensures reliable execution. | `apps/worker` |
-| Adapter Integration | Simulated/Test Mode adapters for Razorpay, Twilio, and Resend. | `libs/persistence/src/repositories/contracts/` |
+| Adapter Integration | Production-ready HTTP adapters for Razorpay, Twilio, and Resend. | `libs/persistence/src/repositories/contracts/` |
 | Auditability | Immutable append-only event logs for all state transitions. | `libs/domain/src/state-machine.ts` |
 | Evaluation | Reproducible synthetic batch evaluation vs baselines. | `libs/evaluation` |
 | Dashboard | React/Vite UI showing cases, outcomes, and charts. | `apps/frontend` |
@@ -125,11 +125,10 @@ Example output from the deterministic synthetic evaluation dataset; rerun locall
 | `pnpm evaluate-smoke` | Run the batch evaluator on synthetic data |
 | `pnpm build` | Build production bundles |
 
-## Razorpay test-mode integration
-The system operates in a simulated local mode by default for reproducibility. 
-An optional, live Razorpay Test Mode adapter is included.
-- **Requirement:** Set `ENABLE_RAZORPAY_TEST_MODE=true` and provide sandbox keys in `.env`.
-- **Constraint:** This is strictly for test mode. It moves no real money and is not intended for production usage.
+## Razorpay integration
+The system integrates natively with Razorpay APIs using hardened HTTP circuits, exponential backoffs, and strict idempotency handling.
+- **Requirement:** Provide your live or sandbox Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`) in `.env`.
+- **Safety:** Automatically prevents duplicate charges even during network timeouts by leveraging optimistic concurrency and Razorpay's native idempotency headers.
 
 ## Documentation map
 - [Architecture](docs/architecture/)
@@ -137,7 +136,6 @@ An optional, live Razorpay Test Mode adapter is included.
 - [Security Model](SECURITY.md)
 - [Failure & Resilience](docs/failures/FAILURES.md)
 - [Architectural Decision Records](docs/decisions/)
-- [Implementation Completeness Audit](docs/project-status/IMPLEMENTATION-COMPLETENESS-AUDIT.md)
 
 ## Quality gates
 - **Linting:** Enforced via `oxlint`.
