@@ -8,7 +8,7 @@ This system solves this by using a **Causal AI Architecture (T-Learner)** to est
 
 ---
 
-## 🏆 The "Dual-Validation" Architecture (Buildathon Ready)
+## 🏆 The "Dual-Validation" Architecture
 
 Because real payment failure datasets contain highly sensitive PII and financial data, we designed this system using a **Federated Dual-Validation Architecture** to prove it is production-ready today:
 
@@ -131,7 +131,7 @@ We built a rigorous offline evaluation suite (`statistical_audit.py` & `evaluate
 ---
 
 ## Documentation map
-- [FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md) (Judges: Start Here)
+- [FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md)
 - [Architecture](docs/architecture/)
 - [Security Model](SECURITY.md)
 - [Architectural Decision Records](docs/decisions/)
