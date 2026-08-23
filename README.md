@@ -97,6 +97,16 @@ flowchart TB
     Postgres -.-> DashboardUI
 ```
 
+*(or in text format below)*
+
+### Global Architecture (Text View)
+- **External Boundaries:** Razorpay Webhook -> Razorpay Test-Mode Sandbox
+- **API Layer:** Webhook Ingestion Controller, React Operations Dashboard
+- **Domain Layer:** Recovery Orchestrator, Idempotency Guards, Recovery Planning Service, Deterministic Policy Engine, Lifecycle State Machine
+- **AI & ML Services:** Causal ML Inference Service (FastAPI), Generative AI Service (LLM), Offline ML Evaluation Pipeline
+- **Worker Execution Layer:** BullMQ / Redis Queue, Execution Worker, Razorpay Execution Adapter
+- **Persistence & Audit:** PostgreSQL (Prisma), Immutable Audit Trail
+
 ---
 
 ## 3. End-to-End Execution Flow
