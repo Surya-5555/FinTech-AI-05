@@ -51,7 +51,7 @@ describe('Security Boundaries (e2e)', () => {
     })
     .compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication({ rawBody: true });
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }));
     await app.init();
   });
@@ -61,7 +61,7 @@ describe('Security Boundaries (e2e)', () => {
   });
 
   describe('Authorization Boundary', () => {
-    it('rejects unauthorized mutation request (missing token)', () => {
+    it('rejects unauthorized mutation request (missing webhook signature)', () => {
       return request(app.getHttpServer())
         .post('/events/ingest')
         .send({
@@ -76,10 +76,10 @@ describe('Security Boundaries (e2e)', () => {
         .expect(401);
     });
 
-    it('rejects unauthorized mutation request (invalid token)', () => {
+    it('rejects unauthorized mutation request (invalid webhook signature)', () => {
       return request(app.getHttpServer())
         .post('/events/ingest')
-        .set('Authorization', 'Bearer wrong-token')
+        .set('x-razorpay-signature', 'invalid-signature-hash')
         .send({
           externalEventId: 'evt_123',
           merchant: { id: 'm_1', name: 'Test', externalReference: 'm_1' },

@@ -4,7 +4,7 @@ process.env.ENABLE_RAZORPAY_TEST_MODE = 'true';
 process.env.API_AUTH_TOKEN = 'test-auth-token';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { randomUUID } from 'crypto';
+import crypto, { randomUUID } from 'crypto';
 import { expect, test, describe, beforeAll, afterAll } from 'vitest';
 
 import { AppModule } from '../../apps/api/src/app.module';
@@ -28,7 +28,7 @@ describe('Phase 2: End-to-End Golden Path', () => {
       imports: [AppModule],
     }).compile();
 
-    apiApp = apiModule.createNestApplication();
+    apiApp = apiModule.createNestApplication({ rawBody: true });
     apiApp.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
     await apiApp.init();
 
@@ -109,9 +109,16 @@ describe('Phase 2: End-to-End Golden Path', () => {
       failureReason: 'BANK_TIMEOUT' 
     };
 
+    const payloadString = JSON.stringify(payload);
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'test-secret';
+    // ensure test env uses the same secret
+    process.env.RAZORPAY_WEBHOOK_SECRET = secret; 
+    
+    const signature = crypto.createHmac('sha256', secret).update(payloadString).digest('hex');
+
     const response = await request(apiApp.getHttpServer())
       .post('/events/ingest')
-      .set('Authorization', `Bearer ${process.env.API_AUTH_TOKEN}`)
+      .set('x-razorpay-signature', signature)
       .set('Idempotency-Key', `idemp_${randomUUID()}`)
       .send(payload);
       

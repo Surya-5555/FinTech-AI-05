@@ -3,14 +3,14 @@ import { EventsService } from './events.service';
 import { IngestEventDto } from './dto/ingest-event.dto';
 import { generateStableHash } from '@rr/utils';
 
-import { OperatorAuthGuard } from '../../common/guards/operator-auth.guard';
+import { RazorpayWebhookGuard } from '../../common/guards/razorpay-webhook.guard';
 
 @Controller('events')
 export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Post('ingest')
-  @UseGuards(OperatorAuthGuard)
+  @UseGuards(RazorpayWebhookGuard)
   @HttpCode(HttpStatus.OK)
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
   async ingestEvent(

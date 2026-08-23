@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import crypto from 'crypto';
 
 vi.mock('@rr/persistence', () => {
   return {
@@ -58,7 +59,7 @@ describe('EventsController (e2e)', () => {
     })
     .compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleFixture.createNestApplication({ rawBody: true });
     app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
     await app.init();
   });
@@ -93,9 +94,14 @@ describe('EventsController (e2e)', () => {
       failureReason: 'INSUFFICIENT_FUNDS'
     };
 
+    const payloadString = JSON.stringify(payload);
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'test-secret';
+    process.env.RAZORPAY_WEBHOOK_SECRET = secret;
+    const signature = crypto.createHmac('sha256', secret).update(payloadString).digest('hex');
+
     const response = await request(app.getHttpServer())
       .post('/events/ingest')
-      .set('Authorization', `Bearer ${process.env.API_AUTH_TOKEN}`)
+      .set('x-razorpay-signature', signature)
       .set('Idempotency-Key', `idemp_${Date.now()}`)
       .send(payload)
       .expect(200);
