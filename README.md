@@ -226,15 +226,12 @@ Run these in separate terminals to start the entire distributed system:
 
 The following critical technical documents detail specific subsystems:
 
-- **[FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md)**
-  *The forensic assessment of the Causal ML implementation, evaluation results, statistical limitations, and safety controls.*
-- **[Architecture & Systems Design](docs/architecture/)**
-  *Detailed diagrams and sequence flows of the ingestion and execution pipelines.*
-- **[Architectural Decision Records (ADRs)](docs/decisions/)**
-  *Immutable records of why specific technologies (NestJS, XGBoost, Prisma) were chosen.*
-- **[Security & Resilience Model](SECURITY.md)**
-  *How the system handles duplicate webhooks, stale states, LLM hallucinations, and API timeouts.*
-- **[Failure Mode Recovery](docs/failures/FAILURES.md)**
-  *Documentation on degradation fallbacks.*
-- **[Evaluation Methodology](docs/evaluation/EVALUATION.md)**
-  *How policy value is calculated and simulated offline.*
+| Document | Description |
+|---|---|
+| **[FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md)** | The forensic assessment of the Causal ML implementation, evaluation results, statistical limitations, and safety controls. |
+| **[Architecture & Systems Design](docs/architecture/)** | Detailed diagrams and sequence flows of the ingestion and execution pipelines. |
+| **[Architectural Decision Records (ADRs)](docs/decisions/)** | Immutable records of why specific technologies (NestJS, XGBoost, Prisma) were chosen. |
+| **[Security & Resilience Model](SECURITY.md)** | How the system handles duplicate webhooks, stale states, LLM hallucinations, and API timeouts. |
+| **[Failure Mode Recovery](docs/failures/FAILURES.md)** | Documentation on degradation fallbacks. |
+| **[Evaluation Methodology](docs/evaluation/EVALUATION.md)** | How policy value is calculated and simulated offline. |
+
