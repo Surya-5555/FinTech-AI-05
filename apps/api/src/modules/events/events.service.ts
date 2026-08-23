@@ -35,7 +35,9 @@ export class EventsService {
         email: dto.customer.consents.email,
         sms: dto.customer.consents.sms,
         voice: dto.customer.consents.voice
-      }
+      },
+      customerEmail: dto.customer.email,
+      customerPhone: dto.customer.phone
     };
 
     const result = await this.ingestionRepository.ingestEventAndCreateCaseIfEligible(

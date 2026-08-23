@@ -11,6 +11,8 @@ export interface IngestionCommand {
     sms: string;
     voice: string;
   };
+  customerEmail?: string | undefined;
+  customerPhone?: string | undefined;
 }
 
 export interface IngestionRepository {

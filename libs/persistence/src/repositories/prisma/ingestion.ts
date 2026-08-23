@@ -1,7 +1,7 @@
 import { IngestionCommand, IngestionRepository } from '../contracts/ingestion';
 import { IngestionResult, MerchantConfig, RevenueEvent, RecoveryCase, AuditLog } from '@rr/contracts';
 import { getPrismaClient } from '../../client/index';
-import { generateId } from '@rr/utils';
+import { generateId, encryptPII } from '@rr/utils';
 import { ConcurrencyConflictError } from '../../errors/index';
 
 export class PrismaIngestionRepository implements IngestionRepository {
@@ -125,6 +125,12 @@ export class PrismaIngestionRepository implements IngestionRepository {
               consentEmail: String(command.customerConsents.email),
               consentSms: String(command.customerConsents.sms),
               consentVoice: String(command.customerConsents.voice),
+              emailEncrypted: command.customerEmail 
+                ? encryptPII(command.customerEmail, process.env.PII_ENCRYPTION_KEY || 'default-insecure-pii-key-32bytes!') 
+                : null,
+              phoneEncrypted: command.customerPhone 
+                ? encryptPII(command.customerPhone, process.env.PII_ENCRYPTION_KEY || 'default-insecure-pii-key-32bytes!') 
+                : null,
               contactWindowMetadataJson: '{}'
             }
           });

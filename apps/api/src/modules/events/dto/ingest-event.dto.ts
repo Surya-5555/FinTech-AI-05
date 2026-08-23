@@ -44,6 +44,16 @@ export class CustomerDto {
   @ValidateNested()
   @Type(() => ConsentsDto)
   consents!: ConsentsDto;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  phone?: string;
 }
 
 export class AmountDto {

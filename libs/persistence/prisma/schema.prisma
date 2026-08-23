@@ -26,6 +26,8 @@ model Customer {
   consentEmail                 String
   consentSms                   String
   consentVoice                 String
+  emailEncrypted               String?
+  phoneEncrypted               String?
   contactWindowMetadataJson    String   @db.Text
   createdAt                    DateTime @default(now())
   updatedAt                    DateTime @updatedAt
