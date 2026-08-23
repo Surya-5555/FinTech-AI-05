@@ -6,6 +6,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "start:ml": "cd apps/ml-pipeline && .\\venv\\Scripts\\Activate.ps1 && python src/server.py",
     "dev": "pnpm --filter \"./apps/*\" dev",
     "build": "pnpm -r build",
     "lint": "eslint .",
