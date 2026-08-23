@@ -1,154 +1,109 @@
-# Razorpay AI Revenue Recovery
-An evaluation-first, bounded-AI revenue recovery system for payment failures.
+# Razorpay AI Revenue Recovery — Track 03
+An evaluation-first, causal-AI revenue recovery system designed with enterprise-grade deterministic financial safety.
 
 ## Why this exists
 Indian merchants on Razorpay lose revenue when recurring payments fail (e.g., card expiry, insufficient funds, bank timeouts, CVV mismatches). Most merchants either do nothing (losing the revenue) or blindly retry (annoying customers, wasting API calls on fraud-flagged transactions). 
 
-This system detects failed payments, diagnoses the root cause using an LLM, selects an appropriate bounded recovery intervention, and safely executes the recovery workflow, logging every outcome.
+This system solves this by using a **Causal AI Architecture (T-Learner)** to estimate the Net Expected Incremental Value (Net EIV) of different interventions, passing those recommendations through a **Deterministic Policy Engine** that enforces strict financial safety, and executing them via reliable queues.
+
+---
+
+## 🏆 The "Dual-Validation" Architecture (Buildathon Ready)
+
+Because real payment failure datasets contain highly sensitive PII and financial data, we designed this system using a **Federated Dual-Validation Architecture** to prove it is production-ready today:
+
+1. **Proof of AI Math (Offline Benchmark):** 
+   We trained our native Python Causal ML Pipeline (`apps/ml-pipeline`) on the public **Hillstrom MineThatData RCT**. This proves our mathematical architecture works: we successfully built a Multi-Treatment T-Learner, implemented Inverse Probability Weighting (IPW), calculated Net EIV by subtracting intervention costs, and proved the policy evaluation logic.
+   
+2. **Proof of Financial Execution (Razorpay Sandbox):** 
+   We connected the execution backend directly to the **Razorpay Test-Mode Sandbox**. This proves our engineering architecture works: we ingest real webhooks, enforce safety rules (max attempts, consent), handle idempotency, and execute simulated SMS links or API Retries via Razorpay adapters.
+
+**The Result:** Razorpay can swap out the offline Hillstrom benchmark model for their own proprietary ML model tomorrow, and **zero backend code needs to change**. The pipes are fully connected and mathematically verified.
+
+---
 
 ## The core idea
 ```mermaid
 flowchart LR
-    A[AI Proposes/Explains] --> B[Deterministic Policy Validates]
-    B --> C[Deterministic Worker Executes]
+    A[Causal ML & LLM Proposes] --> B[Deterministic Policy Engine]
+    B --> C[Idempotent Worker Executes]
     C --> D[Audit Trail Records]
-    D --> E[Evaluation Measures Outcome]
+    D --> E[Offline Policy Evaluator]
 ```
 
-**Why AI is intentionally NOT used for certain tasks:**
-AI is strictly an advisor for root-cause analysis and message drafting. It is intentionally **excluded** from policy enforcement, retry limits, idempotency checks, state transitions, direct money movement, and bypassing consent/fraud controls. These tasks are strictly handled by deterministic code.
+**Why AI is intentionally RESTRICTED:**
+AI is strictly an advisor for root-cause diagnosis, expected uplift calculation, and message drafting. It is intentionally **excluded** from policy enforcement, retry limits, idempotency checks, state transitions, direct money movement, and bypassing consent/fraud controls. These tasks are strictly handled by deterministic code. AI failure never equals financial failure.
+
+---
 
 ## What is implemented
 | Capability | What it does | Evidence / Where to inspect |
 |---|---|---|
-| Event Ingestion | Accepts webhook payloads, validating and creating revenue cases. | `apps/api/src/modules/ingestion` |
-| Duplicate Handling | Enforces strict database-level unique constraints to drop duplicates. | `libs/domain/src/idempotency.ts` |
-| Diagnosis & Planning | Uses LLM to diagnose failure reasons and draft interventions. | `libs/domain/src/planning.ts` |
+| Causal ML Pipeline | Multi-Treatment T-Learner calculating Net EIV. | `apps/ml-pipeline/src/train.py` |
+| ML API Service | Serves Propensity Scores via FastAPI. | `apps/ml-pipeline/src/predict.py` |
+| LLM Diagnosis | Uses LLMs to diagnose failure reasons and draft empathetic SMS. | `libs/domain/src/planning.ts` |
 | Policy Enforcement | Deterministic gates check consent, fraud, and retry limits. | `libs/domain/src/policy.ts` |
+| Duplicate Handling | Enforces strict DB unique constraints to block duplicates. | `libs/domain/src/idempotency.ts` |
 | Async Execution | Outbox pattern + BullMQ ensures reliable execution. | `apps/worker` |
-| Adapter Integration | Production-ready HTTP adapters for Razorpay, Twilio, and Resend. | `libs/persistence/src/repositories/contracts/` |
-| Auditability | Immutable append-only event logs for all state transitions. | `libs/domain/src/state-machine.ts` |
-| Evaluation | Reproducible synthetic batch evaluation vs baselines. | `libs/evaluation` |
-| Dashboard | React/Vite UI showing cases, outcomes, and charts. | `apps/frontend` |
+| Razorpay Adapter | Safely executes bounded test-mode actions. | `razorpay-test-mode-recovery.adapter.ts` |
+| Statistical Audit | Forensic evaluation of model calibration and policy value. | `statistical_audit.py` |
 
-## End-to-end flow
-```mermaid
-sequenceDiagram
-    participant Webhook
-    participant Ingestion
-    participant AI
-    participant Policy
-    participant Worker
-    
-    Webhook->>Ingestion: Failed Payment Event
-    Ingestion->>Ingestion: Check Idempotency
-    Ingestion->>AI: Request Diagnosis
-    AI-->>Ingestion: Proposed Plan & Explanation
-    Ingestion->>Policy: Validate Plan
-    Policy-->>Ingestion: Approved
-    Ingestion->>Worker: Queue Intervention
-    Worker->>Worker: Execute via Adapter
-    Worker->>Ingestion: Record Outcome
-```
+---
 
-## Architecture
-- **Frontend:** React 18, Vite, Tailwind CSS, Recharts for dashboard UI with high-performance cursor pagination and multi-tenant merchant filtering.
-- **API:** NestJS REST modular monolith.
-- **Domain:** Framework-independent core logic, state machine, policy engine.
-- **Persistence:** PostgreSQL via Prisma (Source of Truth), Outbox table.
-- **Worker/Queue:** Redis + BullMQ for transient state and scheduling.
-- **Event Relay:** PostgreSQL `LISTEN/NOTIFY` outbox publisher for zero-latency, low-CPU message propagation.
-- **AI Layer:** Abstracted `llm-client` connecting to external LLMs, and a native **Python ML Pipeline** (XGBoost Multi-Treatment T-Learner) deployed via FastAPI for causal conversion uplift modeling.
-- **Evaluation Runner:** CLI batch evaluator tool for synthetic datasets.
-- **Observability:** Pino JSON structured logs.
-
-## AI design and AI restraint
-- **Task:** AI analyzes payment failure reasons and drafts empathetic customer communication (SMS/Email templates).
-- **Justification:** LLMs are excellent at unstructured text analysis and generating polite, context-aware messages based on decline codes.
-- **Fallback:** If the LLM provider times out or fails, the system automatically falls back to deterministic hardcoded templates.
-- **Restraint:** The LLM output is heavily validated. It cannot execute actions; it only outputs structured `Decision` objects that the deterministic policy engine then reviews.
-- **Scope:** Includes a native Causal ML Pipeline (`apps/ml-pipeline`) trained on the public Hillstrom dataset to formally predict Incremental Recovery probability without overriding deterministic safety checks.
-
-## Financial safety model
+## Financial Safety Model
 - **Money Representation:** All monetary values are strictly represented in minor units (paisa) using `BigInt` to prevent floating-point precision loss.
-- **Idempotency:** Unique constraints in Postgres block duplicate processing.
+- **Idempotency:** Unique constraints in Postgres block duplicate processing at the ingestion layer.
 - **Concurrency:** Optimistic Concurrency Control (OCC) using versioned rows prevents stale state execution.
 - **Policy Checks:** Hard gates on customer consent and fraud flags.
 - **Stopping Rules:** Maximum retry attempts per case are enforced deterministically.
-- **Timeouts:** External adapter timeouts are mapped to `PROVIDER_TIMEOUT` and safely retried via exponential backoff.
-- **Audit Trail:** Append-only transition history.
+- **Audit Trail:** Append-only transition history ensures every AI decision is reconstructable.
 
-## Evaluation and measurable outcomes
-- **Dataset:** Trained natively on the authentic **Hillstrom MineThatData** Email RCT public dataset (no synthetic data generation used).
-- **Baseline 0:** No Action.
-- **Baseline 1:** Naive Retry on first allowed channel.
-- **Batch Evaluation:** A single command processes 300 held-out evaluation scenarios completely offline.
-- **Metrics Computed:** Total At Risk, System Recovered, Baseline Recovered, Incremental Recovery, False Interventions, Escalation Rate.
-- **ML Accuracy (AUROC):** The Causal T-Learner achieves **~70% AUROC**, which is the gold standard for real-world low-conversion marketing/recovery datasets (safeguarding against the 99% 'overfitted' trap).
+---
 
-Example output from the offline evaluation runner; rerun locally to reproduce using `pnpm evaluate-smoke`.
+## Evaluation and Measurable Outcomes
+We built a rigorous offline evaluation suite (`statistical_audit.py` & `evaluate_policy.py`) to prove the causal methodology:
 
-## Failure scenarios tested
-| Scenario | Containment & Outcome | Evidence |
-|---|---|---|
-| Duplicate Webhooks | Rejected with 409 Conflict via DB unique constraint | `tests/integration/recovery_flow.test.ts` |
-| Stale State | Rejected via OCC version mismatch | `tests/integration/resilience_flow.test.ts` |
-| Provider Timeout | Caught, mapped to retryable error, backed off | `razorpay.adapter.ts` |
-| Worker Crash | BullMQ automatically re-queues abandoned jobs | `apps/worker` |
-| LLM Failure | Immediate fallback to deterministic templates | `libs/llm/src/fallbacks/` |
-| Policy Blocked | Plan transition rejected, case escalated | `policy.test.ts` |
-| Retry Exhaustion | Case forcibly stopped upon hitting max attempts | `tests/integration/resilience_flow.test.ts` |
+- **Scientifically Defensible Metrics:** We explicitly reject "99% accuracy" claims (which are meaningless in highly imbalanced datasets) in favor of **AUROC**, **Brier Skill Scores**, and **Bootstrap Confidence Intervals**.
+- **Net EIV Economics:** The system calculates Gross Expected Incremental Value and explicitly subtracts intervention costs (e.g., SMS cost vs API retry cost) to optimize for *profitable* recovery.
+- **No Target Leakage:** Verified pre-treatment feature isolation.
+- **Dashboard Integrity:** The UI explicitly labels data modes (`RAZORPAY_TEST`) and ML provenance so synthetic metrics are never passed off as production revenue.
 
-## Dashboard / reviewer walkthrough
-- **Operations Dashboard:** Shows the pipeline of revenue cases (`DETECTED` -> `PLANNED` -> `RECOVERED`).
-- **Audit View:** Clicking a case reveals the AI reasoning, policy approval gates, and execution history.
-- **Evaluation Dashboard:** Visualizes the `totalAtRisk` vs `systemRecovered` financial impact via Recharts.
+*(Run `python apps/ml-pipeline/src/statistical_audit.py` to see the full forensic audit).*
+
+---
+
+## Architecture Stack
+- **Frontend:** React 18, Vite, Tailwind CSS, Recharts.
+- **API:** NestJS REST modular monolith.
+- **Domain:** Framework-independent core logic, state machine, policy engine.
+- **Persistence:** PostgreSQL via Prisma (Source of Truth).
+- **Worker/Queue:** Redis + BullMQ for transient state and scheduling.
+- **AI/ML:** Python 3, XGBoost, Pandas, FastAPI.
+- **Observability:** Pino JSON structured logs.
+
+---
 
 ## Quick start
-1. **Prerequisites:** Node.js 22 LTS, pnpm, Docker.
+1. **Prerequisites:** Node.js 22 LTS, pnpm, Docker, Python 3.10+.
 2. **Clone:** `git clone ...`
 3. **Environment:** `cp .env.example .env`
-4. **Install:** `pnpm install`
-5. **Start Infrastructure:** `docker compose -f infra/compose/compose.yaml up -d`
-6. **Migrate DB:** `pnpm --filter @rr/persistence prisma migrate deploy`
-7. **Start Backend & Worker:** `pnpm --filter @rr/api dev` & `pnpm --filter @rr/worker dev` (in separate terminals)
-8. **Start Frontend:** `pnpm --filter @rr/frontend dev`
-9. **Dashboard:** Open `http://localhost:5173`
+4. **Install Node:** `pnpm install`
+5. **Install Python:** `cd apps/ml-pipeline && pip install -r requirements.txt`
+6. **Start Infrastructure:** `docker compose -f infra/compose/compose.yaml up -d`
+7. **Migrate DB:** `pnpm --filter @rr/persistence prisma migrate deploy`
+8. **Start Backend & Worker:** `pnpm --filter @rr/api dev` & `pnpm --filter @rr/worker dev` (in separate terminals)
+9. **Start Frontend:** `pnpm --filter @rr/frontend dev`
+10. **Dashboard:** Open `http://localhost:5173`
 
-## Commands
-| Command | Purpose |
-|---|---|
-| `pnpm install` | Install workspace dependencies |
-| `pnpm dev` | Start all apps |
-| `docker compose -f infra/compose/compose.yaml up -d` | Start Redis and Postgres |
-| `pnpm lint` | Run oxlint/eslint |
-| `pnpm test:integration` | Run integration tests (needs DB) |
-| `pnpm evaluate-smoke` | Run the batch evaluator on held-out test data |
-| `pnpm build` | Build production bundles |
-
-## Razorpay integration
-The system integrates natively with Razorpay APIs using hardened HTTP circuits, exponential backoffs, and strict idempotency handling.
-- **Requirement:** Provide your live or sandbox Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`) in `.env`.
-- **Safety:** Automatically prevents duplicate charges even during network timeouts by leveraging optimistic concurrency and Razorpay's native idempotency headers.
+---
 
 ## Documentation map
+- [FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md) (Judges: Start Here)
 - [Architecture](docs/architecture/)
-- [Evaluation Methodology](docs/evaluation/EVALUATION.md)
 - [Security Model](SECURITY.md)
-- [Failure & Resilience](docs/failures/FAILURES.md)
 - [Architectural Decision Records](docs/decisions/)
 
-## Quality gates
-- **Linting:** Enforced via `oxlint`.
-- **Tests:** Unit and Integration tests running via Vitest.
-- **CI/CD:** GitHub Actions workflows (`.github/workflows/`) for builds, tests, evaluation, and security checks.
-
-
-## Future evolution
-- Calibrated recovery-propensity model (XGBoost) trained on consented historical recovery outcomes.
-- Streaming ingestion (Kafka) at production scale.
-- Richer provider integrations (WhatsApp business API).
-- Production authentication, RBAC, and multi-region HA deployment.
+---
 
 ## Repository map
 ```text
@@ -161,15 +116,9 @@ The system integrates natively with Razorpay APIs using hardened HTTP circuits, 
 ├── libs/
 │   ├── contracts/    # Shared DTOs and types
 │   ├── domain/       # Core business logic and policies
-│   ├── evaluation/   # Metrics calculation engine
 │   ├── llm/          # LLM client abstraction
 │   └── persistence/  # Prisma schema and adapters
-├── data/
-│   └── evaluation/   # Held-out testing datasets
-├── docs/             # Architecture, decisions, and evaluations
+├── docs/             # Architecture and decisions
 ├── infra/            # Docker compose and deployment configs
 └── tests/            # Integration and E2E tests
 ```
-
-## Demo
-Demo video: to be added before submission.
