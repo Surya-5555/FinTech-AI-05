@@ -6,8 +6,12 @@ import json
 from train import MultiTreatmentTLearner
 
 class CausalInferenceService:
-    def __init__(self, model_path='../../artifacts/t_learner.pkl', features_path='../../data/processed/hillstrom/feature_columns.json'):
+    def __init__(self, model_path='../../../artifacts/t_learner.pkl', features_path='../../../data/processed/hillstrom/feature_columns.json'):
         # Load the trained MultiTreatmentTLearner
+        import os
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        model_path = os.path.join(base_dir, '../../../artifacts/t_learner.pkl')
+        features_path = os.path.join(base_dir, '../../../data/processed/hillstrom/feature_columns.json')
         with open(model_path, 'rb') as f:
             self.model = pickle.load(f)
             
@@ -61,15 +65,17 @@ class CausalInferenceService:
                 {
                     "treatment": "INTERVENTION_A", # Retry
                     "incremental_probability_uplift": float(row['Uplift_T1']),
-                    "expected_incremental_value": float(row['EIV_T1'])
+                    "expected_incremental_value": float(row['EIV_T1']),
+                    "net_expected_incremental_value": float(row['Net_EIV_T1'])
                 },
                 {
                     "treatment": "INTERVENTION_B", # Payment Link
                     "incremental_probability_uplift": float(row['Uplift_T2']),
-                    "expected_incremental_value": float(row['EIV_T2'])
+                    "expected_incremental_value": float(row['EIV_T2']),
+                    "net_expected_incremental_value": float(row['Net_EIV_T2'])
                 }
             ],
-            "best_treatment": "INTERVENTION_A" if row['EIV_T1'] > row['EIV_T2'] else "INTERVENTION_B"
+            "best_treatment": "INTERVENTION_A" if row['Net_EIV_T1'] > row['Net_EIV_T2'] else "INTERVENTION_B"
         }
 
 if __name__ == "__main__":

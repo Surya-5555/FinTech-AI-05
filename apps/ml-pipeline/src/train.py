@@ -43,9 +43,18 @@ class MultiTreatmentTLearner:
         uplift_t1 = p_y_t1 - p_y_t0
         uplift_t2 = p_y_t2 - p_y_t0
         
-        # Calculate Expected Incremental Value (Uplift * Amount)
+        # Calculate Expected Incremental Value (Gross Uplift * Amount)
         eiv_t1 = uplift_t1 * invoice_amount_proxy
         eiv_t2 = uplift_t2 * invoice_amount_proxy
+        
+        # Define Intervention Costs
+        cost_t0 = 0.0
+        cost_t1 = 0.10 # Retry cost
+        cost_t2 = 2.00 # SMS Payment Link cost
+        
+        # Calculate Net Expected Incremental Value
+        net_eiv_t1 = eiv_t1 - cost_t1
+        net_eiv_t2 = eiv_t2 - cost_t2
         
         results = pd.DataFrame({
             'P_Control': p_y_t0,
@@ -54,14 +63,17 @@ class MultiTreatmentTLearner:
             'Uplift_T1': uplift_t1,
             'Uplift_T2': uplift_t2,
             'EIV_T1': eiv_t1,
-            'EIV_T2': eiv_t2
+            'EIV_T2': eiv_t2,
+            'Net_EIV_T1': net_eiv_t1,
+            'Net_EIV_T2': net_eiv_t2
         })
         
         return results
 
 def train_pipeline():
-    train_df = pd.read_csv('../../data/processed/hillstrom/train.csv')
-    test_df = pd.read_csv('../../data/processed/hillstrom/test.csv')
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    train_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/train.csv'))
+    test_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/test.csv'))
     
     # Target and Treatment
     T_train, Y_train = train_df['T'], train_df['Y']
@@ -80,16 +92,38 @@ def train_pipeline():
     learner = MultiTreatmentTLearner(treatments=[0, 1, 2])
     learner.fit(X_train, T_train, Y_train)
     
+    # Per-arm accuracy & AUROC on test set
+    from sklearn.metrics import roc_auc_score
+    treatment_labels = {0: 'Control', 1: 'Retry', 2: 'Payment Link'}
+    print("\n--- Per-Arm Model Accuracy (Test Set) ---")
+    for t in [0, 1, 2]:
+        idx = (T_test == t)
+        X_t = X_test[idx]
+        Y_t = Y_test[idx]
+        preds = learner.models[t].predict(X_t)
+        probs = learner.models[t].predict_proba(X_t)[:, 1]
+        acc = accuracy_score(Y_t, preds)
+        try:
+            auc = roc_auc_score(Y_t, probs)
+        except ValueError:
+            auc = float('nan')
+        print(f"  Model T{t} ({treatment_labels[t]}): Accuracy = {acc*100:.2f}%  |  AUROC = {auc:.4f}  |  Samples = {len(Y_t)}")
+    
     # Evaluate conceptually on test set
     results = learner.predict_expected_incremental_value(X_test, test_df['invoice_amount_proxy'])
     
     print("\n--- Mean Estimated Expected Incremental Value (EIV) on Test Set ---")
-    print(f"Mean EIV for Treatment 1 (Retry): {results['EIV_T1'].mean():.4f}")
-    print(f"Mean EIV for Treatment 2 (Link):  {results['EIV_T2'].mean():.4f}")
+    print(f"Mean Gross EIV for Treatment 1 (Retry): {results['EIV_T1'].mean():.4f}")
+    print(f"Mean Gross EIV for Treatment 2 (Link):  {results['EIV_T2'].mean():.4f}")
+    
+    print("\n--- Mean Net Expected Incremental Value (Net EIV) on Test Set ---")
+    print(f"Mean Net EIV for Treatment 1 (Retry): {results['Net_EIV_T1'].mean():.4f}")
+    print(f"Mean Net EIV for Treatment 2 (Link):  {results['Net_EIV_T2'].mean():.4f}")
     
     # Save Model
-    os.makedirs('../../artifacts', exist_ok=True)
-    model_path = '../../artifacts/t_learner.pkl'
+    artifacts_dir = os.path.join(base_dir, '../../../artifacts')
+    os.makedirs(artifacts_dir, exist_ok=True)
+    model_path = os.path.join(artifacts_dir, 't_learner.pkl')
     with open(model_path, 'wb') as f:
         pickle.dump(learner, f)
     
