@@ -58,7 +58,7 @@ sequenceDiagram
 - **Persistence:** PostgreSQL via Prisma (Source of Truth), Outbox table.
 - **Worker/Queue:** Redis + BullMQ for transient state and scheduling.
 - **Event Relay:** PostgreSQL `LISTEN/NOTIFY` outbox publisher for zero-latency, low-CPU message propagation.
-- **AI Layer:** Abstracted `llm-client` connecting to external LLMs, and a Shadow ML Propensity Pipeline (XGBoost logic simulator) that evaluates risk without overriding determinism.
+- **AI Layer:** Abstracted `llm-client` connecting to external LLMs. ML Propensity Pipeline (XGBoost) is currently deferred pending a legally viable dataset.
 - **Evaluation Runner:** CLI batch evaluator tool for synthetic datasets.
 - **Observability:** Pino JSON structured logs.
 
@@ -67,7 +67,7 @@ sequenceDiagram
 - **Justification:** LLMs are excellent at unstructured text analysis and generating polite, context-aware messages based on decline codes.
 - **Fallback:** If the LLM provider times out or fails, the system automatically falls back to deterministic hardcoded templates.
 - **Restraint:** The LLM output is heavily validated. It cannot execute actions; it only outputs structured `Decision` objects that the deterministic policy engine then reviews.
-- **Scope:** Includes a Shadow ML pipeline (simulated XGBoost) to score `P(Recovery)` offline for future architectural transitions.
+- **Scope:** AI is bounded to text generation and root-cause analysis. ML predictive modeling is deferred.
 
 ## Financial safety model
 - **Money Representation:** All monetary values are strictly represented in minor units (paisa) using `BigInt` to prevent floating-point precision loss.
@@ -82,7 +82,7 @@ sequenceDiagram
 - **Dataset:** 300 held-out synthetic cases (seeded PRNG) representing realistic failure distributions (insufficient funds, bank timeout, card expired, etc.).
 - **Baseline 0:** No Action.
 - **Baseline 1:** Naive Retry on first allowed channel.
-- **Batch Evaluation:** A single command processes the dataset entirely deterministically, without live network calls.
+- **Batch Evaluation:** A single command processes the dataset entirely deterministically. Note: This validates orchestration correctness and logic, it does not claim real-world causal recovery lift.
 - **Metrics Computed:** Total At Risk, System Recovered, Baseline Recovered, Incremental Recovery, False Interventions, Escalation Rate.
 
 Example output from the deterministic synthetic evaluation dataset; rerun locally to reproduce using `pnpm evaluate-smoke`.
@@ -127,7 +127,7 @@ Example output from the deterministic synthetic evaluation dataset; rerun locall
 
 ## Razorpay integration
 The system integrates natively with Razorpay APIs using hardened HTTP circuits, exponential backoffs, and strict idempotency handling.
-- **Requirement:** Provide your live or sandbox Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`) in `.env`.
+- **Requirement:** Provide your sandbox Razorpay keys (`RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`) in `.env`. Live credentials must NEVER be used.
 - **Safety:** Automatically prevents duplicate charges even during network timeouts by leveraging optimistic concurrency and Razorpay's native idempotency headers.
 
 ## Documentation map
