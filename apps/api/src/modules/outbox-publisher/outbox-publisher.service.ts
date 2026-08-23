@@ -1,12 +1,13 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { OutboxRepository } from '@rr/persistence';
+import { Client } from 'pg';
 
 @Injectable()
 export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(OutboxPublisherService.name);
   private queue: Queue | null = null;
-  private timer: NodeJS.Timeout | null = null;
+  private pgClient: Client | null = null;
   private isProcessing = false;
 
   constructor(
@@ -36,13 +37,40 @@ export class OutboxPublisherService implements OnModuleInit, OnModuleDestroy {
       prefix: queuePrefix,
     });
 
-    this.logger.log('Outbox Publisher started. Polling every 5 seconds.');
-    this.timer = setInterval(() => this.poll(), 5000);
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      this.logger.error('DATABASE_URL is required for Outbox pg_notify');
+      throw new Error('DATABASE_URL is missing');
+    }
+
+    this.pgClient = new Client({ connectionString: databaseUrl });
+    
+    try {
+      await this.pgClient.connect();
+      
+      this.pgClient.on('notification', (msg: any) => {
+        if (msg.channel === 'outbox_event_created') {
+          this.poll();
+        }
+      });
+      
+      this.pgClient.on('error', (err: any) => {
+        this.logger.error('PostgreSQL client error in OutboxPublisherService', err);
+      });
+      
+      await this.pgClient.query('LISTEN outbox_event_created');
+      this.logger.log('Outbox Publisher started. Listening on outbox_event_created.');
+      
+      // Initial poll to clear backlog
+      this.poll();
+    } catch (err: any) {
+      this.logger.error('Failed to connect PostgreSQL client for outbox listener', err.stack);
+    }
   }
 
   async onModuleDestroy() {
-    if (this.timer) {
-      clearInterval(this.timer);
+    if (this.pgClient) {
+      await this.pgClient.end();
     }
     if (this.queue) {
       await this.queue.close();

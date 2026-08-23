@@ -45,6 +45,7 @@ export interface DiagnosisResult {
   recommendedIntervention: InterventionType;
   requiresHumanReview: boolean;
   evaluatedAt: Date;
+  shadowPropensity?: any;
 }
 
 export interface MerchantRecoveryPolicyConfig {

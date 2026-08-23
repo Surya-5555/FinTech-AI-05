@@ -323,6 +323,9 @@ export class PrismaPlanningRepository implements PlanningRepository {
         },
       });
 
+      // Emit LISTEN/NOTIFY event for real-time outbox relay
+      await tx.$executeRaw`NOTIFY outbox_event_created`;
+
       // Write audit log
       await tx.auditLog.create({
         data: {

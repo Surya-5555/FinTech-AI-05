@@ -3,28 +3,36 @@ import { getPrismaClient } from '@rr/persistence';
 
 @Injectable()
 export class CasesService {
-  async getCases(query: { limit?: number; offset?: number; merchantId?: string }) {
+  async getCases(query: { limit?: number; cursor?: string; merchantId?: string }) {
     const prisma = getPrismaClient();
     const take = query.limit || 10;
-    const skip = query.offset || 0;
-
+    
     const where = query.merchantId ? { merchantId: query.merchantId } : {};
 
-    const [items, total] = await Promise.all([
-      prisma.revenueCase.findMany({
-        where,
-        take,
-        skip,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.revenueCase.count({ where }),
-    ]);
+    const findOpts: any = {
+      where,
+      take,
+      orderBy: { createdAt: 'desc' },
+    };
+
+    if (query.cursor) {
+      findOpts.cursor = { id: query.cursor };
+      findOpts.skip = 1; // skip the cursor itself
+    }
+
+    const items = await prisma.revenueCase.findMany(findOpts);
+    
+    // We can do a total count, but often with cursor pagination it's omitted or cached. 
+    // We'll keep it for the dashboard if needed.
+    const total = await prisma.revenueCase.count({ where });
+
+    const nextCursor = items.length === take ? items[items.length - 1]?.id : null;
 
     return {
       items: items.map(this.mapCase),
       total,
       limit: take,
-      offset: skip,
+      nextCursor,
     };
   }
 

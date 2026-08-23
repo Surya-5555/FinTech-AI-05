@@ -3,15 +3,34 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiClient } from '../../api/client';
 import { formatMoneyMinor } from '../../lib/money';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight, Search, ChevronLeft } from 'lucide-react';
 
 export function CasesPage() {
   const [merchantId, setMerchantId] = useState('');
+  const [cursors, setCursors] = useState<string[]>([]);
+  const currentCursor = cursors[cursors.length - 1];
   
   const { data, isLoading } = useQuery({
-    queryKey: ['cases', merchantId],
-    queryFn: () => ApiClient.get<any>(`/cases?limit=50${merchantId ? `&merchantId=${merchantId}` : ''}`)
+    queryKey: ['cases', merchantId, currentCursor],
+    queryFn: () => ApiClient.get<any>(`/cases?limit=20${merchantId ? `&merchantId=${merchantId}` : ''}${currentCursor ? `&cursor=${currentCursor}` : ''}`)
   });
+
+  const handleNext = () => {
+    if (data?.nextCursor) {
+      setCursors([...cursors, data.nextCursor]);
+    }
+  };
+
+  const handlePrev = () => {
+    if (cursors.length > 0) {
+      setCursors(cursors.slice(0, -1));
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMerchantId(e.target.value);
+    setCursors([]); // Reset pagination on search
+  };
 
   return (
     <div className="space-y-6">
@@ -32,12 +51,12 @@ export function CasesPage() {
               type="text"
               placeholder="Filter by Merchant ID..."
               value={merchantId}
-              onChange={(e) => setMerchantId(e.target.value)}
+              onChange={handleSearchChange}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
           <div className="text-sm text-gray-500">
-            {data?.total ? `${data.total} cases found` : 'Searching...'}
+            {data?.total !== undefined ? `${data.total} total cases` : 'Searching...'}
           </div>
         </div>
 
@@ -98,6 +117,31 @@ export function CasesPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        
+        {/* Pagination Controls */}
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            Showing page {cursors.length + 1}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handlePrev}
+              disabled={cursors.length === 0}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={!data?.nextCursor}
+              className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

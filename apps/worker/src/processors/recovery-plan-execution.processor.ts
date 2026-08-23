@@ -1,5 +1,5 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
+import { Processor, WorkerHost, InjectQueue } from '@nestjs/bullmq';
+import { Job, Queue } from 'bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { ExecutionRepository, PlanningRepository } from '@rr/persistence';
 import { RecoveryPlanExecutionJob, InterventionExecutionResult, RevenueCaseState, InterventionExecutionRequest } from '@rr/contracts';
@@ -20,6 +20,8 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
     @Inject('PlanningRepository')
     private readonly planningRepo: PlanningRepository,
     private readonly providerFactory: ProviderFactory,
+    @InjectQueue('reconciliation')
+    private readonly reconciliationQueue: Queue,
   ) {
     super();
   }
@@ -144,7 +146,7 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
       // 5. Map Result
       const executionResult: InterventionExecutionResult = {
         interventionId: intervention.id as any,
-        status: providerResult.success ? 'SUCCEEDED' : 'FAILED',
+        status: providerResult.success ? 'SUCCEEDED' : (providerResult.failureCode === 'PROVIDER_TIMEOUT' ? 'AMBIGUOUS' : 'FAILED'),
         executedAt: new Date(),
       };
       if (providerResult.recoveredAmount) executionResult.recoveredAmount = providerResult.recoveredAmount;
@@ -161,6 +163,20 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
           // In real life, might be AWAITING_GATEWAY_RESPONSE, but assuming synchronous here
           nextCaseState = executionResult.recoveredAmount ? RevenueCaseState.RECOVERED : RevenueCaseState.FAILED; 
         }
+      } else if (executionResult.status === 'AMBIGUOUS') {
+         nextCaseState = RevenueCaseState.AMBIGUOUS;
+         await this.reconciliationQueue.add('reconcile-provider', {
+           interventionId: intervention.id,
+           caseId: payload.caseId,
+           merchantId: payload.merchantId,
+           externalReference: providerResult.externalReference,
+           actionType,
+         }, {
+           delay: 5000, // Wait 5 seconds before checking
+           attempts: 3,
+           backoff: { type: 'exponential', delay: 10000 }
+         });
+         this.logger.log(`Enqueued reconciliation job for intervention ${intervention.id}`);
       } else {
          nextCaseState = RevenueCaseState.FAILED;
       }

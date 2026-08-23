@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
 import { RecoveryPlanExecutionProcessor } from './processors/recovery-plan-execution.processor';
+import { ReconciliationProcessor } from './processors/reconciliation.processor';
 import { PrismaExecutionRepository, PrismaPlanningRepository } from '@rr/persistence';
 
 import { ProviderFactory } from './providers/provider.factory';
@@ -20,9 +21,16 @@ import { ResendAdapter } from './providers/email/resend.adapter';
       },
       prefix: process.env.QUEUE_PREFIX || 'rr',
     }),
+    BullModule.registerQueue({
+      name: 'recovery-plan-execution',
+    }),
+    BullModule.registerQueue({
+      name: 'reconciliation',
+    }),
   ],
   providers: [
     RecoveryPlanExecutionProcessor,
+    ReconciliationProcessor,
     ProviderFactory,
     RazorpayAdapter,
     RazorpayTestModeRecoveryAdapter,

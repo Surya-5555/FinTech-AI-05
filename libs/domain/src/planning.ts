@@ -14,6 +14,8 @@ import { diagnoseRevenueCase } from './diagnosis';
 import { ActiveInterventionSummary, recommendIntervention, selectCandidateInterventions } from './intervention';
 import { evaluateRecoveryPolicy } from './policy';
 
+import { scorePropensity } from './ml/propensity';
+
 export interface PlanProposalInput {
   revCase: RecoveryCase;
   sourceEvent: RevenueEvent;
@@ -36,8 +38,14 @@ export function proposeRecoveryPlan(input: PlanProposalInput): RecoveryPlanPropo
     throw new Error(`Cannot propose plan for case in state ${revCase.state}`);
   }
 
+  // 0. Shadow ML Propensity Scoring
+  const shadowPropensity = scorePropensity(revCase, sourceEvent);
+
   // 1. Diagnose
   const diagnosis = diagnoseRevenueCase(revCase, sourceEvent, merchantPolicy, now);
+  
+  // Attach shadow ML scores for audit logs (does NOT affect deterministic decisions yet)
+  diagnosis.shadowPropensity = shadowPropensity;
 
   // 2. Select Candidates
   const candidates = selectCandidateInterventions(revCase, diagnosis, merchantPolicy);

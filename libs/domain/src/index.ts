@@ -7,3 +7,4 @@ export * from './diagnosis';
 export * from './intervention';
 export * from './policy';
 export * from './planning';
+export * from './ml/propensity';

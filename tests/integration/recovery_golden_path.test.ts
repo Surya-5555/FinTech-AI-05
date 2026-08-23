@@ -166,21 +166,8 @@ describe('Phase 2: End-to-End Golden Path', () => {
     const outboxService = apiApp.get(OutboxPublisherService);
     await (outboxService as any).poll();
 
-    // Trigger worker manually for test predictability
-    const { RecoveryPlanExecutionProcessor } = await import('../../apps/worker/src/processors/recovery-plan-execution.processor');
-    const processor = workerApp.get(RecoveryPlanExecutionProcessor);
-    
-    await processor.process({
-      data: {
-        caseId: caseId,
-        planId: planId,
-        merchantId: merchantRef,
-        attempt: 1,
-      },
-      id: 'test-job',
-      opts: { attempts: 3 },
-      attemptsMade: 0,
-    } as any);
+    // The background worker (started via WorkerModule) will automatically pick up the enqueued job from Redis
+    // and process it asynchronously. We just need to wait for it.
 
     // 2. Wait for the Worker to process it asynchronously
     // We will poll the database for up to 10 seconds.

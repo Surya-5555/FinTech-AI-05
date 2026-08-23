@@ -47,7 +47,7 @@ export interface ExecutionProvider {
 
 export interface InterventionExecutionResult {
   interventionId: InterventionId;
-  status: 'SUCCEEDED' | 'FAILED' | 'RETRY_SCHEDULED' | 'ESCALATED' | 'STOPPED';
+  status: 'SUCCEEDED' | 'FAILED' | 'RETRY_SCHEDULED' | 'ESCALATED' | 'STOPPED' | 'AMBIGUOUS';
   executedAt: Date;
   recoveredAmount?: Money;
   externalReference?: string;
