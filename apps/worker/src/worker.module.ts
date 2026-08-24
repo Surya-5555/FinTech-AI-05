@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { RecoveryPlanExecutionProcessor } from './processors/recovery-plan-execution.processor';
 import { ReconciliationProcessor } from './processors/reconciliation.processor';
+import { StaleLockScannerProcessor } from './processors/stale-lock-scanner.processor';
 import { PrismaExecutionRepository, PrismaPlanningRepository } from '@rr/persistence';
 
 import { ProviderFactory } from './providers/provider.factory';
@@ -11,10 +13,12 @@ import { RazorpayTestModeRecoveryAdapter } from './providers/razorpay/razorpay-t
 import { RazorpayRetryAdapter } from './providers/razorpay/razorpay-retry.adapter';
 import { TwilioAdapter } from './providers/twilio/twilio.adapter';
 import { ResendAdapter } from './providers/email/resend.adapter';
+import { EscalationService } from './providers/escalation/escalation.service';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '../../.env' }),
+    ScheduleModule.forRoot(),
     BullModule.forRoot({
       connection: {
         url: process.env.REDIS_URL || 'redis://localhost:6379',
@@ -31,12 +35,14 @@ import { ResendAdapter } from './providers/email/resend.adapter';
   providers: [
     RecoveryPlanExecutionProcessor,
     ReconciliationProcessor,
+    StaleLockScannerProcessor,
     ProviderFactory,
     RazorpayAdapter,
     RazorpayTestModeRecoveryAdapter,
     RazorpayRetryAdapter,
     TwilioAdapter,
     ResendAdapter,
+    EscalationService,
     {
       provide: 'ExecutionRepository',
       useClass: PrismaExecutionRepository,
