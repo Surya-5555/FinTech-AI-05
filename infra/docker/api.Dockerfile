@@ -30,14 +30,7 @@ RUN pnpm install --frozen-lockfile
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY --from=deps /app/libs/config/node_modules ./libs/config/node_modules
-COPY --from=deps /app/libs/contracts/node_modules ./libs/contracts/node_modules
-COPY --from=deps /app/libs/domain/node_modules ./libs/domain/node_modules
-COPY --from=deps /app/libs/evaluation/node_modules ./libs/evaluation/node_modules
-COPY --from=deps /app/libs/llm/node_modules ./libs/llm/node_modules
-COPY --from=deps /app/libs/observability/node_modules ./libs/observability/node_modules
-COPY --from=deps /app/libs/persistence/node_modules ./libs/persistence/node_modules
-COPY --from=deps /app/libs/utils/node_modules ./libs/utils/node_modules
+COPY --from=deps /app/libs ./libs
 # Copy source
 COPY . .
 # Build Prisma Client
