@@ -14,7 +14,7 @@ import { ResendAdapter } from './providers/email/resend.adapter';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '../../.env' }),
     BullModule.forRoot({
       connection: {
         url: process.env.REDIS_URL || 'redis://localhost:6379',

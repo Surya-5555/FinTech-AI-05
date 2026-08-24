@@ -24,6 +24,7 @@ import { FailuresModule } from './modules/failures/failures.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '../../.env',
       load: [configuration],
     }),
     LoggerModule.forRoot({

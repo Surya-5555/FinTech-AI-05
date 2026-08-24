@@ -12,6 +12,10 @@ class CausalInferenceService:
         base_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(base_dir, '../../../artifacts/t_learner.pkl')
         features_path = os.path.join(base_dir, '../../../data/processed/hillstrom/feature_columns.json')
+        import sys
+        if not hasattr(sys.modules['__main__'], 'MultiTreatmentTLearner'):
+            sys.modules['__main__'].MultiTreatmentTLearner = MultiTreatmentTLearner
+
         with open(model_path, 'rb') as f:
             self.model = pickle.load(f)
             
