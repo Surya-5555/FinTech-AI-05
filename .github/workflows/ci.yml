@@ -59,11 +59,11 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      - name: Typecheck
-        run: pnpm typecheck
-
       - name: Prisma DB Push (Test DB)
         run: pnpm --filter @rr/persistence exec prisma migrate deploy
+
+      - name: Typecheck
+        run: pnpm typecheck
 
       - name: Run Tests
         run: pnpm test
