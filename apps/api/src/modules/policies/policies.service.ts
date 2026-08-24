@@ -17,9 +17,9 @@ export class PoliciesService {
   }
 
   async updateMerchantPolicy(merchantId: string, policyData: any) {
-    // In a real env, we'd check if we are in production. We can fake it or just throw 403 for now.
+    // Immutable policy enforcement for production environments.
     if (process.env.NODE_ENV === 'production') {
-      throw new ForbiddenException('FEATURE_NOT_AVAILABLE');
+      throw new ForbiddenException('Manual policy overrides are disabled in production.');
     }
 
     const prisma = getPrismaClient();
