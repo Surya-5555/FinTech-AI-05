@@ -6,6 +6,7 @@ import { TwilioAdapter } from './twilio/twilio.adapter';
 import { ResendAdapter } from './email/resend.adapter';
 import { RazorpayRetryAdapter } from './razorpay/razorpay-retry.adapter';
 import { RazorpayTestModeRecoveryAdapter } from './razorpay/razorpay-test-mode-recovery.adapter';
+import { EscalationService } from './escalation/escalation.service';
 
 @Injectable()
 export class ProviderFactory implements IProviderFactory {
@@ -15,6 +16,7 @@ export class ProviderFactory implements IProviderFactory {
     private readonly twilioAdapter: TwilioAdapter,
     private readonly emailAdapter: ResendAdapter,
     private readonly razorpayRetryAdapter: RazorpayRetryAdapter,
+    private readonly escalationService: EscalationService,
   ) {}
 
   getProvider(actionType: string): ExecutionProvider {
@@ -32,6 +34,8 @@ export class ProviderFactory implements IProviderFactory {
       case ExecutionActionType.SEND_SMS_REMINDER:
       case ExecutionActionType.SEND_VOICE_REMINDER:
         return this.twilioAdapter;
+      case ExecutionActionType.CREATE_HUMAN_ESCALATION:
+        return this.escalationService;
       default:
         throw new Error(`No provider configured for action type: ${actionType}`);
     }
