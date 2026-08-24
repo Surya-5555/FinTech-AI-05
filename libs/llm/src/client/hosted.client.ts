@@ -80,7 +80,6 @@ export class HostedLLMClient implements LLMClient {
         const errBody = await response.text().catch(() => '');
         record.status = AIInvocationStatus.PROVIDER_ERROR;
         record.latencyMs = Date.now() - startTime;
-        record.errorMessage = `Gemini API error ${response.status}: ${errBody.substring(0, 200)}`;
         return { record, isFallback: true };
       }
 
