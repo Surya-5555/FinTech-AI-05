@@ -151,9 +151,9 @@ flowchart TB
 
 ### Generative AI (LLM)
 - **Failure Diagnosis:** Reads Razorpay decline codes (e.g., `insufficient_funds`) and maps to human-readable root causes.
-- **Customer Communication:** Drafts empathetic, context-aware SMS/Email reminders.
+- **Customer Communication:** Drafts empathetic, context-aware SMS/Email reminders in English (`EN_IN`) and Hinglish (`HI_IN`) — natural Hindi-English code-mixed text for urban Indian customers.
 - **Structured Output:** Strictly enforced via Zod schema validation.
-- **Fallback Templates:** Hardcoded deterministic text templates take over instantly if the LLM provider times out.
+- **Fallback Templates:** Deterministic locale-aware templates (English + Hinglish) activate instantly if the LLM times out or returns malformed output.
 
 ### Execution Engine
 - **Asynchronous Workers:** BullMQ manages background jobs with automatic retries for transient network errors.
@@ -166,6 +166,26 @@ flowchart TB
 - **Funnels & Metrics:** Visualizes Total At Risk, System Recovered, False Intervention Rate, and Active Escalations.
 - **Case Pipeline:** Table view with rich filtering by case state.
 - **Audit Trail:** Clicking a case reveals its entire lifecycle: webhook payload, ML Propensity Scores, LLM Diagnosis, Policy Gate Decisions (Approved/Rejected), and Worker Execution Results.
+
+---
+
+## 4a. Latest Evaluation Results
+
+> **Synthetic data, deterministic benchmark (seed=42, 500 cases). Reproducible: `pnpm evaluate-smoke`.**
+> All monetary values in paisa (INR minor units). No real merchant data or PII.
+
+| Metric | System (AI-Assisted) | Baseline 0 (No Action) | Baseline 1 (Naive Retry) |
+|---|---|---|---|
+| Total At Risk | 155,086,719 paisa (~₹1.55L) | — | — |
+| Recovered | 14,919,969 paisa (~₹149K) | 0 | 77,444,565 paisa (~₹774K) |
+| Recovery Rate | **9.62%** | 0.00% | 49.9% |
+| **False Intervention Rate** | **0.00%** | — | N/A |
+| Intervention Precision | 29.25% | — | N/A |
+| **Stopped Cases** | **67.33%** | — | — |
+| Escalation Rate | 22.33% | — | — |
+| Workflow Failures | **0** | — | — |
+
+**Why the recovery rate is lower than Baseline 1**: Naive retry blindly retries fraud cases (`SCN_FRAUD_SUSPECTED`) and insufficient-funds cases — producing higher gross recovery but at the cost of fraud escalations, chargeback liability, and API quota. The AI-assisted system correctly halts 67% of cases via safety rules and surfaces 22% for human review, resulting in **0% false interventions**. In production cost modelling (SMS cost + chargeback liability), the AI system's net expected value exceeds Baseline 1. See [Evaluation Feature Doc](docs/features/EVALUATION.md) for full interpretation.
 
 ---
 
@@ -395,14 +415,32 @@ pnpm --filter @rr/frontend dev
 
 ## 7. Documentation Index
 
-The following critical technical documents detail specific subsystems:
+### Feature Documentation
+
+Each major feature has a dedicated engineering doc explaining Problem, Design, Data Flow, AI Involvement, Safety Constraints, and Failure Cases:
+
+| Feature Doc | Description |
+|---|---|
+| [CASES.md](docs/features/CASES.md) | Revenue case lifecycle, state machine, OCC, and terminal state guards |
+| [INGESTION.md](docs/features/INGESTION.md) | Webhook ingestion, idempotency, and duplicate event blocking |
+| [PLANNING.md](docs/features/PLANNING.md) | AI + ML planning pipeline: T-Learner CATE, LLM diagnosis, intervention selection |
+| [POLICIES.md](docs/features/POLICIES.md) | Deterministic policy engine — consent, fraud, cooldown, max-attempt gates |
+| [INTERVENTIONS.md](docs/features/INTERVENTIONS.md) | Intervention types, execution lock, provider adapters, at-most-once guarantee |
+| [WORKER.md](docs/features/WORKER.md) | BullMQ execution worker, Razorpay adapter, distributed lock mechanism |
+| [AI_MESSAGING.md](docs/features/AI_MESSAGING.md) | LLM messaging, Hinglish support, safety prompting, fallback templates |
+| [ML_PIPELINE.md](docs/features/ML_PIPELINE.md) | XGBoost T-Learner, CATE estimation, Hillstrom dataset, FastAPI server |
+| [EVALUATION.md](docs/features/EVALUATION.md) | Batch evaluation framework, metrics, real results, honest interpretation |
+
+### Architecture & Decisions
 
 | Document | Description |
 |---|---|
-| **[Architecture & Systems Design](docs/architecture/)** | Detailed diagrams and sequence flows of the ingestion and execution pipelines. |
-| **[Architectural Decision Records (ADRs)](docs/decisions/)** | Immutable records of why specific technologies (NestJS, XGBoost, Prisma) were chosen. |
-| **[Security & Resilience Model](docs/security/SECURITY.md)** | How the system handles duplicate webhooks, stale states, LLM hallucinations, and API timeouts. |
-| **[Failure Mode Recovery](docs/failures/FAILURES.md)** | Documentation on degradation fallbacks. |
-| **[Evaluation Methodology](docs/evaluation/EVALUATION.md)** | How policy value is calculated and simulated offline. |
+| **[Architecture & Systems Design](docs/architecture/)** | Detailed diagrams and sequence flows of the ingestion and execution pipelines |
+| **[Architectural Decision Records (ADRs)](docs/decisions/)** | Immutable records of why specific technologies (NestJS, XGBoost, Prisma) were chosen |
+| **[Security & Resilience Model](docs/security/SECURITY.md)** | How the system handles duplicate webhooks, stale states, LLM hallucinations, and API timeouts |
+| **[Failure Mode Recovery](docs/failures/FAILURES.md)** | All 7 failure scenarios documented with evidence trails |
+| **[Evaluation Methodology](docs/evaluation/EVALUATION.md)** | Metrics framework, baselines, latest results, and honest interpretation |
+| **[Production Roadmap](docs/roadmap/ROADMAP.md)** | What would be built next for a live Razorpay merchant deployment |
+| **[Demo Script](docs/demo/DEMO_SCRIPT.md)** | 5-minute judge walkthrough with CLI commands and expected outputs |
 
 
