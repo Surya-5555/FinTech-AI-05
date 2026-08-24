@@ -19,9 +19,13 @@ export class RazorpayAdapter implements ExecutionProvider {
       this.logger.error('CRITICAL SAFETY VIOLATION: Razorpay adapter initialized without test mode enabled.');
     }
 
-    const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_dummy_key';
-    const key_secret = process.env.RAZORPAY_KEY_SECRET || 'dummy_secret';
+    const key_id = process.env.RAZORPAY_KEY_ID || '';
+    const key_secret = process.env.RAZORPAY_KEY_SECRET || '';
     
+    if (!key_id || !key_secret) {
+      this.logger.warn('Razorpay API keys not provided. Requests will fail authorization.');
+    }
+
     const authHeader = `Basic ${Buffer.from(`${key_id}:${key_secret}`).toString('base64')}`;
 
     this.client = axios.create({
