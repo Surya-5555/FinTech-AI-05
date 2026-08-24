@@ -60,7 +60,7 @@ jobs:
         run: pnpm lint
 
       - name: Prisma DB Push (Test DB)
-        run: pnpm --filter @rr/persistence exec prisma migrate deploy
+        run: pnpm --filter @rr/persistence exec prisma db push
 
       - name: Generate Prisma Client
         run: pnpm --filter @rr/persistence run generate

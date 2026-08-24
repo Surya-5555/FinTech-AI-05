@@ -90,10 +90,10 @@ describe('Recovery Planning Domain Logic', () => {
     expect(candidates).toContain(InterventionType.PAYMENT_RETRY);
   });
 
-  it('proposes plan end-to-end for valid case', () => {
+  it('proposes plan end-to-end for valid case', async () => {
     const rc = mockCase();
     const ev = mockEvent('PAYMENT_FAILED', 'NETWORK_ERROR');
-    const proposal = proposeRecoveryPlan({
+    const proposal = await proposeRecoveryPlan({
       revCase: rc,
       sourceEvent: ev,
       merchantPolicy: mockMerchantPolicy,

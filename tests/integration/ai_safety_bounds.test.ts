@@ -21,7 +21,7 @@ import { getFallbackMessageDraft } from '../../libs/llm/src/fallbacks/templates'
 describe('Phase 3: AI Decision Quality & Safety Bounds', () => {
   
   describe('Deterministic Policy Boundary over AI', () => {
-    test('Intervention selection is strictly deterministic and ignores AI hallucinations', () => {
+    test('Intervention selection is strictly deterministic and ignores AI hallucinations', async () => {
       // The architecture inherently prevents AI from hallucinating interventions 
       // by placing the decision logic entirely in deterministic domain functions.
       // This test proves that the allowed interventions are strictly constrained.
@@ -82,7 +82,7 @@ describe('Phase 3: AI Decision Quality & Safety Bounds', () => {
         now: new Date()
       };
 
-      const result = proposeRecoveryPlan(input);
+      const result = await proposeRecoveryPlan(input);
 
       expect(result.plan.interventionType).not.toBe(InterventionType.PAYMENT_RETRY);
       expect(result.plan.interventionType).toBe(InterventionType.PAYMENT_LINK);

@@ -126,7 +126,7 @@ describe('Fintech Safety: Recovery Flow Guarantees', () => {
     const revCase = await setupCase();
     
     // Create a scenario where max attempts is 2, and we have already tried 2 times
-    const proposal = proposeRecoveryPlan({
+    const proposal = await proposeRecoveryPlan({
       revCase: {
         ...revCase,
         state: RevenueCaseState.RETRYABLE,
@@ -164,7 +164,7 @@ describe('Fintech Safety: Recovery Flow Guarantees', () => {
     const revCase = await setupCase();
     
     // Create a scenario where no consent is provided
-    const proposal = proposeRecoveryPlan({
+    const proposal = await proposeRecoveryPlan({
       revCase: {
         ...revCase,
         state: RevenueCaseState.DETECTED,

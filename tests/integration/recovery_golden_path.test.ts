@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 process.env.RAZORPAY_MODE = 'test';
 process.env.ENABLE_RAZORPAY_TEST_MODE = 'true';
 process.env.API_AUTH_TOKEN = 'test-auth-token';
+process.env.RAZORPAY_KEY_ID = 'rzp_test_valid_dummy_key';
+process.env.RAZORPAY_KEY_SECRET = 'valid_secret';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import crypto, { randomUUID } from 'crypto';
