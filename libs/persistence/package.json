@@ -12,12 +12,12 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^7.9.1",
     "@rr/contracts": "workspace:*",
     "@rr/domain": "workspace:*",
     "@rr/utils": "workspace:*"
   },
   "devDependencies": {
-    "prisma": "^5.22.0"
+    "prisma": "^7.9.1"
   }
 }
