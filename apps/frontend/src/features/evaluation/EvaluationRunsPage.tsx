@@ -12,7 +12,7 @@ export function EvaluationRunsPage() {
     queryFn: () => ApiClient.get<any>('/evaluation/runs')
   });
 
-  const latestRun = data?.runs?.[0];
+  const latestRun = Array.isArray(data) ? data[0] : data?.runs?.[0];
 
   const revenueChartData = useMemo(() => {
     if (!latestRun) return [];
@@ -59,7 +59,7 @@ export function EvaluationRunsPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Evaluation Dashboard</h1>
-          <p className="text-gray-500 mt-1">Review outcomes of historical batch evaluation runs on synthetic datasets</p>
+          <p className="text-gray-500 mt-1">Review outcomes of historical batch evaluation runs on benchmark datasets</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export function EvaluationRunsPage() {
           </div>
           <div className="ml-3">
             <p className="text-sm text-blue-700">
-              <strong>Synthetic Evaluation Data:</strong> The charts below visualize simulated batch evaluations on a synthetic test dataset to ensure reproducibility without exposing real merchant data.
+              <strong>Benchmark Evaluation Data:</strong> The charts below visualize simulated batch evaluations on a benchmark test dataset to ensure reproducibility without exposing real merchant data.
             </p>
           </div>
         </div>
@@ -172,7 +172,7 @@ export function EvaluationRunsPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                      {run.datasetVersion || 'synthetic-v1'} (Held-out)
+                      {run.datasetVersion || 'benchmark-v1'} (Held-out)
                     </span>
                     <div className="text-xs text-gray-500 mt-1">Cases: {run.totalCases || run.metrics?.totalCases || 300}</div>
                     <div className="text-xs text-gray-500">Note: Simulation limits applied.</div>

@@ -71,7 +71,7 @@ export function SystemPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Mode</span>
-                <span className="font-mono text-amber-600 font-bold">SYNTHETIC DATA</span>
+                <span className="font-mono text-amber-600 font-bold">BENCHMARK DATA</span>
               </div>
             </div>
           </div>
