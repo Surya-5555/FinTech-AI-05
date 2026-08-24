@@ -37,6 +37,8 @@ export enum RecoveryReasonCode {
   NO_SAFE_INTERVENTION = 'NO_SAFE_INTERVENTION',
   MERCHANT_POLICY_EXCLUDED = 'MERCHANT_POLICY_EXCLUDED',
   FRAUD_DETECTED = 'FRAUD_DETECTED',
+  CURRENCY_NOT_SUPPORTED = 'CURRENCY_NOT_SUPPORTED',
+  CROSS_BORDER_RESTRICTED = 'CROSS_BORDER_RESTRICTED',
 }
 
 export interface DiagnosisResult {
@@ -66,6 +68,8 @@ export interface MerchantRecoveryPolicyConfig {
   };
   staleEventLimitHours: number;
   featureFlags: Record<string, boolean>;
+  supportedCurrencies?: string[];
+  allowCrossBorder?: boolean;
   updatedAt: Date;
 }
 

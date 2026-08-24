@@ -64,6 +64,34 @@ export function evaluateRecoveryPolicy(input: PolicyEvaluationInput): PolicyDeci
     };
   }
 
+  // 2.6 Currency & Cross-Border Safeguards
+  if (merchantPolicy.supportedCurrencies && merchantPolicy.supportedCurrencies.length > 0) {
+    if (!merchantPolicy.supportedCurrencies.includes(revCase.amountAtRisk.currency)) {
+      reasonCodes.push(RecoveryReasonCode.CURRENCY_NOT_SUPPORTED);
+      return {
+        approved: false,
+        reasonCodes,
+        requiresHumanApproval: true,
+        stopCase: true,
+        escalationRequired: true,
+      };
+    }
+  }
+
+  if (merchantPolicy.allowCrossBorder === false) {
+    // Assuming 'INR' is the domestic currency. If not INR, block cross-border.
+    if (revCase.amountAtRisk.currency !== 'INR') {
+      reasonCodes.push(RecoveryReasonCode.CROSS_BORDER_RESTRICTED);
+      return {
+        approved: false,
+        reasonCodes,
+        requiresHumanApproval: true,
+        stopCase: true,
+        escalationRequired: true,
+      };
+    }
+  }
+
   // 3. Attempt cap
   if (revCase.attemptCount >= merchantPolicy.maxAttemptsPerCase) {
     reasonCodes.push(RecoveryReasonCode.ATTEMPT_LIMIT_REACHED);
