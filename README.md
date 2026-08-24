@@ -228,7 +228,7 @@ The following critical technical documents detail specific subsystems:
 
 | Document | Description |
 |---|---|
-| **[FINAL AI READINESS REPORT](FINAL_BUILDATHON_AI_READINESS.md)** | The forensic assessment of the Causal ML implementation, evaluation results, statistical limitations, and safety controls. |
+
 | **[Architecture & Systems Design](docs/architecture/)** | Detailed diagrams and sequence flows of the ingestion and execution pipelines. |
 | **[Architectural Decision Records (ADRs)](docs/decisions/)** | Immutable records of why specific technologies (NestJS, XGBoost, Prisma) were chosen. |
 | **[Security & Resilience Model](SECURITY.md)** | How the system handles duplicate webhooks, stale states, LLM hallucinations, and API timeouts. |
