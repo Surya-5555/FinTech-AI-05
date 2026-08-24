@@ -68,12 +68,13 @@ The `ProviderFactory` resolves the correct provider based on intervention type:
 
 | Failure | System Response |
 |---|---|
-| Worker crashes after lock acquired | Lock remains held; second delivery is blocked; stale lock TTL (supervisor) |
+| Worker crashes after lock acquired | Lock remains held; `StaleLockScannerProcessor` cron automatically detects TTL expiration, releases lock, and restores case to retryable state (no manual intervention). |
 | Provider returns 5xx | `PROVIDER_ERROR` recorded; BullMQ may retry (bounded) |
 | Provider times out | `TIMEOUT` result; BullMQ may retry (bounded) |
 | Razorpay API key invalid | `CONFIGURATION_ERROR`; case escalated; no retry |
-| DB unavailable when persisting result | Transaction fails; lock remains; supervisor escalates |
+| DB unavailable when persisting result | Transaction fails; lock remains; `StaleLockScannerProcessor` eventually recovers it |
 | BullMQ max retries exhausted | Dead-letter queue; case → `ESCALATED` |
+| Partial Payment Settled | System accurately computes remaining `amountAtRiskMinor` and reverts case to `DETECTED`, triggering AI to dynamically plan for the remaining balance. |
 
 ## Code References
 

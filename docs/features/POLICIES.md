@@ -33,6 +33,8 @@ AI Planning Service → RecoveryPlan
 | **Max Attempt Gate** | `case.attemptCount >= merchantPolicy.maxAttemptsPerCase` | Block with `MAX_ATTEMPTS_REACHED`; escalate |
 | **TRAI Calling Window & Frequency** | Must be within 09:00 - 19:59 IST and daily max attempts must not be exceeded | Block with `ATTEMPT_LIMIT_REACHED`; sets `RETRY_AFTER` |
 | **Mandatory Fraud Hard-Block** | `rootCause === RootCause.FRAUD` | Hard-block with `FRAUD_DETECTED`; `stopCase: true` |
+| **Currency Ledger Support** | `case.amountAtRisk.currency` must be in `merchantPolicy.supportedCurrencies` | Block with `UNSUPPORTED_CURRENCY`; `stopCase: true` |
+| **Cross-Border Restriction** | If currency is non-domestic, `merchantPolicy.allowCrossBorderRecovery` must be `true` | Block with `CROSS_BORDER_RESTRICTED`; `stopCase: true` |
 | **Cooldown Gate** | `lastAttemptAt + cooldownPeriodMs > now` | Block with `COOLDOWN_ACTIVE` |
 | **Terminal State Gate** | `case.status in TERMINAL_STATES` | Block; no-op (case already resolved) |
 | **Channel Availability Gate** | Provider must be configured | Block with `CHANNEL_UNAVAILABLE` |
@@ -44,6 +46,8 @@ Merchants can configure per-merchant policies (stored in the `MerchantPolicy` ta
 - `cooldownPeriodMs`: Minimum time between intervention attempts (default: 24 hours)
 - `allowedChannels`: Which intervention types are permitted for this merchant
 - `smsConsentRequired` / `emailConsentRequired`: Per-merchant consent configuration
+- `supportedCurrencies`: Array of supported ISO currencies (e.g., `["INR", "USD"]`)
+- `allowCrossBorderRecovery`: Boolean flag for attempting international recoveries
 
 ## AI Involvement
 

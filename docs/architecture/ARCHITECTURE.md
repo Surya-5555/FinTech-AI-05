@@ -23,5 +23,5 @@ Below is the directory of all architectural subsystems:
 ## Core Architectural Principles
 
 - **Deterministic Over Smart:** AI is used strictly for advisory evaluation (scoring, templating). All final decisions and state mutations are guarded by deterministic TypeScript policies.
-- **Idempotency Everywhere:** From unique webhooks in Postgres to Redis-locked worker execution, the system mathematically prevents duplicate financial operations.
+- **Idempotency & Concurrency:** From unique webhooks in Postgres to Redis-locked worker execution, the system mathematically prevents duplicate financial operations. Optimistic Concurrency Control (OCC) guards all state transitions against race conditions (e.g. in-flight customer payments preempting worker execution).
 - **Graceful Degradation:** If the LLM goes down, or the ML server is unreachable, the system falls back to standard retry logic. The architecture never fails open.
