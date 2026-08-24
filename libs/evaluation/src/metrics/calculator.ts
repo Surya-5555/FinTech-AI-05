@@ -1,5 +1,6 @@
 import { StrategyResult } from '../baselines/strategy';
 import { EvaluationCase } from '../dataset/schemas';
+import { RoiCalculator } from './calculate_net_roi';
 
 export interface EvaluationMetrics {
   // Money
@@ -44,6 +45,14 @@ export interface EvaluationMetrics {
 
   // Runtime
   evaluationRuntimeMs: number;
+
+  // ROI
+  systemNetRoiMinor: string;
+  baseline1NetRoiMinor: string;
+  systemCostMinor: string;
+  baseline1CostMinor: string;
+  systemChargebacks: number;
+  baseline1Chargebacks: number;
 }
 
 export class MetricsCalculator {
@@ -123,6 +132,9 @@ export class MetricsCalculator {
     
     const averageAttemptsPerCase = totalCases > 0 ? interventionsAttempted / totalCases : 0;
 
+    const b1Roi = RoiCalculator.computeNetRoi(baseline1Results, cases);
+    const sysRoi = RoiCalculator.computeNetRoi(sutResults, cases);
+
     return {
       totalAtRiskMinor: totalAtRisk.toString(),
       naturallyRecoveredMinor: naturallyRecovered.toString(),
@@ -154,7 +166,13 @@ export class MetricsCalculator {
       workflowFailures,
       aiDraftRequests: aiRequests,
       aiFallbackCount: aiFallbacks,
-      evaluationRuntimeMs
+      evaluationRuntimeMs,
+      systemNetRoiMinor: sysRoi.netRoiMinor,
+      baseline1NetRoiMinor: b1Roi.netRoiMinor,
+      systemCostMinor: sysRoi.totalCostMinor,
+      baseline1CostMinor: b1Roi.totalCostMinor,
+      systemChargebacks: sysRoi.chargebackCount,
+      baseline1Chargebacks: b1Roi.chargebackCount
     };
   }
 }

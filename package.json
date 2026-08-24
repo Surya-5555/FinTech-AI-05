@@ -16,8 +16,9 @@
     "test": "vitest run --passWithNoTests",
     "test:unit": "vitest run --project unit --passWithNoTests",
     "test:integration": "vitest run --project integration --passWithNoTests",
-    "evaluate": "pnpm --filter @rr/evaluator start evaluate",
+    "evaluate": "pnpm dlx tsx scripts/eval_runner.ts",
     "evaluate-smoke": "pnpm --filter @rr/evaluator start evaluate",
+    "generate-dataset": "pnpm dlx tsx scripts/generate_evaluation_dataset.ts",
     "load-test": "pnpm dlx tsx scripts/load-test.ts",
     "failure-demo": "pnpm dlx tsx scripts/resilience-test.ts",
     "clean": "pnpm -r clean"

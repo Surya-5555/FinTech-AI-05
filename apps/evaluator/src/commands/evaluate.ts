@@ -64,5 +64,8 @@ export async function runEvaluation(options: EvaluateOptions) {
     sutResults
   });
 
+  const summary = fs.readFileSync(path.join(outPath, 'summary.md'), 'utf8');
+  console.log('\n' + summary);
+
   console.log(chalk.green(`Evaluation complete. Results saved to ${outPath}`));
 }

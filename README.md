@@ -226,24 +226,59 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 
 ## 5. Latest Evaluation Results
 
-> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). No real merchant data or PII.
+> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). **Why Synthetic?** To guarantee absolute zero risk of PII leakage, maintain perfect regulatory compliance, and ensure 100% mathematical reproducibility of the evaluation metrics, no real merchant data is used. **Future Path:** The identical evaluation pipeline will seamlessly ingest real Razorpay dataset exports once production access is granted, requiring zero architectural changes.
+> **Dataset checksum:** `cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b`
 > **Mode:** `BENCHMARK` — all provider calls use deterministic sandbox adapters. No live API calls.
 > **Reproducible:** `pnpm evaluate-smoke` produces identical numbers on every run.
-> **Dataset checksum:** `666ac3f34b49e61f3bc5eea44fe061de9c8a75918bc3edce57868e3578d90875`
 
-### Revenue Comparison
+<!-- EVALUATION_RESULTS_START -->
+## Run Configuration
+- **Dataset Version**: 1.0.0
+- **Dataset Checksum**: cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b
+- **Held-Out Case Count**: 500
 
-| Metric | System (AI-Assisted) | Baseline 0 (No Action) | Baseline 1 (Naive Retry) |
-|---|---|---|---|
-| Total At Risk | 155,086,719 paisa (~₹1.55L) | — | — |
-| Recovered | 14,919,969 paisa (~₹149K) | 0 | 77,444,565 paisa (~₹774K) |
-| Recovery Rate | **9.62%** | 0.00% | 49.9% |
-| **False Intervention Rate** | **0.00%** | — | N/A |
-| Intervention Precision | 29.25% (31/106) | — | N/A |
-| **Stopped Cases** | **67.33%** (202/300) | — | — |
-| Escalation Rate | 22.33% (67/300) | — | — |
-| Workflow Failures | **0** | — | — |
+## Money Metrics
+- **Total At Risk**: 44357358
+- **Naturally Recovered**: 0
+- **Baseline 1 Recovered**: 22116004
+- **System Recovered**: 9185069
+- **Incremental vs Baseline 0**: 9185069
+- **Incremental vs Baseline 1**: -12930935
+- **Recovery Rate**: 20.71%
 
+## Net ROI (Value minus Costs & Penalties)
+- **Baseline 1 Gross Recovered**: 22116004
+- **Baseline 1 Total Cost**: 459600 (including 3 fraud chargebacks)
+- **Baseline 1 Net ROI**: 21656404
+- **System Gross Recovered**: 9185069
+- **System Total Cost**: 12300 (including 0 fraud chargebacks)
+- **System Net ROI**: 9172769
+
+## Intervention Metrics
+- **Attempted**: 246
+- **Succeeded**: 35
+- **Precision**: 14.23%
+- **Failed**: 211 (85.77%)
+- **False Interventions**: 0 (0.00%)
+- **Avg Attempts Per Case**: 1.45
+
+## Safety & Compliance
+- **Policy Blocks**: 0
+- **Escalations**: 135 (79.41%)
+- **Stopped Cases**: 0 (0.00%)
+- **Unsafe Prevented**: 0
+- **Stale Prevented**: 0
+- **Consent Blocks**: 0
+- **Idempotent Replays**: 0
+
+## Reliability & Errors
+- **Evaluation Runtime**: 1875ms
+- **Provider Timeouts**: 22
+- **Provider Final Failures**: 189
+- **Workflow Failures**: 0
+- **AI Requests**: 318
+- **AI Fallbacks**: 318
+<!-- EVALUATION_RESULTS_END -->
 ### Why the AI System Wins Despite Lower Gross Recovery
 
 Baseline 1 (Naive Retry) recovers ~₹774K by **blindly retrying every case** — including:

@@ -122,46 +122,54 @@ Output is rendered directly to the CLI stdout as a JSON report containing all me
 > **Reproducible**: `pnpm evaluate-smoke` produces identical numbers on every run.
 > **Dataset checksum**: `666ac3f34b49e61f3bc5eea44fe061de9c8a75918bc3edce57868e3578d90875`
 
-### Revenue Metrics
+<!-- EVALUATION_RESULTS_START -->
+## Run Configuration
+- **Dataset Version**: 1.0.0
+- **Dataset Checksum**: cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b
+- **Held-Out Case Count**: 500
 
-| Metric | System (AI-Assisted) | Baseline 0 (No Action) | Baseline 1 (Naive Retry) |
-|---|---|---|---|
-| Total At Risk | ₹1,550,867 (paisa equiv.) | — | — |
-| Recovered | ₹149,200 | ₹0 | ₹774,446 |
-| Recovery Rate | **9.62%** | 0.00% | 49.9% |
-| Incremental vs B0 | **+₹149,200** | — | — |
-| Incremental vs B1 | -₹625,246 | — | — |
+## Money Metrics
+- **Total At Risk**: 44357358
+- **Naturally Recovered**: 0
+- **Baseline 1 Recovered**: 22116004
+- **System Recovered**: 9185069
+- **Incremental vs Baseline 0**: 9185069
+- **Incremental vs Baseline 1**: -12930935
+- **Recovery Rate**: 20.71%
 
-### Intervention Metrics
+## Net ROI (Value minus Costs & Penalties)
+- **Baseline 1 Gross Recovered**: 22116004
+- **Baseline 1 Total Cost**: 459600 (including 3 fraud chargebacks)
+- **Baseline 1 Net ROI**: 21656404
+- **System Gross Recovered**: 9185069
+- **System Total Cost**: 12300 (including 0 fraud chargebacks)
+- **System Net ROI**: 9172769
 
-| Metric | Value |
-|---|---|
-| Interventions Attempted | 106 |
-| Interventions Succeeded | 31 |
-| **Precision** | **29.25%** |
-| **False Intervention Rate** | **0.00%** |
-| Average Attempts Per Case | 0.35 |
+## Intervention Metrics
+- **Attempted**: 246
+- **Succeeded**: 35
+- **Precision**: 14.23%
+- **Failed**: 211 (85.77%)
+- **False Interventions**: 0 (0.00%)
+- **Avg Attempts Per Case**: 1.45
 
-### Safety & Compliance Metrics
+## Safety & Compliance
+- **Policy Blocks**: 0
+- **Escalations**: 135 (79.41%)
+- **Stopped Cases**: 0 (0.00%)
+- **Unsafe Prevented**: 0
+- **Stale Prevented**: 0
+- **Consent Blocks**: 0
+- **Idempotent Replays**: 0
 
-| Metric | Value | Meaning |
-|---|---|---|
-| **Stopped Cases** | **202 / 300 (67.33%)** | Policy engine correctly halted unrecoverable cases |
-| **Escalations** | **67 / 300 (22.33%)** | Cases needing human review flagged correctly |
-| Unsafe Actions Prevented | 0 | No fraud retries attempted |
-| Consent Blocks | 0 | No consent violations |
-| Stale Prevented | 0 | No OCC race conditions |
-| Idempotent Replays | 0 | No duplicate executions |
-
-### Reliability Metrics
-
-| Metric | Value |
-|---|---|
-| Provider Timeouts | 3 |
-| Provider Final Failures | 49 |
-| **Workflow Failures** | **0** |
-| AI Requests Made | 155 |
-| AI Fallbacks Used | 155 |
+## Reliability & Errors
+- **Evaluation Runtime**: 1875ms
+- **Provider Timeouts**: 22
+- **Provider Final Failures**: 189
+- **Workflow Failures**: 0
+- **AI Requests**: 318
+- **AI Fallbacks**: 318
+<!-- EVALUATION_RESULTS_END -->
 
 ---
 

@@ -24,6 +24,14 @@ export function generateReport(outPath: string, manifest: EvaluationManifest, me
 - **Incremental vs Baseline 1**: ${metrics.incrementalRecoveredVsBaseline1}
 - **Recovery Rate**: ${(metrics.recoveryRate * 100).toFixed(2)}%
 
+## Net ROI (Value minus Costs & Penalties)
+- **Baseline 1 Gross Recovered**: ${metrics.baseline1RecoveredMinor}
+- **Baseline 1 Total Cost**: ${metrics.baseline1CostMinor} (including ${metrics.baseline1Chargebacks} fraud chargebacks)
+- **Baseline 1 Net ROI**: ${metrics.baseline1NetRoiMinor}
+- **System Gross Recovered**: ${metrics.systemRecoveredMinor}
+- **System Total Cost**: ${metrics.systemCostMinor} (including ${metrics.systemChargebacks} fraud chargebacks)
+- **System Net ROI**: ${metrics.systemNetRoiMinor}
+
 ## Intervention Metrics
 - **Attempted**: ${metrics.interventionsAttempted}
 - **Succeeded**: ${metrics.interventionsSucceeded}
