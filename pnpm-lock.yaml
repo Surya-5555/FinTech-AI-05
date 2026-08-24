@@ -90,7 +90,7 @@ importers:
         specifier: workspace:*
         version: link:../../libs/domain
       '@rr/llm':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../../libs/llm
       '@rr/persistence':
         specifier: workspace:*
