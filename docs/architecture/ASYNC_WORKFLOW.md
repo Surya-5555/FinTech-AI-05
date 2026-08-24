@@ -1,20 +1,23 @@
-# Asynchronous Workflow Foundation
+# Asynchronous Workflow & Queue Architecture
 
-## Architecture
-The system uses an event-driven async workflow orchestration.
+## Overview
+To guarantee system resilience, strict timeouts, and decoupled execution, all heavy processing (AI evaluation, external SMS dispatch, Razorpay API calls) occurs asynchronously. The system relies on **BullMQ** (backed by Redis) as the enterprise-grade task queue for distributing workloads across horizontally scalable worker nodes.
 
-1. **API / Core System**: Generates a `RecoveryPlan` with status `POLICY_APPROVED`.
-2. **Enqueue Intent**: The API saves an `OutboxEvent` to Postgres while updating the Case state.
-3. **Outbox Publisher**: A daemon reads the `OutboxEvent` and safely publishes a `RecoveryPlanExecutionJob` to Redis (BullMQ).
-4. **Worker (BullMQ Processor)**: Pulls the job.
-   - Re-reads canonical state (Postgres).
-   - Re-evaluates policies (domain logic).
-   - Checks idempotency keys.
-   - Prepares an `Intervention` record.
-   - Audits the action.
+## Queue Topologies
+The system segregates workloads into dedicated queues to prevent noisy-neighbor issues and ensure critical tasks are prioritized:
+1. **`planning-queue`**: Handles the AI evaluation phase (invoking LLMs/XGBoost to determine the optimal recovery strategy). This is compute-heavy.
+2. **`execution-queue`**: Handles the actual dispatch of SMS, Voice, or Email via external providers. This is network-heavy and prone to timeouts.
+3. **`reconciliation-queue`**: Periodically checks Razorpay for unresolved cases or stale states.
 
-## Safety Constraints
-- Workers do not own State. They only mediate execution and record outcomes.
-- Queue jobs carry identifiers, not secure data.
-- Transient DB failures in the worker cause a job retry (handled natively by BullMQ).
-- Persistent or logic failures cause the job to eventually fail and the case to escalate.
+## Worker Resilience
+
+### 1. Exponential Backoff & Retries
+External APIs (like Twilio, Resend, or Razorpay) fail. The BullMQ workers are configured with automatic retry policies using exponential backoff (e.g., 3 retries, starting at 5s, then 25s, then 125s). If a network timeout occurs, the job simply fails and is safely re-enqueued by BullMQ.
+
+### 2. Idempotent Job Execution
+Because BullMQ guarantees at-least-once delivery, workers must be idempotent.
+- Every job payload includes a unique identifier (the Case ID + Intervention ID).
+- Before a worker dispatches an SMS or makes a state change, it acquires a distributed lock in Redis and checks the database state. If the intervention is already marked `SUCCESS`, the worker safely exits (a no-op).
+
+### 3. Graceful Degradation
+If the LLM or Causal ML models are completely offline and retries are exhausted, the worker catches the failure, transitions the `RecoveryPlan` to `FAILED`, and the domain model automatically falls back to a deterministic, hardcoded baseline policy to ensure revenue recovery attempts continue even during AI outages.
