@@ -43,7 +43,7 @@ export class SystemUnderTestStrategy implements EvaluationStrategy {
     let aiRequests = 0;
     let aiFallbacks = 0;
 
-    // 1. Merchant Config Mock
+    // 1. Merchant Config Setup
     const merchantConfig: MerchantConfig = {
       minimumAmountMinor: 50n, // very low to not block
       supportedCurrencies: ['INR', 'USD'],
@@ -107,7 +107,7 @@ export class SystemUnderTestStrategy implements EvaluationStrategy {
       return this.buildResult(false, 0, 0, 0, 0, stops, 0, 0, 0, 0, 0, 0, 0, 0, '0');
     }
 
-    // Mock Case
+    // Initial Case Setup
     const revCase: RecoveryCase = {
       caseId: 'case_test' as RevenueCaseId,
       merchantId: 'merch_test' as MerchantId,
