@@ -1,4 +1,4 @@
-// Placeholder mappers for translating between Prisma types and Domain types.
+// Mappers for translating between Prisma types and Domain types.
 import { RecoveryCase, RecoveryPlan, AuditLog, InterventionOutcome, EvaluationRun, RevenueEvent, EventType, PaymentFailureReason, RevenueCaseState, InterventionType, InterventionStatus, AuditActorType, AuditAction } from '@rr/contracts';
 import type { 
   RevenueCase as PrismaRevenueCase, 
@@ -43,4 +43,3 @@ export function prismaRevenueCaseToContract(pr: PrismaRevenueCase): RecoveryCase
     correlationId: pr.correlationId as any,
   };
 }
-// Additional mappers will be filled in as needed.

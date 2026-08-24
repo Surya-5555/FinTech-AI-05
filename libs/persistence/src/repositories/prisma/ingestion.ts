@@ -30,7 +30,7 @@ export class PrismaIngestionRepository implements IngestionRepository {
           });
           const merchantSegment = existingMerchant ? existingMerchant.segment : 'default';
 
-          const dummyConfig: MerchantConfig = {
+          const defaultConfig: MerchantConfig = {
             supportedEventTypes: ['PAYMENT_FAILED', 'SUBSCRIPTION_FAILED', 'INVOICE_OVERDUE', 'CHECKOUT_ABANDONED'] as any,
             minimumAmountMinor: 100n,
             eventMaxAgeHours: 24,
@@ -51,7 +51,7 @@ export class PrismaIngestionRepository implements IngestionRepository {
             metadata: JSON.parse(existingEvent.metadataJson)
           };
 
-          const qual = qualifyFn(mockEvent, dummyConfig, merchantSegment);
+          const qual = qualifyFn(mockEvent, defaultConfig, merchantSegment);
 
           const rc: RecoveryCase | null = existingCaseModel ? {
             caseId: existingCaseModel.id as any,
