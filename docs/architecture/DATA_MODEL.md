@@ -45,6 +45,18 @@ erDiagram
     }
 ```
 
+---
+**OR (Text-Based Relationship Mapping for AI Accessibility):**
+
+- **Merchant** `owns` many **Customers**, `receives` many **RevenueEvents**, and `owns` many **RevenueCases**.
+- **Customer** `has` many **RevenueCases** and `triggers` many **RevenueEvents**.
+- **RevenueEvent** `initiates` exactly one (or zero) **RevenueCase**.
+- **RevenueCase** `evaluates` many **RecoveryPlans**, `executes` many **Interventions**, and `triggers` many **Escalations**.
+- **RecoveryPlan** `generates` many **Interventions**.
+- **Intervention** `results in` exactly one (or zero) **InterventionOutcome**.
+- **AuditLog**, **OutboxEvent**, and **AIInvocation** act as unlinked ledger tables without strict foreign key constraints.
+---
+
 > [!NOTE]
 > `AuditLog`, `OutboxEvent`, and `AIInvocation` are intentionally decoupled from strict foreign keys to maintain extremely high write-throughput without lock contention on the parent tables.
 
