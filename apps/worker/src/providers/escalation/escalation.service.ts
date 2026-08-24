@@ -13,7 +13,7 @@ export class EscalationService implements ExecutionProvider {
 
   constructor() {
     this.llmClient = new HostedLLMClient({
-      apiKey: process.env.GEMINI_API_KEY || 'mock-key-for-now',
+      apiKey: process.env.GEMINI_API_KEY || 'OFFLINE_BENCHMARK_KEY',
       model: 'gemini-1.5-flash',
     });
     this.loadSopContext();

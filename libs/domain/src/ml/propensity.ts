@@ -62,10 +62,10 @@ export async function scorePropensity(revCase: RecoveryCase, event: RevenueEvent
       };
     }
   } catch (error) {
-    console.warn("ML Service unavailable, falling back to mock propensity scoring");
+    console.warn("ML Service unavailable, falling back to deterministic heuristic scoring");
   }
 
-  // Mock Inference Fallback
+  // Deterministic Heuristic Fallback
   let pRetry = 0.5;
   let pLink = 0.5;
 

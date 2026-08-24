@@ -59,6 +59,10 @@ async function run() {
     injectMetrics(path.join(WORKSPACE_ROOT, 'docs/evaluation/EVALUATION.md'), metricsToInject);
 
     console.log('✅ Break Circular Evaluation Dependency: Documentation successfully updated with fresh metrics.');
+    
+    // Self-cleaning: Delete evaluation output directory to ensure no benchmark data remains on disk/git
+    fs.rmSync(outPath, { recursive: true, force: true });
+    console.log(`🧹 Cleaned up benchmark temporary directory: ${outPath}`);
   } catch (err: any) {
     console.error('Evaluation failed!');
     if (err.stdout) {

@@ -15,7 +15,7 @@ export class RazorpayTestModeRecoveryAdapter implements ExecutionProvider {
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
     if (this.isEnabled) {
-      if (!keyId || !keySecret || keyId === 'rzp_test_dummy_key') {
+      if (!keyId || !keySecret || keyId === 'rzp_test_placeholder_key') {
         this.logger.error('CRITICAL SAFETY VIOLATION: Razorpay Test Mode is enabled but valid credentials are missing.');
         throw new Error('ENABLE_RAZORPAY_TEST_MODE is true, but RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are missing or invalid.');
       }

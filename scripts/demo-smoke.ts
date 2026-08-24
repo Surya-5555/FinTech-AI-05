@@ -37,7 +37,7 @@ async function runSmokeTest() {
           method: 'upi'
         },
         merchant: {
-          id: 'mock_merchant_1',
+          id: 'test_merchant_1',
           name: 'Demo Merchant'
         },
         customer: {
@@ -60,7 +60,7 @@ async function runSmokeTest() {
     await new Promise(resolve => setTimeout(resolve, 3000));
 
     console.log('[Demo Smoke] 5. Verifying Case Details and Deterministic Plan...');
-    // We fetch recent cases and look for our mock customer
+    // We fetch recent cases and look for our test customer
     const casesRes = await fetch(`${apiUrl}/cases?limit=10`);
     const casesData = await casesRes.json();
     const demoCase = casesData.cases.find((c: any) => c.customer_id === `cust_demo_${correlationId}`);

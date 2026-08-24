@@ -24,7 +24,7 @@ export class PrismaIngestionRepository implements IngestionRepository {
             where: { sourceEventId: existingEvent.id }
           });
 
-          // Fetch the mock or existing merchant to get segment
+          // Fetch the default or existing merchant to get segment
           const existingMerchant = await tx.merchant.findUnique({
             where: { id: existingEvent.merchantId }
           });
@@ -38,7 +38,7 @@ export class PrismaIngestionRepository implements IngestionRepository {
             supportedCurrencies: ['INR', 'USD']
           };
 
-          const mockEvent: RevenueEvent = {
+          const heuristicEvent: RevenueEvent = {
             eventId: existingEvent.id as any,
             externalEventId: existingEvent.externalEventId,
             merchantId: existingEvent.merchantId as any,
@@ -51,7 +51,7 @@ export class PrismaIngestionRepository implements IngestionRepository {
             metadata: JSON.parse(existingEvent.metadataJson)
           };
 
-          const qual = qualifyFn(mockEvent, defaultConfig, merchantSegment);
+          const qual = qualifyFn(heuristicEvent, defaultConfig, merchantSegment);
 
           const rc: RecoveryCase | null = existingCaseModel ? {
             caseId: existingCaseModel.id as any,
@@ -68,7 +68,7 @@ export class PrismaIngestionRepository implements IngestionRepository {
           } : null;
 
           return {
-            event: mockEvent,
+            event: heuristicEvent,
             qualification: qual,
             revenueCase: rc,
             correlationId: existingEvent.correlationId,

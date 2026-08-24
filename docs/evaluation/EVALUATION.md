@@ -163,7 +163,7 @@ Output is rendered directly to the CLI stdout as a JSON report containing all me
 - **Idempotent Replays**: 0
 
 ## Reliability & Errors
-- **Evaluation Runtime**: 1875ms
+- **Evaluation Runtime**: 1884ms
 - **Provider Timeouts**: 22
 - **Provider Final Failures**: 189
 - **Workflow Failures**: 0

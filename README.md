@@ -272,7 +272,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 - **Idempotent Replays**: 0
 
 ## Reliability & Errors
-- **Evaluation Runtime**: 1875ms
+- **Evaluation Runtime**: 1884ms
 - **Provider Timeouts**: 22
 - **Provider Final Failures**: 189
 - **Workflow Failures**: 0

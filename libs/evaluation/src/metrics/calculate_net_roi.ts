@@ -20,6 +20,8 @@ export class RoiCalculator {
       const result = results[i];
       const c = cases[i];
       
+      if (!result || !c) continue;
+
       grossRecovered += BigInt(result.recoveredAmountMinor);
       
       // Cost of interventions
