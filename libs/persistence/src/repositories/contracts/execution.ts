@@ -18,7 +18,8 @@ export interface ExecutionRepository {
   markCaseForStopAfterWorkflowFailure(caseId: string, reason: string): Promise<void>;
   
   claimExecutionLock(interventionId: string, workerId: string): Promise<boolean>;
-  persistExecutionResult(result: InterventionExecutionResult, resultingCaseState: string): Promise<void>;
+  releaseStaleLocks(staleLockMinutes: number): Promise<number>;
+  persistExecutionResult(result: InterventionExecutionResult, resultingCaseState: string, remainingAmountAtRiskMinor?: bigint): Promise<void>;
   scheduleRetry(interventionId: string, delayMs: number): Promise<void>;
   blockExecution(interventionId: string, reason: string): Promise<void>;
 }

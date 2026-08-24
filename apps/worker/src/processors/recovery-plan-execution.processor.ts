@@ -3,7 +3,7 @@ import { Job, Queue } from 'bullmq';
 import { Inject, Logger } from '@nestjs/common';
 import { ExecutionRepository, PlanningRepository } from '@rr/persistence';
 import { RecoveryPlanExecutionJob, InterventionExecutionResult, RevenueCaseState, InterventionExecutionRequest } from '@rr/contracts';
-import { proposeRecoveryPlan } from '@rr/domain';
+import { proposeRecoveryPlan, evaluateRecoveryPolicy } from '@rr/domain';
 import { ProviderFactory } from '../providers/provider.factory';
 import { randomUUID } from 'crypto';
 
@@ -63,46 +63,62 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
 
       // Re-evaluate policy to ensure it's still valid
       const activeInterventionSummary = await this.planningRepo.getActiveInterventionSummary(payload.caseId);
-      const proposal = await proposeRecoveryPlan({
+      
+      // Fix Time-Drift Discrepancy: Only run evaluateRecoveryPolicy to check if the CURRENT plan's intervention is still valid,
+      // without invoking the whole LangGraph which might hallucinate a different intervention or permanently stop the case.
+      const diagnosis = await proposeRecoveryPlan({
         revCase: { ...revCase, state: RevenueCaseState.DETECTED },
         sourceEvent,
         merchantPolicy,
         activeInterventionSummary,
         now: new Date(),
+      }).then(p => p.diagnosis);
+
+      const policyDecision = evaluateRecoveryPolicy({
+        revCase: { ...revCase, state: RevenueCaseState.DETECTED },
+        diagnosis,
+        proposedIntervention: plan.interventionType,
+        merchantPolicy,
+        activeInterventionSummary,
+        now: new Date(),
       });
 
-      if (proposal.plan.planStatus !== 'POLICY_APPROVED') {
-        this.logger.warn(`Policy re-evaluation rejected plan ${plan.planId}`);
-        await this.executionRepo.markCaseForStopAfterWorkflowFailure(
-          payload.caseId, 
-          'Policy re-evaluation rejected intervention'
-        );
-        return { result: 'STOPPED', reason: 'POLICY_REJECTED_ON_REVALUATION' };
-      }
-
-      if (proposal.plan.interventionType !== plan.interventionType) {
-        this.logger.warn(`Policy re-evaluation recommended a different intervention, stopping workflow`);
-        await this.executionRepo.markCaseForStopAfterWorkflowFailure(
-          payload.caseId, 
-          'Policy recommended different intervention'
-        );
-        return { result: 'STOPPED', reason: 'INTERVENTION_MISMATCH' };
+      if (!policyDecision.approved) {
+        this.logger.warn(`Policy re-evaluation rejected intervention ${plan.interventionType} due to ${policyDecision.reasonCodes.join(', ')}`);
+        
+        if (policyDecision.stopCase) {
+           await this.executionRepo.markCaseForStopAfterWorkflowFailure(payload.caseId, 'Policy re-evaluation permanently rejected intervention');
+           return { result: 'STOPPED', reason: 'POLICY_REJECTED_ON_REVALUATION_FATAL' };
+        } else {
+           // It's a transient rejection (e.g. time-drift outside contact window)
+           // Discard the job, let the reconciliation/cron pick it up when window opens or retry after delay
+           return { result: 'DISCARDED', reason: 'POLICY_REJECTED_TRANSIENT' };
+        }
       }
 
       // C. Idempotency Key for Intervention
       const interventionIdempotencyKey = `${plan.planId}-${plan.interventionType}-${payload.attempt}`;
 
       // D. Persist prepared intervention transactionally
-      const intervention = await this.executionRepo.prepareInterventionForExecution({
-        planId: plan.planId,
-        caseId: plan.caseId,
-        merchantId: payload.merchantId,
-        interventionType: plan.interventionType,
-        idempotencyKey: interventionIdempotencyKey,
-        attemptCount: payload.attempt,
-      });
-
-      this.logger.log(`Intervention prepared for execution: ${intervention.id}`);
+      let intervention = await this.executionRepo.findInterventionByIdempotencyKey(interventionIdempotencyKey);
+      
+      if (!intervention) {
+        intervention = await this.executionRepo.prepareInterventionForExecution({
+          planId: plan.planId,
+          caseId: plan.caseId,
+          merchantId: payload.merchantId,
+          interventionType: plan.interventionType,
+          idempotencyKey: interventionIdempotencyKey,
+          attemptCount: payload.attempt,
+        });
+        this.logger.log(`Intervention prepared for execution: ${intervention.id}`);
+      } else {
+        this.logger.log(`Found existing intervention for idempotency key ${interventionIdempotencyKey}: ${intervention.id}`);
+        // If it's already succeeded or failed, skip
+        if (intervention.status === 'SUCCEEDED' || intervention.status === 'FAILED') {
+           return { result: 'DISCARDED', reason: 'ALREADY_EXECUTED' };
+        }
+      }
 
       // E. Execution Phase
       // 1. Claim Lock
@@ -156,12 +172,27 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
 
       // Map intervention outcome to case state
       let nextCaseState = RevenueCaseState.RECOVERED; // Simplified
+      let remainingAmountAtRiskMinor: bigint | undefined = undefined;
+
       if (executionResult.status === 'SUCCEEDED') {
         if (actionType === 'CREATE_PAYMENT_LINK' || actionType.startsWith('SEND_')) {
           nextCaseState = RevenueCaseState.AWAITING_CUSTOMER_ACTION;
         } else if (actionType === 'INITIATE_PAYMENT_RETRY') {
           // In real life, might be AWAITING_GATEWAY_RESPONSE, but assuming synchronous here
-          nextCaseState = executionResult.recoveredAmount ? RevenueCaseState.RECOVERED : RevenueCaseState.FAILED; 
+          if (executionResult.recoveredAmount) {
+             const recovered = BigInt(executionResult.recoveredAmount.amountMinor);
+             const atRisk = BigInt(revCase.amountAtRisk.amountMinor);
+             if (recovered < atRisk) {
+                // Partial recovery
+                nextCaseState = RevenueCaseState.DETECTED; // Go back to start of workflow for remaining amount
+                remainingAmountAtRiskMinor = atRisk - recovered;
+                this.logger.log(`Partial recovery detected: ${recovered} recovered, ${remainingAmountAtRiskMinor} remaining.`);
+             } else {
+                nextCaseState = RevenueCaseState.RECOVERED;
+             }
+          } else {
+             nextCaseState = RevenueCaseState.FAILED;
+          }
         }
       } else if (executionResult.status === 'AMBIGUOUS') {
          nextCaseState = RevenueCaseState.AMBIGUOUS;
@@ -182,7 +213,7 @@ export class RecoveryPlanExecutionProcessor extends WorkerHost {
       }
 
       // 6. Persist Atomic Outcome
-      await this.executionRepo.persistExecutionResult(executionResult, nextCaseState);
+      await this.executionRepo.persistExecutionResult(executionResult, nextCaseState, remainingAmountAtRiskMinor);
 
       this.logger.log(`Execution completed with status ${executionResult.status}, case is now ${nextCaseState}`);
       return { result: 'EXECUTED', status: executionResult.status, interventionId: intervention.id };

@@ -203,7 +203,43 @@ export class PrismaExecutionRepository implements ExecutionRepository {
     }
   }
 
-  async persistExecutionResult(result: any, resultingCaseState: string): Promise<void> {
+  async releaseStaleLocks(staleLockMinutes: number): Promise<number> {
+    const prisma = getPrismaClient();
+    const staleThreshold = new Date(Date.now() - staleLockMinutes * 60 * 1000);
+    
+    // We assume EXECUTING status means it is locked and currently running.
+    // We revert it to PENDING if we release the lock. Or we can just leave it EXECUTING and wait for retry,
+    // but typically we'd just clear the lock and let the system pick it up again if it matches picking criteria.
+    // Wait, the status should be reverted or we just release the lock.
+    const updated = await prisma.intervention.updateMany({
+      where: {
+        lockedAt: {
+          lte: staleThreshold,
+        },
+      },
+      data: {
+        lockedAt: null,
+        lockedBy: null,
+      },
+    });
+
+    // Also handle OutboxEvents that are stale
+    const updatedOutbox = await prisma.outboxEvent.updateMany({
+      where: {
+        lockedAt: {
+          lte: staleThreshold,
+        },
+      },
+      data: {
+        lockedAt: null,
+        lockedBy: null,
+      },
+    });
+
+    return updated.count + updatedOutbox.count;
+  }
+
+  async persistExecutionResult(result: any, resultingCaseState: string, remainingAmountAtRiskMinor?: bigint): Promise<void> {
     const prisma = getPrismaClient();
     await prisma.$transaction(async (tx) => {
       const intervention = await tx.intervention.findUnique({
@@ -264,7 +300,8 @@ export class PrismaExecutionRepository implements ExecutionRepository {
             state: resultingCaseState,
             version: existingCase.version + 1,
             updatedAt: new Date(),
-          }
+            ...(remainingAmountAtRiskMinor !== undefined && { amountAtRiskMinor: remainingAmountAtRiskMinor }),
+          },
         });
 
         await tx.auditLog.create({
