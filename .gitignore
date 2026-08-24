@@ -67,3 +67,14 @@ docs/demo/*.webm
 docs/demo/*.gif
 # Data
 data/
+
+# Evaluation & Benchmark Outputs
+benchmark/
+eval-results/
+evaluation-results/
+benchmark-results/
+docs/benchmark-results/
+
+# Project Status & Management
+project-status/
+TODO.md
