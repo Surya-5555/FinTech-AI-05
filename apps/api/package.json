@@ -22,7 +22,7 @@
     "@prisma/client": "^5.22.0",
     "@rr/contracts": "workspace:*",
     "@rr/domain": "workspace:*",
-    "@rr/llm": "workspace:^",
+    "@rr/llm": "workspace:*",
     "@rr/persistence": "workspace:*",
     "@rr/utils": "workspace:*",
     "class-transformer": "^0.5.1",
