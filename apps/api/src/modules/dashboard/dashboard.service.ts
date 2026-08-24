@@ -60,7 +60,7 @@ export class DashboardService {
         provider: 'HEALTHY',
         queue: 'HEALTHY'
       },
-      dataMode: 'SYNTHETIC', // or 'DEMO'
+      dataMode: 'BENCHMARK', // anonymized benchmark dataset mode
       generatedAt: new Date().toISOString()
     };
   }
