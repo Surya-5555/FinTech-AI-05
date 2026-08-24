@@ -31,7 +31,8 @@ AI Planning Service → RecoveryPlan
 |---|---|---|
 | **Consent Gate** | Customer must have `smsConsent=true` for SMS; `emailConsent=true` for email | Block with `CONSENT_MISSING` |
 | **Max Attempt Gate** | `case.attemptCount >= merchantPolicy.maxAttemptsPerCase` | Block with `MAX_ATTEMPTS_REACHED`; escalate |
-| **Fraud Code Gate** | `failureCode in FRAUD_CODES` | Block all intervention types; force ESCALATE |
+| **TRAI Calling Window & Frequency** | Must be within 09:00 - 19:59 IST and daily max attempts must not be exceeded | Block with `ATTEMPT_LIMIT_REACHED`; sets `RETRY_AFTER` |
+| **Mandatory Fraud Hard-Block** | `rootCause === RootCause.FRAUD` | Hard-block with `FRAUD_DETECTED`; `stopCase: true` |
 | **Cooldown Gate** | `lastAttemptAt + cooldownPeriodMs > now` | Block with `COOLDOWN_ACTIVE` |
 | **Terminal State Gate** | `case.status in TERMINAL_STATES` | Block; no-op (case already resolved) |
 | **Channel Availability Gate** | Provider must be configured | Block with `CHANNEL_UNAVAILABLE` |

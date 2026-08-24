@@ -139,7 +139,9 @@ flowchart TB
 - **Distributed Execution Lock:** Before any provider call, the worker does an atomic `UPDATE ... WHERE lockedBy IS NULL`. If another worker already holds the lock, 0 rows are updated → silent drop. Guarantees at-most-once execution.
 - **Maximum-Attempt Enforcement:** `merchantPolicy.maxAttemptsPerCase` (default: 3) is checked synchronously. Exceeding it forces `ESCALATED` state before any API call.
 - **Consent Enforcement:** SMS requires `smsConsent=true`; email requires `emailConsent=true`. Missing consent → `CONSENT_MISSING` reason code → intervention blocked.
-- **Fraud Code Gate:** If `failureCode` maps to a known fraud indicator, all non-escalation interventions are blocked — the case is force-escalated regardless of AI recommendation.
+- **Mandatory Fraud Hard-Block:** If `failureCode` maps to a known fraud indicator (e.g. `SUSPECTED_FRAUD`), the root cause is deterministically flagged as `FRAUD` (0% recovery confidence), and all interventions are hard-blocked (`stopCase: true`) regardless of AI recommendation.
+- **TRAI Calling Window & Frequency Compliance:** Strictly enforces the 09:00 AM – 08:00 PM IST contact window and daily maximum messaging limits (via `contactWindowMetadataJson`). Interventions outside this window are gracefully deferred with a `RETRY_AFTER` directive.
+- **Secure Webhook Verification:** Cryptographically validates `x-razorpay-signature` using HMAC-SHA256 against raw buffers (via NestJS `rawBody`) and `crypto.timingSafeEqual()` to prevent timing side-channel attacks.
 - **Cooldown Gate:** `lastAttemptAt + cooldownPeriodMs > now()` blocks rapid re-attempts on the same case.
 - **Failure Isolation:** AI failures, ML timeouts, and provider errors are caught within their bounded context. They never propagate to the ingestion layer — the system degrades gracefully.
 

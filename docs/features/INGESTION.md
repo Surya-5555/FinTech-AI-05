@@ -59,6 +59,7 @@ Every incoming webhook payload is validated against a strict typed DTO before re
 ## Safety Constraints
 
 - **Database-Level Uniqueness**: The `@@unique` constraint is the authoritative idempotency mechanism. Application-level caches are supplementary.
+- **Secure Webhook Verification**: Cryptographically validates `x-razorpay-signature` using HMAC-SHA256 against raw buffers (via NestJS `rawBody`) and `crypto.timingSafeEqual()` to prevent timing side-channel attacks.
 - **Atomic Case Creation**: Case creation and the initial state machine transition are wrapped in a single Prisma transaction. Partial state is impossible.
 - **Auth Token Enforcement**: The `POST /api/events` endpoint requires a valid `API_AUTH_TOKEN` header. Unauthenticated requests are rejected with HTTP 401 before any processing begins.
 - **No Silent Drops**: Validation failures return HTTP 422 with structured error codes. Operators can inspect why a webhook was rejected.
