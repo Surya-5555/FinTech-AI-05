@@ -31,7 +31,7 @@ class CausalInferenceService:
         
         # We need to one-hot encode based on expected columns
         # First, ensure categorical columns exist
-        cat_cols = ['history_segment', 'zip_code', 'channel']
+        cat_cols = ['amountSegment', 'customerLocation', 'paymentChannel']
         for col in cat_cols:
             if col not in df.columns:
                 df[col] = 'Unknown'
@@ -49,11 +49,11 @@ class CausalInferenceService:
 
     def predict(self, payload: dict):
         """
-        Payload should contain:
-        - recency, history, mens, womens, newbie, history_segment, zip_code, channel
+        Payload should contain Domain-Specific features:
+        - daysSinceLastPayment, amountMinor, isCardError, isHighValueMerchant, isFirstAttempt, amountSegment, customerLocation, paymentChannel
         """
-        # The invoice amount is proxy'd by history for our offline validation
-        invoice_amount = payload.get('history', 0)
+        # The invoice amount is proxy'd by amountMinor for our offline validation
+        invoice_amount = payload.get('amountMinor', 0)
         
         X = self.prepare_features(payload)
         
@@ -86,14 +86,14 @@ if __name__ == "__main__":
     service = CausalInferenceService()
     
     sample_payload = {
-        "recency": 2,
-        "history": 150.0,
-        "mens": 1,
-        "womens": 0,
-        "newbie": 0,
-        "history_segment": "2) $100 - $200",
-        "zip_code": "Urban",
-        "channel": "Web"
+        "daysSinceLastPayment": 2,
+        "amountMinor": 150.0,
+        "isCardError": 1,
+        "isHighValueMerchant": 0,
+        "isFirstAttempt": 0,
+        "amountSegment": "2) $100 - $200",
+        "customerLocation": "Urban",
+        "paymentChannel": "Web"
     }
     
     print("Testing inference...")

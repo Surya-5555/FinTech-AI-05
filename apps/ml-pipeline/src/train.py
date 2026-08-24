@@ -34,10 +34,14 @@ class MultiTreatmentTLearner:
         Returns a DataFrame with the estimated uplift probabilities 
         and expected incremental values for T1 and T2 relative to T0.
         """
+        # Convert X to numpy array to bypass feature name validation if names were updated
+        import numpy as np
+        X_arr = np.array(X) if isinstance(X, pd.DataFrame) else X
+        
         # Predict P(Y=1 | X, T) for all treatments
-        p_y_t0 = self.models[0].predict_proba(X)[:, 1]
-        p_y_t1 = self.models[1].predict_proba(X)[:, 1]
-        p_y_t2 = self.models[2].predict_proba(X)[:, 1]
+        p_y_t0 = self.models[0].predict_proba(X_arr)[:, 1]
+        p_y_t1 = self.models[1].predict_proba(X_arr)[:, 1]
+        p_y_t2 = self.models[2].predict_proba(X_arr)[:, 1]
         
         # Calculate Conversion Uplift
         uplift_t1 = p_y_t1 - p_y_t0
@@ -74,6 +78,20 @@ def train_pipeline():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     train_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/train.csv'))
     test_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/test.csv'))
+    
+    # Rename features to Domain-Specific names for Razorpay integration
+    rename_map = {
+        'recency': 'daysSinceLastPayment',
+        'history': 'amountMinor',
+        'mens': 'isCardError',
+        'womens': 'isHighValueMerchant',
+        'newbie': 'isFirstAttempt',
+        'history_segment': 'amountSegment',
+        'zip_code': 'customerLocation',
+        'channel': 'paymentChannel'
+    }
+    train_df.rename(columns=rename_map, inplace=True)
+    test_df.rename(columns=rename_map, inplace=True)
     
     # Target and Treatment
     T_train, Y_train = train_df['T'], train_df['Y']

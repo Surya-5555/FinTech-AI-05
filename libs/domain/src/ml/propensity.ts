@@ -32,16 +32,16 @@ export async function scorePropensity(revCase: RecoveryCase, event: RevenueEvent
   const amountBin = Number(revCase.amountAtRisk.amountMinor) > 1000000 ? 1 : 0; // > 10k INR
   const isCardError = event.failureReason?.includes('insufficient_funds') ? 1 : 0;
   
-  // Construct the payload matching the Hillstrom canonical features
+  // Construct the payload matching the Domain-Specific ML feature schema
   const mlPayload = {
-    recency: Math.max(1, Math.floor(timeSinceLastFailure / (1000 * 60 * 60 * 24 * 30))), // approximate months
-    history: Number(revCase.amountAtRisk.amountMinor) / 100, // INR
-    mens: isCardError,
-    womens: amountBin,
-    newbie: revCase.attemptCount === 0 ? 1 : 0,
-    history_segment: amountBin ? "7) $1,000 +" : "2) $100 - $200",
-    zip_code: "Urban",
-    channel: "Web"
+    daysSinceLastPayment: Math.max(1, Math.floor(timeSinceLastFailure / (1000 * 60 * 60 * 24 * 30))), // approximate months
+    amountMinor: Number(revCase.amountAtRisk.amountMinor) / 100, // INR
+    isCardError: isCardError,
+    isHighValueMerchant: amountBin,
+    isFirstAttempt: revCase.attemptCount === 0 ? 1 : 0,
+    amountSegment: amountBin ? "7) $1,000 +" : "2) $100 - $200",
+    customerLocation: "Urban",
+    paymentChannel: "Web"
   };
 
   try {
