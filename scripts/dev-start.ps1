@@ -70,9 +70,9 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "  All services are starting!            " -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-Write-Host "  Dashboard   → http://localhost:5173   " -ForegroundColor White
-Write-Host "  API         → http://localhost:3000   " -ForegroundColor White
-Write-Host "  ML Pipeline → http://localhost:8000   " -ForegroundColor White
+Write-Host "  Dashboard   -> http://localhost:5173   " -ForegroundColor White
+Write-Host "  API         -> http://localhost:3000   " -ForegroundColor White
+Write-Host "  ML Pipeline -> http://localhost:8000   " -ForegroundColor White
 Write-Host ""
 Write-Host "  Wait ~15s for all services to be ready." -ForegroundColor DarkGray
 Write-Host ""
