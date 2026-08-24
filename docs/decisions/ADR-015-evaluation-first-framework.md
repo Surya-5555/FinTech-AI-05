@@ -6,7 +6,7 @@ The Razorpay AI Buildathon requires an honest, reproducible report showing incre
 ## Decision
 We have built a completely isolated evaluation framework (`@rr/evaluator`) that runs locally using seeded, deterministic synthetic data generated via an LCG (Linear Congruential Generator). 
 
-1. **Synthetic Data**: We generate cases (`data/evaluation/v1`) using a seeded random number generator so all developers get the exact same dataset without sharing PII. 
+1. **Benchmark Data**: We generate cases dynamically using a seeded random number generator so all developers get the exact same dataset without sharing PII. 
 2. **Baselines**:
    - `Baseline0`: No Recovery (baseline simulation).
    - `Baseline1`: Naive Retry (attempts recovery blindly without policy constraints).

@@ -182,4 +182,4 @@ Open `libs/llm/src/fallbacks/templates.ts`:
 | ML scores all 0 | ML server may not be running; planning falls back gracefully (expected) |
 | curl 401 | Set `API_AUTH_TOKEN` env var matching `.env` value |
 | No case in dashboard | Check worker logs; BullMQ may need Redis connectivity |
-| `pnpm evaluate-smoke` fails | No DB needed; check if `data/evaluation/v1/heldout.jsonl` exists |
+| `pnpm evaluate-smoke` fails | No DB needed; ensure the CLI framework dependencies are installed |

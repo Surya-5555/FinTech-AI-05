@@ -9,8 +9,7 @@ This document describes how the Revenue Recovery system is measured. The evaluat
 ### Provenance
 The evaluation dataset is **purpose-built with deterministic generation**. No real merchant data, customer PII, or production transaction records are used.
 
-- **Location**: `data/evaluation/v1/`
-- **Generator**: `scripts/generate_evaluation_dataset.ts` using a deterministic PRNG (Linear Congruential Generator)
+- **Generation**: Created deterministically via `scripts/generate_evaluation_dataset.ts` using a deterministic PRNG (Linear Congruential Generator)
 - **Seed**: `42` (fixed — every run produces identical data)
 - **Cases**: 500 total
 - **Checksum**: `666ac3f34b49e61f3bc5eea44fe061de9c8a75918bc3edce57868e3578d90875` (SHA-256 of concatenated records)
@@ -112,7 +111,7 @@ pnpm evaluate-smoke
 make evaluate
 ```
 
-Output is written to `artifacts/` as a JSON report containing all metrics above.
+Output is rendered directly to the CLI stdout as a JSON report containing all metrics above.
 
 ---
 

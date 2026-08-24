@@ -43,7 +43,7 @@ To prove the system works at scale across a held-out dataset, run:
 make demo-evaluate
 ```
 
-This will spin up a one-shot container that executes the batch evaluation and writes the results to the local `artifacts/` folder. You can view these results in the Operations Dashboard under the "Evaluations" tab.
+This will spin up a one-shot container that executes the batch evaluation and renders the results directly to the console. You can view these results in the Operations Dashboard under the "Evaluations" tab.
 
 ## 5. Teardown
 
