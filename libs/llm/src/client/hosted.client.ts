@@ -3,6 +3,9 @@ import { AIInvocationStatus, AIInvocationRecord, AIUseCase } from '@rr/contracts
 import { generateId } from '@rr/utils';
 import { createHash } from 'crypto';
 
+// Gemini API base URL — uses generateContent with JSON response mode
+const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+
 export class HostedLLMClient implements LLMClient {
   private apiKey: string;
   private model: string;
@@ -10,8 +13,9 @@ export class HostedLLMClient implements LLMClient {
 
   constructor(options: { apiKey: string; model: string; timeoutMs?: number }) {
     this.apiKey = options.apiKey;
-    this.model = options.model;
-    this.timeoutMs = options.timeoutMs || 10000;
+    // Default to gemini-1.5-flash if no model specified
+    this.model = options.model || 'gemini-1.5-flash';
+    this.timeoutMs = options.timeoutMs || 15000;
   }
 
   async generateStructured<T>(request: StructuredGenerationRequest<T>): Promise<LLMGenerationResult<T>> {
@@ -23,7 +27,7 @@ export class HostedLLMClient implements LLMClient {
     const record: AIInvocationRecord = {
       id: generateId('ai'),
       useCase: request.context.useCase as AIUseCase,
-      providerName: 'OPENAI_COMPATIBLE',
+      providerName: 'GOOGLE_GEMINI',
       modelName: this.model,
       promptVersion: 'v1',
       inputHash,
@@ -42,19 +46,30 @@ export class HostedLLMClient implements LLMClient {
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // Gemini uses a different URL structure and request body format
+      const url = `${GEMINI_BASE_URL}/${this.model}:generateContent?key=${this.apiKey}`;
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify({
-          model: this.model,
-          messages: [
-            { role: 'system', content: request.systemPrompt },
-            { role: 'user', content: request.userPrompt },
+          // System instruction is separate in Gemini API
+          systemInstruction: {
+            parts: [{ text: request.systemPrompt }],
+          },
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: request.userPrompt }],
+            },
           ],
-          response_format: { type: 'json_object' },
+          // Force JSON output from Gemini
+          generationConfig: {
+            responseMimeType: 'application/json',
+            temperature: 0.1, // Low temperature for deterministic financial decisions
+          },
         }),
         signal: controller.signal,
       });
@@ -62,15 +77,18 @@ export class HostedLLMClient implements LLMClient {
       clearTimeout(timeout);
 
       if (!response.ok) {
-        record.status = response.status === 429 ? AIInvocationStatus.PROVIDER_ERROR : AIInvocationStatus.PROVIDER_ERROR;
+        const errBody = await response.text().catch(() => '');
+        record.status = AIInvocationStatus.PROVIDER_ERROR;
         record.latencyMs = Date.now() - startTime;
+        record.errorMessage = `Gemini API error ${response.status}: ${errBody.substring(0, 200)}`;
         return { record, isFallback: true };
       }
 
       const data = await response.json();
-      const rawContent = data.choices[0]?.message?.content || '{}';
+      // Gemini response structure: candidates[0].content.parts[0].text
+      const rawContent = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
       const outputHash = createHash('sha256').update(rawContent).digest('hex').substring(0, 16);
-      
+
       record.outputHash = outputHash;
       record.latencyMs = Date.now() - startTime;
 
@@ -81,9 +99,6 @@ export class HostedLLMClient implements LLMClient {
         record.status = AIInvocationStatus.VALIDATION_FAILED;
         return { record, rawResponse: rawContent, isFallback: true };
       }
-
-      // Add actual zod parsing safely outside if needed, this just tries basic JSON
-      // Validation will happen at the caller level
 
       return {
         data: parsedData,
@@ -103,9 +118,10 @@ export class HostedLLMClient implements LLMClient {
   async healthCheck(): Promise<LLMProviderHealth> {
     return {
       enabled: !!this.apiKey,
-      providerName: 'OPENAI_COMPATIBLE',
+      providerName: 'GOOGLE_GEMINI',
       modelName: this.model,
       ready: !!this.apiKey,
     };
   }
 }
+
