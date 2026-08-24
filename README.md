@@ -193,34 +193,205 @@ The system is managed as a pnpm monorepo.
 
 ---
 
-## 6. Developer Guide
+## 6. Getting Started (Local Development)
 
-### Installation
-1. **Prerequisites:** Node.js 22 LTS, pnpm, Docker, Python 3.10+.
-2. **Clone the repository.**
-3. **Environment setup:** Copy `.env.example` to `.env` and fill in necessary keys.
-4. **Install Node dependencies:** `pnpm install`
-5. **Install Python dependencies:** `cd apps/ml-pipeline && pip install -r requirements.txt`
+### Prerequisites
 
-### Infrastructure & Database
-1. **Start Services (Postgres, Redis):** `docker compose -f infra/compose/compose.yaml up -d`
-2. **Run Migrations:** `pnpm --filter @rr/persistence prisma migrate deploy`
-3. **Generate Prisma Client:** `pnpm --filter @rr/persistence prisma generate`
-
-### Running the System
-Run these in separate terminals to start the entire distributed system:
-1. **API Server:** `pnpm --filter @rr/api dev`
-2. **Worker Node:** `pnpm --filter @rr/worker dev`
-3. **ML Service:** `cd apps/ml-pipeline/src && python main.py`
-4. **Dashboard UI:** `pnpm --filter @rr/frontend dev` (Opens on `http://localhost:5173`)
-
-### Testing & Evaluation
-- **Integration Tests:** `pnpm test:integration` (Verifies state machine and idempotency against DB).
-- **Linting:** `pnpm lint` (Runs oxlint across the monorepo).
-- **Offline Batch Evaluation:** `pnpm evaluate-smoke` (Runs the Node.js batch evaluator).
-- **ML Statistical Audit:** `cd apps/ml-pipeline/src && python statistical_audit.py` (Outputs the forensic causal AI audit report).
+| Tool | Version | Purpose |
+|---|---|---|
+| Node.js | 22 LTS+ | API, Worker, Frontend |
+| pnpm | 10+ | Monorepo package manager |
+| Docker Desktop | Latest | Postgres + Redis containers |
+| Python | 3.10+ | ML inference service |
+| Git | Any | Source control |
 
 ---
+
+### Step 1 — Clone & Install
+
+```bash
+git clone https://github.com/Surya-5555/RazorPay-Buildathon.git
+cd RazorPay-Buildathon
+
+# Install all Node dependencies across the monorepo
+pnpm install
+```
+
+---
+
+### Step 2 — Environment Setup
+
+```bash
+# Copy the example env file
+cp .env.example .env
+```
+
+Open `.env` and fill in the required values:
+
+| Variable | Required | Description |
+|---|---|---|
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `REDIS_URL` | Yes | Redis connection string |
+| `LLM_API_KEY` | Yes | Google Gemini API key |
+| `LLM_MODEL` | Yes | e.g. `gemini-2.5-flash` |
+| `RAZORPAY_KEY_ID` | Yes | Razorpay test-mode key |
+| `RAZORPAY_KEY_SECRET` | Yes | Razorpay test-mode secret |
+| `ENABLE_RAZORPAY_TEST_MODE` | Yes | Must be `true` for local dev |
+| `TWILIO_ACCOUNT_SID` | Optional | SMS outreach |
+| `TWILIO_AUTH_TOKEN` | Optional | SMS outreach |
+| `TWILIO_FROM_NUMBER` | Optional | SMS outreach |
+| `RESEND_API_KEY` | Optional | Email outreach |
+| `RESEND_FROM_EMAIL` | Optional | Email outreach |
+| `API_AUTH_TOKEN` | Yes | Internal API authentication |
+
+---
+
+### Step 3 — Python ML Environment
+
+```bash
+cd apps/ml-pipeline
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# Linux / Mac
+source venv/bin/activate
+
+pip install -r requirements.txt
+cd ../..
+```
+
+---
+
+### Step 4 — Database Setup
+
+```bash
+# Start Postgres + Redis via Docker
+docker compose -f infra/compose/compose.yaml up -d
+
+# Push schema to database
+pnpm --filter @rr/persistence exec prisma db push
+
+# Generate Prisma client
+pnpm --filter @rr/persistence run generate
+```
+
+---
+
+### Step 5 — Run Everything (One Command)
+
+#### Windows (PowerShell)
+Opens 5 separate terminal windows — one per service:
+
+```powershell
+.\scripts\dev-start.ps1
+```
+
+<details>
+<summary>View full script: <code>scripts/dev-start.ps1</code></summary>
+
+```powershell
+# dev-start.ps1 - Local Development Startup Script (Windows)
+# Usage: .\scripts\dev-start.ps1 from the project root
+
+$ROOT = Split-Path -Parent $PSScriptRoot
+
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  Razorpay AI Revenue Recovery - Dev    " -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host ""
+
+# 1. Infra: Postgres + Redis
+Write-Host "[1/5] Starting infrastructure (Postgres + Redis)..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; docker compose -f infra/compose/compose.yaml up"
+
+Write-Host "      Waiting 5s for Docker to spin up..."
+Start-Sleep -Seconds 5
+
+# 2. ML Pipeline on port 8000
+Write-Host "[2/5] Starting ML Pipeline (port 8000)..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT\apps\ml-pipeline\src'; ..\venv\Scripts\Activate.ps1; python server.py"
+
+# 3. API Server on port 3000
+Write-Host "[3/5] Starting API Server (port 3000)..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; pnpm --filter @rr/api dev"
+
+# 4. Background Worker
+Write-Host "[4/5] Starting Background Worker..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; pnpm --filter @rr/worker dev"
+
+# 5. Frontend on port 5173
+Write-Host "[5/5] Starting Frontend Dashboard (port 5173)..." -ForegroundColor Yellow
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; pnpm --filter @rr/frontend dev"
+
+Write-Host ""
+Write-Host "  Dashboard   -> http://localhost:5173" -ForegroundColor White
+Write-Host "  API         -> http://localhost:3000" -ForegroundColor White
+Write-Host "  ML Pipeline -> http://localhost:8000" -ForegroundColor White
+```
+
+</details>
+
+#### Linux / Mac (bash + tmux)
+Creates a named tmux session with one window per service. Falls back to background processes if tmux is not installed:
+
+```bash
+chmod +x scripts/dev-start.sh
+./scripts/dev-start.sh
+```
+
+> **tmux controls:** Switch windows with `Ctrl+B → 0-4`. Detach with `Ctrl+B → D`. Re-attach with `tmux attach -t rr-dev`.
+
+---
+
+### Service URLs
+
+| Service | URL | Description |
+|---|---|---|
+| Frontend Dashboard | http://localhost:5173 | React Operations UI |
+| API Server | http://localhost:3000 | NestJS REST API |
+| ML Inference | http://localhost:8000 | FastAPI XGBoost service |
+| API Docs | http://localhost:3000/api/docs | Swagger UI (dev mode) |
+
+---
+
+### Manual Start (Alternative)
+
+If you prefer separate terminals:
+
+```bash
+# Terminal 1 — Infra
+docker compose -f infra/compose/compose.yaml up
+
+# Terminal 2 — ML Pipeline
+cd apps/ml-pipeline/src && source ../venv/bin/activate && python server.py
+
+# Terminal 3 — API
+pnpm --filter @rr/api dev
+
+# Terminal 4 — Worker
+pnpm --filter @rr/worker dev
+
+# Terminal 5 — Frontend
+pnpm --filter @rr/frontend dev
+```
+
+---
+
+### Testing & Evaluation
+
+| Command | Description |
+|---|---|
+| `pnpm lint` | Run ESLint across the monorepo |
+| `pnpm test:integration` | Integration tests against live DB |
+| `pnpm evaluate-smoke` | Offline batch evaluation run |
+| `cd apps/ml-pipeline/src && python statistical_audit.py` | ML causal AI audit report |
+
+---
+
+
 
 ## 7. Documentation Index
 
