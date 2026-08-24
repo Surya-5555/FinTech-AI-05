@@ -30,7 +30,11 @@ export function diagnoseRevenueCase(
   let confidence = 0.4;
   const reasonCodes: RecoveryReasonCode[] = [];
 
-  if (eventType === 'PAYMENT_FAILED') {
+  if (failureReason === 'SUSPECTED_FRAUD') {
+    rootCause = RootCause.FRAUD;
+    confidence = 0;
+    reasonCodes.push(RecoveryReasonCode.FRAUD_DETECTED);
+  } else if (eventType === 'PAYMENT_FAILED') {
     if (failureReason === 'BANK_TIMEOUT' || failureReason === 'NETWORK_ERROR') {
       rootCause = RootCause.TRANSIENT_BANK_OR_NETWORK_FAILURE;
       confidence = 0.95;

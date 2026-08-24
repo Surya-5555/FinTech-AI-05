@@ -6,6 +6,7 @@ import {
   PolicyDecision,
   RecoveryReasonCode,
   RevenueCaseState,
+  RootCause,
 } from '@rr/contracts';
 import { ActiveInterventionSummary } from './intervention';
 
@@ -45,6 +46,18 @@ export function evaluateRecoveryPolicy(input: PolicyEvaluationInput): PolicyDeci
     return {
       approved: false,
       reasonCodes: [RecoveryReasonCode.MERCHANT_POLICY_EXCLUDED],
+      requiresHumanApproval: false,
+      stopCase: true,
+      escalationRequired: false,
+    };
+  }
+
+  // 2.5 Fraud Hard-Block
+  if (diagnosis.rootCause === RootCause.FRAUD) {
+    reasonCodes.push(RecoveryReasonCode.FRAUD_DETECTED);
+    return {
+      approved: false,
+      reasonCodes,
       requiresHumanApproval: false,
       stopCase: true,
       escalationRequired: false,

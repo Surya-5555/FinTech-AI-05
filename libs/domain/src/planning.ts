@@ -15,6 +15,7 @@ import { ActiveInterventionSummary, recommendIntervention, selectCandidateInterv
 import { evaluateRecoveryPolicy } from './policy';
 
 import { scorePropensity } from './ml/propensity';
+import { isOutsideTRAIWindow } from './utils/time-compliance';
 
 export interface PlanProposalInput {
   revCase: RecoveryCase;
@@ -64,6 +65,23 @@ export async function proposeRecoveryPlan(input: PlanProposalInput): Promise<Rec
     if (recommended === 'VOICE_REMINDER' && consents.voice === false) hasConsentForIntervention = false;
   }
 
+  let contactWindowLimitReached = false;
+  if (isOutsideTRAIWindow(now)) {
+    contactWindowLimitReached = true;
+  }
+  
+  if (sourceEvent.metadata?.contactWindowMetadataJson) {
+    try {
+      const metadata = JSON.parse(sourceEvent.metadata.contactWindowMetadataJson as string);
+      const attemptsToday = metadata.attemptsToday || 0;
+      if (attemptsToday >= (merchantPolicy.contactRules?.maxMessagesPerCustomerWindow || 3)) {
+        contactWindowLimitReached = true;
+      }
+    } catch (e) {
+      // ignore parsing errors
+    }
+  }
+
   const policyDecision = evaluateRecoveryPolicy({
     revCase,
     diagnosis,
@@ -71,6 +89,7 @@ export async function proposeRecoveryPlan(input: PlanProposalInput): Promise<Rec
     merchantPolicy,
     activeInterventionSummary,
     hasConsentForIntervention,
+    contactWindowLimitReached,
     now,
   });
 
