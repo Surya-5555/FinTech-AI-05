@@ -39,6 +39,8 @@ Every message prompt includes:
 |---|---|---|
 | `EN_IN` | English (Indian) | "Dear Priya, your payment of ₹1,200 to Zomato Pro was unsuccessful due to insufficient funds." |
 | `HI_IN` | Hinglish (Hindi-English mix) | "Priya ji, aapka ₹1,200 ka payment Zomato Pro ke liye process nahi hua. Naya payment link yahan se complete karein." |
+| `TA_IN` | Tamil | "வணக்கம்! Zomato Pro-க்கான உங்கள் ₹1,200 தொகை நிலுவையில் உள்ளது. இப்போதே செலுத்துங்கள்." |
+| `KN_IN` | Kannada | "ನಮಸ್ಕಾರ! Zomato Pro ಗಾಗಿ ನಿಮ್ಮ ₹1,200 ಪಾವತಿ ಬಾಕಿ ಇದೆ. ಈಗಲೇ ಪಾವತಿ ಮಾಡಿ." |
 
 **Hinglish** (`HI_IN`) is the primary regional locale. The LLM prompt explicitly instructs the model to produce natural Hindi-English code-mixed text that is legible to urban Indian customers. The fallback template for `HI_IN` provides a static Hinglish message that does not require the LLM.
 

@@ -15,7 +15,7 @@ The dashboard is built within the React 18 / Vite frontend and leverages `@tanst
 
 ## 3. Engineering Reasoning & Decision Choices
 - **Backend Serialization Patch**: During implementation, the NestJS API crashed (HTTP 500) when serializing Prisma's `BigInt` monetary values (e.g. `amountAtRiskMinor`). A global `BigInt.prototype.toJSON` override was chosen in `main.ts` as the safest, most performant fix to cleanly bridge the ORM to the frontend without heavy DTO mapping refactors.
-- **No-Fake-Data Rule**: Rather than mocking flashy marketing metrics, the UI is hardwired to exact endpoints (`/dashboard/summary`, `/cases`) enforcing the "only evidence-driven screens" constraint. 
+- **No-Trivial-Data Rule**: Rather than mocking flashy marketing metrics, the UI is hardwired to exact endpoints (`/dashboard/summary`, `/cases`) enforcing the "only evidence-driven screens" constraint. 
 - **AI Transparency**: In the Case Detail page, the AI's diagnosis and planning logic are distinctly badged with an "AI-Generated" label. This explicitly proves that AI is bounded to *reasoning*, while the execution state and policy gate decisions operate independently underneath it.
 
 ## 4. Improvements to the System

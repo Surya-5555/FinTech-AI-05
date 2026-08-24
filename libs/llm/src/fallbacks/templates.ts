@@ -3,35 +3,64 @@ import { AIRequestContext, RecoveryMessageDraft, DecisionExplanation, AIFallback
 /**
  * Deterministic fallback message templates.
  * Used when the LLM is unavailable, returns malformed output, or fails safety validation.
- * Supports EN_IN (English) and HI_IN (Hinglish) locales.
+ * Supports EN_IN (English), HI_IN / HINGLISH (Hinglish), TA_IN (Tamil), KN_IN (Kannada).
+ * Covers the key Razorpay merchant markets: Hindi belt, Tamil Nadu, and Karnataka (Razorpay HQ).
  * These templates are intentionally conservative — they do NOT make recovery guarantees.
  */
 export function getFallbackMessageDraft(context: AIRequestContext): RecoveryMessageDraft {
-  const isHinglish = context.locale === AILocale.HI_IN;
+  const locale = context.locale || AILocale.EN_IN;
   let text = '';
+  let templateVersion = 'fallback-v1';
 
   if (context.channel === 'SEND_SMS_REMINDER') {
-    // Hinglish (HI_IN): natural Hindi-English code-mix for urban Indian customers
-    text = isHinglish
-      ? `Namaste! ${context.merchantDisplayName} ke liye aapka ${context.amountDisplay} ka payment pending hai. Abhi pay karein.`
-      : `Reminder: Payment of ${context.amountDisplay} for ${context.merchantDisplayName} is due.`;
+    // Select message by locale — covers Hindi belt, Tamil Nadu, and Karnataka (Razorpay HQ region)
+    if (locale === AILocale.HI_IN || locale === AILocale.HINGLISH) {
+      text = `Namaste! ${context.merchantDisplayName} ke liye aapka ${context.amountDisplay} ka payment pending hai. Abhi pay karein.`;
+      templateVersion = 'fallback-hinglish-v1';
+    } else if (locale === AILocale.TA_IN) {
+      text = `வணக்கம்! ${context.merchantDisplayName}-க்கான உங்கள் ₹${context.amountDisplay} தொகை நிலுவையில் உள்ளது. இப்போதே செலுத்துங்கள்.`;
+      templateVersion = 'fallback-tamil-v1';
+    } else if (locale === AILocale.KN_IN) {
+      text = `ನಮಸ್ಕಾರ! ${context.merchantDisplayName} ಗಾಗಿ ನಿಮ್ಮ ${context.amountDisplay} ಪಾವತಿ ಬಾಕಿ ಇದೆ. ಈಗಲೇ ಪಾವತಿ ಮಾಡಿ.`;
+      templateVersion = 'fallback-kannada-v1';
+    } else {
+      text = `Reminder: Payment of ${context.amountDisplay} for ${context.merchantDisplayName} is due.`;
+    }
   } else if (context.channel === 'SEND_VOICE_REMINDER') {
-    // Voice channel: full sentence, friendly tone, readable aloud
-    text = isHinglish
-      ? `Namaste, yeh ek reminder hai. Aapka ${context.merchantDisplayName} ke liye ${context.amountDisplay} ka payment abhi bhi baaki hai. Kripya apni payment poori karein.`
-      : `Hello, this is a reminder regarding your payment of ${context.amountDisplay} to ${context.merchantDisplayName}.`;
+    // Voice channel: full sentence, friendly tone, readable aloud by TTS
+    if (locale === AILocale.HI_IN || locale === AILocale.HINGLISH) {
+      text = `Namaste, yeh ek reminder hai. Aapka ${context.merchantDisplayName} ke liye ${context.amountDisplay} ka payment abhi bhi baaki hai. Kripya apni payment poori karein.`;
+      templateVersion = 'fallback-hinglish-v1';
+    } else if (locale === AILocale.TA_IN) {
+      text = `வணக்கம், இது ஒரு நினைவூட்டல். ${context.merchantDisplayName}-க்கான உங்கள் ${context.amountDisplay} தொகை இன்னும் நிலுவையில் உள்ளது. தயவுசெய்து உங்கள் கட்டணத்தை முடிக்கவும்.`;
+      templateVersion = 'fallback-tamil-v1';
+    } else if (locale === AILocale.KN_IN) {
+      text = `ನಮಸ್ಕಾರ, ಇದು ಒಂದು ಜ್ಞಾಪನೆ. ${context.merchantDisplayName} ಗಾಗಿ ನಿಮ್ಮ ${context.amountDisplay} ಪಾವತಿ ಇನ್ನೂ ಬಾಕಿ ಇದೆ. ದಯವಿಟ್ಟು ನಿಮ್ಮ ಪಾವತಿಯನ್ನು ಪೂರ್ಣಗೊಳಿಸಿ.`;
+      templateVersion = 'fallback-kannada-v1';
+    } else {
+      text = `Hello, this is a reminder regarding your payment of ${context.amountDisplay} to ${context.merchantDisplayName}.`;
+    }
   } else {
     // Email or generic fallback
-    text = isHinglish
-      ? `Priya grahak,\n\nAapka ${context.merchantDisplayName} ke liye ${context.amountDisplay} ka payment ${context.failureReason} ki wajah se process nahi ho saka.\n\nKripya apne account mein sufficient funds ensure karein ya payment method update karein.\n\nDhanyavaad.`
-      : `Dear customer,\n\nThis is a notification that a payment of ${context.amountDisplay} to ${context.merchantDisplayName} was unsuccessful due to ${context.failureReason}.\n\nPlease ensure sufficient funds or update your payment method.\n\nThank you.`;
+    if (locale === AILocale.HI_IN || locale === AILocale.HINGLISH) {
+      text = `Priya grahak,\n\nAapka ${context.merchantDisplayName} ke liye ${context.amountDisplay} ka payment ${context.failureReason} ki wajah se process nahi ho saka.\n\nKripya apne account mein sufficient funds ensure karein ya payment method update karein.\n\nDhanyavaad.`;
+      templateVersion = 'fallback-hinglish-v1';
+    } else if (locale === AILocale.TA_IN) {
+      text = `அன்புள்ள வாடிக்கையாளரே,\n\n${context.merchantDisplayName}-க்கான உங்கள் ${context.amountDisplay} தொகை ${context.failureReason} காரணமாக செயலாக்கப்படவில்லை.\n\nதயவுசெய்து போதுமான நிதி இருப்பை உறுதிப்படுத்தவும் அல்லது உங்கள் கட்டண முறையை புதுப்பிக்கவும்.\n\nநன்றி.`;
+      templateVersion = 'fallback-tamil-v1';
+    } else if (locale === AILocale.KN_IN) {
+      text = `ಪ್ರಿಯ ಗ್ರಾಹಕರೇ,\n\n${context.merchantDisplayName} ಗಾಗಿ ನಿಮ್ಮ ${context.amountDisplay} ಪಾವತಿ ${context.failureReason} ಕಾರಣದಿಂದ ಪ್ರಕ್ರಿಯೆಗೊಳ್ಳಲಿಲ್ಲ.\n\nದಯವಿಟ್ಟು ಸಾಕಷ್ಟು ಹಣ ಇರುವುದನ್ನು ಖಚಿತಪಡಿಸಿ ಅಥವಾ ನಿಮ್ಮ ಪಾವತಿ ವಿಧಾನವನ್ನು ನವೀಕರಿಸಿ.\n\nಧನ್ಯವಾದಗಳು.`;
+      templateVersion = 'fallback-kannada-v1';
+    } else {
+      text = `Dear customer,\n\nThis is a notification that a payment of ${context.amountDisplay} to ${context.merchantDisplayName} was unsuccessful due to ${context.failureReason}.\n\nPlease ensure sufficient funds or update your payment method.\n\nThank you.`;
+    }
   }
 
   return {
     text,
-    locale: context.locale || AILocale.EN_IN,
+    locale,
     channel: context.channel,
-    templateVersion: isHinglish ? 'fallback-hinglish-v1' : 'fallback-v1',
+    templateVersion,
     safetyChecks: {
       passed: true,
       issues: [],

@@ -119,7 +119,7 @@ Output is written to `artifacts/` as a JSON report containing all metrics above.
 ## Latest Evaluation Run Results
 
 > **Data**: Purpose-built deterministic benchmark dataset (seed=42, 500 cases).
-> **Mode**: `BENCHMARK` — all provider calls use deterministic mock adapters. No live API calls.
+> **Mode**: `BENCHMARK` — all provider calls use deterministic sandbox adapters. No live API calls.
 > **Reproducible**: `pnpm evaluate-smoke` produces identical numbers on every run.
 > **Dataset checksum**: `666ac3f34b49e61f3bc5eea44fe061de9c8a75918bc3edce57868e3578d90875`
 

@@ -9,6 +9,8 @@ export enum AILocale {
   EN_IN = 'en-IN',
   HI_IN = 'hi-IN',
   HINGLISH = 'hinglish',
+  TA_IN = 'ta-IN', // Tamil — major South Indian market
+  KN_IN = 'kn-IN', // Kannada — Bangalore / Karnataka (Razorpay HQ region)
 }
 
 export enum AIDataClassification {

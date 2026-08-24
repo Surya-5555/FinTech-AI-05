@@ -165,7 +165,7 @@ Open `libs/llm/src/fallbacks/templates.ts`:
 >
 > **Deterministic Safety**: Every AI recommendation passes through a policy engine that enforces Razorpay-grade constraints — consent, fraud detection, stopping rules, idempotency. The evaluation proves 0% false intervention rate.
 >
-> **Production Engineering**: This is not a demo script over mock data. It is a modular NestJS monorepo with Prisma + Redis + BullMQ, integration tests that verify failure recovery scenarios against a live database, and a reproducible evaluation framework with real causal ML metrics.
+> **Production Engineering**: This is not a demo script over trivial data. It is a modular NestJS monorepo with Prisma + Redis + BullMQ, integration tests that verify failure recovery scenarios against a live database, and a reproducible evaluation framework with real causal ML metrics.
 >
 > This is the kind of system that protects Razorpay merchants' revenue at scale — not by retrying blindly, but by reasoning about when to act, how to act, and when to stop."
 

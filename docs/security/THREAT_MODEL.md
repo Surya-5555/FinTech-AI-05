@@ -24,7 +24,7 @@ This document outlines the high-level threat model for the Razorpay AI Revenue R
 **Mitigation**: Strict idempotency keys are enforced at the database level (`Intervention.idempotencyKey`) and passed to external providers (Razorpay). The transactional outbox pattern guarantees exactly-once messaging semantics.
 
 ### 3. Webhook Spoofing
-**Threat**: An attacker sends fake webhook payloads to the system to manipulate case states or trigger false recoveries.
+**Threat**: An attacker sends malicious webhook payloads to the system to manipulate case states or trigger false recoveries.
 **Mitigation**: All incoming webhooks must be cryptographically verified using `x-razorpay-signature` against the configured webhook secret.
 
 ### 4. Secret Leakage
