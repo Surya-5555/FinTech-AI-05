@@ -126,15 +126,16 @@ flowchart TB
 ## 4. Feature Inventory
 
 ### Core Platform
-- **Webhook Ingestion:** NestJS controllers parse and authenticate JSON payloads from Razorpay. Every field is validated via `class-validator` DTOs before any processing begins.
-- **Event Processing & Case Creation:** Raw payloads are mapped to typed `RecoveryCase` entities with strict BigInt arithmetic for all monetary values (no floating point).
+- **Webhook Ingestion:** NestJS controllers securely authenticate JSON payloads from Razorpay using HMAC-SHA256 signatures against the raw byte stream. To strictly respect the 5-second gateway timeout and prevent webhook disablement, the controller immediately pushes the validated payload to a BullMQ queue and returns a fast `200 OK`.
+- **Event Processing & Case Creation:** Background workers asynchronously parse the JSON payload, mapping it to typed `RecoveryCase` entities with strict BigInt arithmetic for all monetary values (no floating point).
 - **State Machine:** Enforces strict lifecycle transitions: `DETECTED` → `PLANNED` → `EXECUTING` → `RECOVERED` / `FAILED` / `STOPPED` / `ESCALATED`. Invalid transitions are rejected with a typed error.
 - **Terminal States:** `RECOVERED`, `STOPPED`, `ESCALATED` are terminal — any subsequent attempt to execute an intervention on a terminal case is rejected before touching the DB.
 
 ---
 
 ### Financial Safety Controls
-- **Idempotency (DB-Level):** PostgreSQL `@@unique([merchantId, externalEventId, eventType])` constraint — not application-level caching. Even concurrent requests on the same event produce exactly one case.
+- **Strict Header-Based Idempotency:** A dedicated PostgreSQL `EventIdempotency` table explicitly checks the `x-razorpay-event-id` header upon ingestion. Because Razorpay operates on at-least-once delivery, this guarantees duplicate webhook payloads are silently dropped before they ever reach the background worker.
+- **Immutable AI Audit Trails:** When the LangGraph AI orchestrator produces a recovery plan, its complete multi-node reasoning dictionary (the state object) is serialized into the `reasoningTrace` column of the `AuditLog`. This guarantees every probabilistic AI decision is deterministically explainable.
 - **Optimistic Concurrency Control (OCC):** Every case update checks the current `version` field. A stale update (version mismatch) is rejected with a conflict error — the caller must re-fetch before retrying.
 - **In-Flight Payment Race Conditions:** A dedicated webhook controller (`razorpay.controller.ts`) catches live `payment.captured` and `order.paid` events. It uses OCC to preemptively halt any scheduled AI interventions if the customer pays on their own before the worker runs.
 - **Distributed Execution Lock:** Before any provider call, the worker does an atomic `UPDATE ... WHERE lockedBy IS NULL`. If another worker already holds the lock, 0 rows are updated → silent drop. Enforces at-most-once execution.
