@@ -63,7 +63,7 @@ erDiagram
 ## Core Architectural Patterns
 
 ### 1. Unique Constraints as Idempotency Barriers
-Financial systems cannot afford duplicate processing. Our data model leverages hard database constraints to guarantee idempotency.
+Financial systems cannot afford duplicate processing. Our data model leverages hard database constraints to enforce idempotency.
 - **Ingestion Table:** The `externalEventId` alongside `eventType` on the `RevenueEvent` table is marked `@unique`. If the system receives a duplicate webhook, the database throws a constraint violation, which the persistence layer safely catches and handles as a successful no-op.
 - **Transitions:** State transitions enforce optimistic locking. A case can only transition if its `version` matches the expected state, blocking race conditions between concurrent workers.
 
@@ -77,7 +77,7 @@ Financial systems cannot afford duplicate processing. Our data model leverages h
 
 ### 3. Execution & Telemetry Tables
 
-1. **`OutboxEvent`:** The queue abstraction layer guaranteeing exactly-once transactional delivery of state changes to BullMQ.
+1. **`OutboxEvent`:** The queue abstraction layer enforcing exactly-once transactional delivery of state changes to BullMQ.
 2. **`AuditLog`:** The immutable ledger recording `previousState`, `nextState`, and the `actorType` (System vs LLM) for every mutation.
 3. **`AIInvocation`:** A telemetry table capturing LLM usage, storing `inputHash`, `estimatedCostMinor`, and latency to audit AI behavior without bloating the core domain tables.
 

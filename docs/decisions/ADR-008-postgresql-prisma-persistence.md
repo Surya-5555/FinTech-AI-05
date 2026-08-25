@@ -11,7 +11,7 @@ While PostgreSQL is our chosen database (ADR-002), writing raw SQL for complex, 
 We will use **Prisma ORM** as the exclusive method for interacting with the PostgreSQL database.
 
 ## Rationale
-1. **End-to-End Type Safety:** Prisma automatically generates strict TypeScript types directly from the database schema. This eliminates the risk of retrieving a string from the database and accidentally treating it as an integer in the application layer, a critical guarantee for the `amountMinor` fields in our financial calculations.
+1. **End-to-End Type Safety:** Prisma automatically generates strict TypeScript types directly from the database schema. This eliminates the risk of retrieving a string from the database and accidentally treating it as an integer in the application layer, a critical protection for the `amountMinor` fields in our financial calculations.
 2. **Migration Management:** Prisma Migrate provides a deterministic, version-controlled way to manage database schema evolution. This is essential for CI/CD pipelines where the test database must be instantiated from scratch perfectly every time.
 3. **Interactive Transactions:** Prisma's `$transaction` API elegantly handles the multi-table operations required by our Transactional Outbox pattern, ensuring that updating the `RevenueCase` and inserting an `OutboxEvent` are committed atomically.
 4. **Developer Ergonomics:** Prisma's intuitive schema definition language (`schema.prisma`) acts as a central, readable source of truth for the entire persistence architecture.

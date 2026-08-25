@@ -21,4 +21,4 @@ We maintain a strict boundary between what the database sees and what the busine
 2. **Domain Entities (`libs/domain/src`):** These are rich TypeScript classes containing behaviors (methods).
 3. **Mappers (`libs/persistence/src/mappers`):** This layer translates the Prisma database models into the pure Domain Entities on read, and serializes the Domain Entities back into Prisma models on write.
 
-This isolation guarantees that if we were to swap Prisma for TypeORM or raw SQL, zero lines of business logic inside `libs/domain` would need to change.
+This isolation ensures that if we were to swap Prisma for TypeORM or raw SQL, zero lines of business logic inside `libs/domain` would need to change.

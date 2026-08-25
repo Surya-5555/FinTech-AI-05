@@ -1,7 +1,7 @@
 # Transactional Outbox Pattern
 
 ## Overview
-In distributed microservices, a common failure mode is updating a database successfully, but crashing before sending the corresponding event to a message broker (or vice versa). To guarantee exactly-once message delivery semantics and maintain absolute consistency between our PostgreSQL database and our Redis queues, the Razorpay AI Revenue Recovery system implements the **Transactional Outbox Pattern**.
+In distributed microservices, a common failure mode is updating a database successfully, but crashing before sending the corresponding event to a message broker (or vice versa). To enforce exactly-once message delivery semantics and maintain absolute consistency between our PostgreSQL database and our Redis queues, the Razorpay AI Revenue Recovery system implements the **Transactional Outbox Pattern**.
 
 ## How It Works
 
@@ -12,7 +12,7 @@ When a domain action occurs (e.g., an API controller accepts a webhook and creat
 3. It inserts an `OutboxMessage` record (containing the event payload and target queue name) into a dedicated `outbox` table.
 4. It commits the transaction.
 
-If the database crashes midway, both the state change and the event are rolled back. If it succeeds, both are guaranteed to be persisted.
+If the database crashes midway, both the state change and the event are rolled back. If it succeeds, both are safely persisted.
 
 ### 2. The Outbox Relay (Sweeper)
 A dedicated, lightweight background process (the Relay) continuously polls the `outbox` table for unprocessed messages (where `processedAt IS NULL`).

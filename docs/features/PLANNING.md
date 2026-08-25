@@ -48,7 +48,7 @@ RevenueCase (DETECTED)
 
 - **Provider**: Google Gemini (`gemini-2.5-flash`) via `HostedLLMClient`.
 - **Output Enforcement**: Zod schema validation on every LLM response. Malformed responses trigger the deterministic fallback template.
-- **Safety Prompting**: Every prompt includes `SharedSafetyPolicyV1` — a system-level instruction forbidding the LLM from claiming specific recovery amounts, making guarantees, or generating content that could constitute financial advice.
+- **Safety Prompting**: Every prompt includes `SharedSafetyPolicyV1` — a system-level instruction forbidding the LLM from claiming specific recovery amounts, providing strict assurances, or generating content that could constitute financial advice.
 - **Locale Support**: Prompts specify `locale` (e.g., `EN_IN`, `HI_IN`). For `HI_IN`, the model is instructed to produce Hinglish (Hindi-English mixed) communication.
 
 ## AI Involvement

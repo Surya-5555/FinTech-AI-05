@@ -15,6 +15,6 @@ We have built a completely isolated evaluation framework (`@rr/evaluator`) that 
 4. **Metrics**: BigInt math ensures accurate calculations of `systemRecoveredMinor` against `totalAtRiskMinor`, guaranteeing no false inflation of recovery rates.
 
 ## Consequences
-- Evaluation runs are 100% reproducible and deterministic.
+- Evaluation runs are fully reproducible and deterministic.
 - External dependencies (LLMs, Razorpay) are faked/disabled during `make evaluate`.
 - We can statistically prove the incremental value of the SUT over Baseline 1 without touching real money.

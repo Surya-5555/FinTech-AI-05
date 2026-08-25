@@ -27,7 +27,7 @@ Every message prompt includes:
 1. **Data Classification Header**: Marks the data as `SYNTHETIC_BENCHMARK` or `RAZORPAY_TEST` so the model understands it is operating on benchmark evaluation data, not live customer records.
 2. **SharedSafetyPolicyV1**: A system-level instruction block that forbids:
    - Specific recovery amount claims ("We will recover ₹X")
-   - Guarantees of any kind
+   - Assurances of any kind
    - Urgency language that constitutes pressure selling
    - Content that could be classified as financial advice
 3. **Context Block**: Merchant name, amount, failure reason, root cause, channel, locale, constraints
@@ -68,7 +68,7 @@ due to {failureReason}. Please ensure sufficient funds or update your payment me
 
 ## Safety Constraints
 
-- **Zod Schema Validation**: Every LLM response is parsed through a strict schema. A response that passes the schema is guaranteed to have `text`, `locale`, `channel`, and `safetyChecks.passed=true`. A response failing this check activates the fallback immediately.
+- **Zod Schema Validation**: Every LLM response is parsed through a strict schema. A response that passes the schema is strictly expected to have `text`, `locale`, `channel`, and `safetyChecks.passed=true`. A response failing this check activates the fallback immediately.
 - **Forbidden Claims Enforcement**: The prompt lists `forbiddenClaims` explicitly (e.g., "payment will be recovered", "guaranteed refund"). The safety check in the response schema asks the model to self-report any violation.
 - **No Direct Customer Contact**: The message draft is returned as text. It is the execution provider (Twilio, Resend) that actually sends it — and only after the policy engine approves the intervention containing it. The LLM cannot trigger a send.
 - **LLM Cannot Modify Case State**: The message draft is an output artifact. It has no write path to the database or the case state machine.

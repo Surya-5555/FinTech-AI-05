@@ -21,7 +21,7 @@ For the live FastApi inference server that the NestJS backend calls, we simulate
 - **What this proves:** This proves that our operational API and backend integration are perfectly typed and structurally sound for the Razorpay context. We trained our live model on this synthetic data (`apps/ml-pipeline/src/train.py`), meaning the system operates on genuine payment fields without exposing any real PII.
 
 ## Architectural Advantages
-1. **Absolute Data Privacy:** We guarantee zero PII risk. No real Razorpay data is exposed or needed for evaluation.
+1. **Absolute Data Privacy:** We ensure zero PII risk. No real Razorpay data is exposed or needed for evaluation.
 2. **Methodologically Sound:** We proved the math works on real humans (Track 1) and proved the code works on real Razorpay schemas (Track 2).
 3. **Production Ready:** When deployed to production, the training pipeline is simply pointed to internal SQL exports instead of the synthetic CSV. The entire architecture—the preprocessing, the T-Learner, the FastAPI server, the NestJS ingestion, and the deterministic safety policies—remains exactly the same. 
 

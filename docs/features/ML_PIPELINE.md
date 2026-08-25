@@ -33,7 +33,7 @@ The planning layer selects `argmax_t(NEIV_t)` subject to:
 **Why this approach? (The Privacy-First Principle)** 
 In a Buildathon environment, we absolutely cannot use real Razorpay merchant data or customer PII, as it violates strict confidentiality and regulatory compliance. However, we also refuse to fabricate the "math" behind our Causal Inference model, and we refuse to mislead the jury by pretending a public dataset is Razorpay data.
 
-To guarantee both mathematical rigor and operational integrity, we architected a **Dual-Track ML Strategy**:
+To ensure both mathematical rigor and operational integrity, we architected a **Dual-Track ML Strategy**:
 
 1. **Track 1: Methodology Proof (The Hillstrom Benchmark)**
    - We run our offline statistical audit (`apps/ml-pipeline/src/statistical_audit.py`) on the **Hillstrom MineThatData Email RCT** — a real, public randomised controlled trial dataset. 

@@ -11,7 +11,7 @@ This is a comprehensive, asynchronous revenue recovery architecture for processi
 Merchants lose significant revenue when recurring payments fail. Blindly retrying cards wastes API calls, triggers fraud alerts, and annoys customers. Doing nothing loses the customer. 
 
 **Why does it exist?** 
-To maximize recovered revenue by personalizing the recovery intervention (e.g., silent API retry vs. SMS payment link) based on the specific context of the failure, while guaranteeing that AI hallucinations or ML errors can never trigger unsafe financial operations.
+To maximize recovered revenue by personalizing the recovery intervention (e.g., silent API retry vs. SMS payment link) based on the specific context of the failure, while ensuring that AI hallucinations or ML errors can never trigger unsafe financial operations.
 
 ---
 
@@ -137,7 +137,7 @@ flowchart TB
 - **Idempotency (DB-Level):** PostgreSQL `@@unique([merchantId, externalEventId, eventType])` constraint — not application-level caching. Even concurrent requests on the same event produce exactly one case.
 - **Optimistic Concurrency Control (OCC):** Every case update checks the current `version` field. A stale update (version mismatch) is rejected with a conflict error — the caller must re-fetch before retrying.
 - **In-Flight Payment Race Conditions:** A dedicated webhook controller (`razorpay.controller.ts`) catches live `payment.captured` and `order.paid` events. It uses OCC to preemptively halt any scheduled AI interventions if the customer pays on their own before the worker runs.
-- **Distributed Execution Lock:** Before any provider call, the worker does an atomic `UPDATE ... WHERE lockedBy IS NULL`. If another worker already holds the lock, 0 rows are updated → silent drop. Guarantees at-most-once execution.
+- **Distributed Execution Lock:** Before any provider call, the worker does an atomic `UPDATE ... WHERE lockedBy IS NULL`. If another worker already holds the lock, 0 rows are updated → silent drop. Enforces at-most-once execution.
 - **Stale-Lock Scanner (Crash Recovery):** A cron-driven `StaleLockScannerProcessor` automatically detects and clears locks held by workers that crashed mid-execution, restoring cases to a retryable state without human intervention.
 - **Partial Payment Settlements:** When `INITIATE_PAYMENT_RETRY` results in a partial capture, the system deterministically updates `amountAtRiskMinor` and reverts the case state to `DETECTED`. This securely kicks the case back to the AI orchestrator to dynamically plan a new intervention for the *remaining* balance instead of falsely marking it recovered.
 - **Currency Mismatch & Cross-Border Guard:** `evaluateRecoveryPolicy` strictly blocks interventions if the event currency isn't configured in the merchant's supported ledger (`MerchantRecoveryPolicyConfig`), and automatically stops international payment recovery attempts if `allowCrossBorderRecovery` is disabled.
@@ -229,7 +229,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 
 ## 5. Latest Evaluation Results
 
-> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). **Why Synthetic?** To guarantee absolute zero risk of PII leakage, maintain perfect regulatory compliance, and ensure 100% mathematical reproducibility of the evaluation metrics, no real merchant data is used. **Future Path:** The identical evaluation pipeline will seamlessly ingest real Razorpay dataset exports once production access is granted, requiring zero architectural changes.
+> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). **Why Synthetic?** To ensure absolute zero risk of PII leakage, maintain perfect regulatory compliance, and ensure strict mathematical reproducibility of the evaluation metrics, no real merchant data is used. **Future Path:** The identical evaluation pipeline will seamlessly ingest real Razorpay dataset exports once production access is granted, requiring zero architectural changes.
 > **Dataset checksum:** `cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b`
 > **Mode:** `BENCHMARK` — all provider calls use deterministic sandbox adapters. No live API calls.
 > **Reproducible:** `pnpm evaluate-smoke` produces identical numbers on every run.

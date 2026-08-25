@@ -5,7 +5,7 @@
 **Context:** AI Integration Strategy
 
 ## Context and Problem Statement
-The goal of this track is "AI Revenue Recovery." However, granting autonomous AI systems direct control over financial transactions or customer communications poses unacceptable risks (hallucinations, infinite retry loops, spam, unbounded cost). The system must utilize AI for intelligence while mathematically guaranteeing financial safety.
+The goal of this track is "AI Revenue Recovery." However, granting autonomous AI systems direct control over financial transactions or customer communications poses unacceptable risks (hallucinations, infinite retry loops, spam, unbounded cost). The system must utilize AI for intelligence while deterministically enforcing financial safety.
 
 ## Decision
 We will enforce a strict architectural boundary where **AI Proposes, but Deterministic Policy Disposes**. AI models (Causal ML and LLMs) are restricted solely to the `RecoveryPlan` generation phase. All plans must pass through a hardcoded, deterministic TypeScript policy engine before execution.

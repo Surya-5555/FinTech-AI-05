@@ -15,6 +15,6 @@ We will use a strictly bounded AI integration model:
 5. **No raw PII:** LLM context must be synthesized and masked.
 
 ## Consequences
-- High safety guarantees for financial interactions.
+- High safety bounds for financial interactions.
 - Allows AI to add value in communication while keeping the core reliable.
 - Requires maintaining fallback templates.

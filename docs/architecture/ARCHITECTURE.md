@@ -12,9 +12,9 @@ Below is the directory of all architectural subsystems:
 2. **[Data Model](DATA_MODEL.md):** The PostgreSQL schema, uniqueness constraints, and JSONB strategies.
 3. **[Domain Model](DOMAIN_MODEL.md):** The tactical DDD implementation, isolating business logic from external frameworks.
 4. **[State Machine](STATE_MACHINE.md):** The rigid, DAG-based state transitions governing a revenue recovery lifecycle.
-5. **[Persistence](PERSISTENCE.md):** The Repository pattern implementation via Prisma and transactional guarantees.
+5. **[Persistence](PERSISTENCE.md):** The Repository pattern implementation via Prisma and transactional protections.
 6. **[Async Workflow](ASYNC_WORKFLOW.md):** The BullMQ/Redis worker topologies and asynchronous queuing strategy.
-7. **[Outbox Pattern](OUTBOX_PATTERN.md):** The transactional outbox guaranteeing exactly-once delivery across Postgres and Redis.
+7. **[Outbox Pattern](OUTBOX_PATTERN.md):** The transactional outbox enforcing exactly-once delivery across Postgres and Redis.
 8. **[Recovery Planning](RECOVERY_PLANNING.md):** The strict boundary between AI (Causal ML/LLMs) and Deterministic Policy enforcement.
 9. **[Worker Safety](WORKER_SAFETY.md):** Fault tolerance, idempotent execution, and graceful degradation in background jobs.
 10. **[Error Model](ERROR_MODEL.md):** The global, deterministic JSON error classification strategy.

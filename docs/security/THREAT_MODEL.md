@@ -21,7 +21,7 @@ This document outlines the high-level threat model for the Razorpay AI Revenue R
 
 ### 2. Double Charging (Idempotency Failure)
 **Threat**: Network timeouts or concurrent requests result in the same recovery intervention executing twice, double-charging the customer.
-**Mitigation**: Strict idempotency keys are enforced at the database level (`Intervention.idempotencyKey`) and passed to external providers (Razorpay). The transactional outbox pattern guarantees exactly-once messaging semantics.
+**Mitigation**: Strict idempotency keys are enforced at the database level (`Intervention.idempotencyKey`) and passed to external providers (Razorpay). The transactional outbox pattern ensures exactly-once messaging semantics.
 
 ### 3. Webhook Spoofing
 **Threat**: An attacker sends malicious webhook payloads to the system to manipulate case states or trigger false recoveries.

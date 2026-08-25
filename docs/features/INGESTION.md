@@ -27,7 +27,7 @@ POST /api/events
 
 ### Idempotency Implementation
 
-The uniqueness guarantee is enforced at the **database level**, not application level:
+The uniqueness enforcement is applied at the **database level**, not application level:
 ```sql
 -- Prisma schema
 @@unique([merchantId, externalEventId, eventType])

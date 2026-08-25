@@ -2,7 +2,7 @@
 
 ## Problem
 
-Once a recovery plan is approved by the policy engine, it must be executed against an external provider (Razorpay API, Twilio, Resend). This execution is inherently asynchronous — the API calls may take seconds, may fail transiently, and may need to be retried. The system must guarantee that each approved intervention is executed **exactly once** regardless of network conditions, worker crashes, or queue re-deliveries.
+Once a recovery plan is approved by the policy engine, it must be executed against an external provider (Razorpay API, Twilio, Resend). This execution is inherently asynchronous — the API calls may take seconds, may fail transiently, and may need to be retried. The system must enforce that each approved intervention is executed **exactly once** regardless of network conditions, worker crashes, or queue re-deliveries.
 
 ## Motivation
 

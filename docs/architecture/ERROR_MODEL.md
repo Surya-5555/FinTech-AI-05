@@ -5,7 +5,7 @@ In financial infrastructure, error handling must be completely deterministic, sa
 
 ## The Global Exception Filter
 
-All exceptions thrown within the NestJS execution context are caught by a global `HttpExceptionFilter`. This filter guarantees that regardless of where a failure occurs (a database constraint violation, a Zod validation error, or an unhandled Promise rejection), the client receives a strictly typed JSON response.
+All exceptions thrown within the NestJS execution context are caught by a global `HttpExceptionFilter`. This filter ensures that regardless of where a failure occurs (a database constraint violation, a Zod validation error, or an unhandled Promise rejection), the client receives a strictly typed JSON response.
 
 ### Standard Error Envelope
 Every API error adheres to the following JSON structure:

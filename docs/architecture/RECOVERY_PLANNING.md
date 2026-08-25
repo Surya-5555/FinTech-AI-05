@@ -19,4 +19,4 @@ Before the `RecoveryPlan` is saved or executed, it must pass through the `libs/d
 - **Cost Ceilings:** Is the cost of the proposed intervention (e.g., an expensive international voice call) higher than the potential recovered revenue? If yes, the plan is downgraded.
 
 ## Failure States
-If the AI APIs fail or timeout, the system gracefully degrades. It falls back to a deterministic baseline strategy (e.g., standard email retry) to ensure revenue is not lost due to third-party AI outages. The boundary guarantees that an AI hallucination can never bypass the consent or cooldown checks.
+If the AI APIs fail or timeout, the system gracefully degrades. It falls back to a deterministic baseline strategy (e.g., standard email retry) to ensure revenue is not lost due to third-party AI outages. The boundary ensures that an AI hallucination can never bypass the consent or cooldown checks.

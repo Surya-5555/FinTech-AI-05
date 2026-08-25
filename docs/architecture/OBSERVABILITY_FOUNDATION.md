@@ -1,7 +1,7 @@
 # Observability Foundation
 
 ## Overview
-Given the asynchronous and distributed nature of the AI Revenue Recovery system (API ingress -> Database -> Outbox -> BullMQ Workers -> LLM APIs -> Razorpay APIs), comprehensive observability is a non-negotiable requirement. Our observability foundation guarantees that every request, background job, and state transition is strictly traceable, measurable, and auditable.
+Given the asynchronous and distributed nature of the AI Revenue Recovery system (API ingress -> Database -> Outbox -> BullMQ Workers -> LLM APIs -> Razorpay APIs), comprehensive observability is a non-negotiable requirement. Our observability foundation ensures that every request, background job, and state transition is strictly traceable, measurable, and auditable.
 
 ## 1. Structured JSON Logging (Pino)
 All logging across the API, Worker, and Evaluation layers is handled by `pino`, outputting strict newline-delimited JSON (NDJSON). 

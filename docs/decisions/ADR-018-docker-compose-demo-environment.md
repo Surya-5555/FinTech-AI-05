@@ -16,7 +16,7 @@ We will use **Docker Compose** with multi-stage Dockerfiles.
 
 ## Rationale
 1. **Simplicity:** Docker Compose is the standard for local multi-container development. `docker compose up --build` provides an immediate out-of-the-box experience.
-2. **Reproducibility:** Multi-stage builds guarantee that everyone is building and running the exact same binaries regardless of host Node versions.
+2. **Reproducibility:** Multi-stage builds ensure that everyone is building and running the exact same binaries regardless of host Node versions.
 3. **Safety:** By strictly using a `demo` environment with `RAZORPAY_MODE=test` and `LLM_ENABLED=false` as defaults, we prevent accidental live financial actions.
 4. **Why not Kubernetes?** Kubernetes introduces massive overhead (minikube/k3d, helm charts, manifests) that is unnecessary for a Buildathon demo. Docker Compose strikes the right balance between containerization and developer ergonomics.
 

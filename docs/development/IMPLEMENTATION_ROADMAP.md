@@ -1,7 +1,7 @@
 # Implementation Roadmap
 **Project:** Razorpay AI Buildathon — Track 03: AI Revenue Recovery
 
-This document outlines the complete sequence for implementing the AI Revenue Recovery system. It guarantees that the system is engineered progressively, maintaining strict boundaries between AI reasoning and deterministic execution, and enabling reproducible evaluation of recovery metrics.
+This document outlines the complete sequence for implementing the AI Revenue Recovery system. It ensures that the system is engineered progressively, maintaining strict boundaries between AI reasoning and deterministic execution, and enabling reproducible evaluation of recovery metrics.
 
 ---
 

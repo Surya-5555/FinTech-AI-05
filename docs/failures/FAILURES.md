@@ -24,7 +24,7 @@ A worker picks up an intervention, acquires the execution lock, then crashes bef
 ### System Response
 1. **Distributed Lock**: Before execution, the worker claims a database-level lock (`lockedBy`, `lockedAt` fields) on the intervention record.
 2. **Lock Rejection**: A second worker attempting to claim the same lock is deterministically rejected — `claimExecutionLock()` returns `false`.
-3. **At-Most-Once Guarantee**: The external payment gateway or messaging endpoint is never hit twice for the same logical intervention attempt.
+3. **At-Most-Once Enforcement**: The external payment gateway or messaging endpoint is never hit twice for the same logical intervention attempt.
 
 ### Evidence
 - Test: `tests/integration/resilience_flow.test.ts` — "Worker Failure/Restart: Idempotent execution lock prevents double execution"
