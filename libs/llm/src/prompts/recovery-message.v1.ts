@@ -22,6 +22,7 @@ CONSTRAINTS:
 - Allowed Tone: ${context.constraints.allowedTone}
 ${context.constraints.requiredDisclosure ? `- Required Disclosure: ${context.constraints.requiredDisclosure}` : ''}
 - Forbidden Claims: ${context.constraints.forbiddenClaims.join(', ')}
+${context.channel === 'VOICE_CALL' ? '- VOICE MODEL TARGET: Sarvam AI Bulbul V3. Generate the script in natural code-mixed Hinglish (Hindi + English) using Latin script. Do not use Devanagari.' : ''}
 
 Respond in valid JSON matching this schema exactly:
 {
