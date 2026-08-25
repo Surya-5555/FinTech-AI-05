@@ -64,7 +64,18 @@ dunningGraph.addNode('recommend', async (state: DunningState) => {
   if (!state.diagnosis) throw new Error('Diagnosis missing');
   const candidates = selectCandidateInterventions(state.revCase, state.diagnosis, state.merchantPolicy);
   state.diagnosis.candidateInterventions = candidates;
-  const recommended = recommendIntervention(state.revCase, state.diagnosis, candidates, state.merchantPolicy, state.activeInterventionSummary);
+  let recommended = recommendIntervention(state.revCase, state.diagnosis, candidates, state.merchantPolicy, state.activeInterventionSummary);
+
+  // Smart Dunning Overrides
+  const failureCode = state.revCase.failureCode;
+  const attemptCount = state.revCase.attemptCount;
+  
+  if (failureCode === 'card_expired') {
+    recommended = InterventionType.PAYMENT_LINK;
+  } else if (['insufficient_funds', 'bank_technical_error'].includes(failureCode || '') && attemptCount < 3) {
+    recommended = InterventionType.PAYMENT_RETRY;
+  }
+
   state.diagnosis.recommendedIntervention = recommended;
   return { candidates, recommended, diagnosis: state.diagnosis };
 });
@@ -115,16 +126,26 @@ dunningGraph.addNode('create_plan', async (state: any) => {
   const { revCase, merchantPolicy, recommended, policyDecision, now } = state;
   const idempotencyKey = `${revCase.caseId}_${merchantPolicy.policyVersion}_${recommended}_${revCase.attemptCount + 1}` as any;
   
+  let plannedAt = now;
+  if (revCase.failureCode === 'insufficient_funds' && recommended === InterventionType.PAYMENT_RETRY) {
+    const nextPayday = new Date(now);
+    // Move to 1st of next month for payday heuristics
+    nextPayday.setMonth(nextPayday.getMonth() + 1);
+    nextPayday.setDate(1);
+    nextPayday.setHours(9, 0, 0, 0);
+    plannedAt = nextPayday;
+  }
+
   const plan: RecoveryPlan = {
     planId: generateId('plan') as any,
     caseId: revCase.caseId,
     interventionType: recommended as any,
-    plannedAt: now,
+    plannedAt,
     reasonCodes: policyDecision!.reasonCodes.map((r: any) => r.toString()),
     policyVersion: merchantPolicy.policyVersion,
     requiresHumanApproval: policyDecision!.requiresHumanApproval,
     idempotencyKey,
-    parameters: {}, 
+    parameters: recommended === InterventionType.PAYMENT_LINK ? { paymentLinkId: 'plink_' + generateId('link') } : {}, 
     planStatus: policyDecision!.approved ? 'POLICY_APPROVED' as any : 'POLICY_REJECTED' as any,
   };
 
