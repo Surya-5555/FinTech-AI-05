@@ -183,7 +183,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 
 **Failure Diagnosis:** The LLM reads the Razorpay decline code and case context, and produces a structured root-cause diagnosis (e.g., `"bank_timeout" → "Bank's payment gateway experienced a transient timeout — a retry is likely to succeed"`).
 
-**Downtime-Aware Routing:** The AI context dynamically evaluates the `rootCause` against known downtime states (e.g., `upi_downtime`, `bank_downtime`). If an active network downtime is detected, the recovery messaging explicitly pivots, advising the user to avoid the degraded network and use an alternative payment method (like a Card) to maximize conversion probability.
+**Downtime-Aware Routing:** The AI context dynamically evaluates the `rootCause` against known downtime states (e.g., `upi_downtime`, `bank_downtime`). If an active network downtime is detected, the recovery messaging explicitly pivots, advising the user to avoid the degraded network and use an alternative payment method (like a Card) to maximize conversion probability. This context-enrichment pattern is modeled directly after the official [Razorpay Downtime API specifications](https://razorpay.com/docs/api/payments/downtime/), ensuring the AI responds to genuine platform states rather than arbitrary assumptions.
 
 **Customer Communication:** Context-aware messages drafted for SMS, Email, and Voice channels across 4 Indian locales:
 

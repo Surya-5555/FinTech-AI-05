@@ -23,7 +23,7 @@ Planning Service selects channel (SMS | EMAIL | VOICE)
 
 ### Downtime-Aware Routing (Context Enrichment)
 
-The messaging engine natively supports Razorpay's Downtime context. If a payment fails with `bank_downtime` or `upi_downtime`, the `AIRequestContext` is enriched with `activeNetworkDowntime: true`.
+The messaging engine natively supports Razorpay's Downtime context, modeled directly after the [official Razorpay Downtime API specifications](https://razorpay.com/docs/api/payments/downtime/). If a payment fails with `bank_downtime` or `upi_downtime`, the `AIRequestContext` is enriched with `activeNetworkDowntime: true`.
 
 When this flag is active, both the LLM and the fallback templates automatically pivot their language to explicitly advise the customer to use an alternative payment method (e.g., a Card) rather than fruitlessly retrying on the degraded network.
 
