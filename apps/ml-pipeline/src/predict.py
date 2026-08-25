@@ -6,12 +6,12 @@ import json
 from train import MultiTreatmentTLearner
 
 class CausalInferenceService:
-    def __init__(self, model_path='../../../artifacts/t_learner.pkl', features_path='../../../data/processed/hillstrom/feature_columns.json'):
+    def __init__(self, model_path='../../../artifacts/t_learner.pkl', features_path='../../../artifacts/model_features.json'):
         # Load the trained MultiTreatmentTLearner
         import os
         base_dir = os.path.dirname(os.path.abspath(__file__))
         model_path = os.path.join(base_dir, '../../../artifacts/t_learner.pkl')
-        features_path = os.path.join(base_dir, '../../../data/processed/hillstrom/feature_columns.json')
+        features_path = os.path.join(base_dir, '../../../artifacts/model_features.json')
         import sys
         if not hasattr(sys.modules['__main__'], 'MultiTreatmentTLearner'):
             sys.modules['__main__'].MultiTreatmentTLearner = MultiTreatmentTLearner

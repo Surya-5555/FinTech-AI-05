@@ -76,22 +76,8 @@ class MultiTreatmentTLearner:
 
 def train_pipeline():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    train_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/train.csv'))
-    test_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/test.csv'))
-    
-    # Rename features to Domain-Specific names for Razorpay integration
-    rename_map = {
-        'recency': 'daysSinceLastPayment',
-        'history': 'amountMinor',
-        'mens': 'isCardError',
-        'womens': 'isHighValueMerchant',
-        'newbie': 'isFirstAttempt',
-        'history_segment': 'amountSegment',
-        'zip_code': 'customerLocation',
-        'channel': 'paymentChannel'
-    }
-    train_df.rename(columns=rename_map, inplace=True)
-    test_df.rename(columns=rename_map, inplace=True)
+    train_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/synthetic_razorpay/train.csv'))
+    test_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/synthetic_razorpay/test.csv'))
     
     # Target and Treatment
     T_train, Y_train = train_df['T'], train_df['Y']
@@ -101,10 +87,26 @@ def train_pipeline():
     exclude_cols = ['T', 'Y', 'visit', 'spend', 'invoice_amount_proxy']
     feature_cols = [c for c in train_df.columns if c not in exclude_cols]
     
-    X_train = train_df[feature_cols]
-    X_test = test_df[feature_cols]
+    # Handle categorical variables via one-hot encoding
+    cat_cols = ['amountSegment', 'customerLocation', 'paymentChannel']
+    X_train_raw = train_df[feature_cols]
+    X_test_raw = test_df[feature_cols]
     
-    print(f"Features: {feature_cols}")
+    X_train = pd.get_dummies(X_train_raw, columns=cat_cols, drop_first=True)
+    X_test = pd.get_dummies(X_test_raw, columns=cat_cols, drop_first=True)
+    
+    # Ensure all boolean dummies are int
+    for col in X_train.columns:
+        if X_train[col].dtype == bool:
+            X_train[col] = X_train[col].astype(int)
+    for col in X_test.columns:
+        if X_test[col].dtype == bool:
+            X_test[col] = X_test[col].astype(int)
+            
+    # Align test set columns to train set columns in case some categories are missing
+    X_test = X_test.reindex(columns=X_train.columns, fill_value=0)
+    
+    print(f"Features after encoding: {X_train.columns.tolist()}")
     
     # Train
     learner = MultiTreatmentTLearner(treatments=[0, 1, 2])
@@ -144,6 +146,11 @@ def train_pipeline():
     model_path = os.path.join(artifacts_dir, 't_learner.pkl')
     with open(model_path, 'wb') as f:
         pickle.dump(learner, f)
+    
+    # Also save the exact features the model expects after encoding
+    import json
+    with open(os.path.join(artifacts_dir, 'model_features.json'), 'w') as f:
+        json.dump(X_train.columns.tolist(), f)
     
     print(f"\nModel successfully saved to {model_path}")
 

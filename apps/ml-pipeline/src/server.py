@@ -4,17 +4,17 @@ from pydantic import BaseModel
 from predict import CausalInferenceService
 
 app = fastapi.FastAPI(title="Razorpay Causal Inference API")
-service = CausalInferenceService(model_path='../../artifacts/t_learner.pkl', features_path='../../data/processed/hillstrom/feature_columns.json')
+service = CausalInferenceService(model_path='../../artifacts/t_learner.pkl', features_path='../../artifacts/model_features.json')
 
 class InferencePayload(BaseModel):
-    recency: int
-    history: float
-    mens: int
-    womens: int
-    newbie: int
-    history_segment: str
-    zip_code: str
-    channel: str
+    daysSinceLastPayment: int
+    amountMinor: float
+    isCardError: int
+    isHighValueMerchant: int
+    isFirstAttempt: int
+    amountSegment: str
+    customerLocation: str
+    paymentChannel: str
 
 @app.post("/predict")
 def predict_endpoint(payload: InferencePayload):
