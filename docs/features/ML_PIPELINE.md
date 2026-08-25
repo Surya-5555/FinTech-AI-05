@@ -28,18 +28,22 @@ The planning layer selects `argmax_t(NEIV_t)` subject to:
 - Fraud override: `FRAUD_SUSPECTED` → forced escalation regardless of NEIV
 - Negative NEIV: If all interventions have negative NEIV, the case is stopped (do nothing is optimal)
 
-### Dataset: Hillstrom MineThatData
+### The Dual-Track ML Strategy
 
-The model is trained on the **Hillstrom MineThatData Email RCT** — a real, public randomised controlled trial dataset with:
-- Control group (no email)
-- Email treatment 1 (men's merchandise)
-- Email treatment 2 (women's merchandise)
-- Outcome: conversion within 2 weeks
+**Why this approach? (The Privacy-First Principle)** 
+In a Buildathon environment, we absolutely cannot use real Razorpay merchant data or customer PII, as it violates strict confidentiality and regulatory compliance. However, we also refuse to fabricate the "math" behind our Causal Inference model, and we refuse to mislead the jury by pretending a public dataset is Razorpay data.
 
-**Why this dataset? (The Privacy-First Proxy Strategy)** 
-In a Buildathon environment, we absolutely cannot use real Razorpay merchant data or customer PII, as it violates strict confidentiality and regulatory compliance. Instead of using random numbers (which destroys the math) or fabricating fake patterns, we use this public RCT as a **mathematical proxy**. 
+To guarantee both mathematical rigor and operational integrity, we architected a **Dual-Track ML Strategy**:
 
-We map the original columns to our Razorpay domain (e.g., `recency` → `daysSinceLastPayment`, `history` → `amountMinor`). This proves our end-to-end XGBoost architecture is 100% production-ready and validates our causal methodology without introducing any PII risk. When deployed, we simply swap the CSV file to the real Razorpay dataset—requiring zero architectural changes!
+1. **Track 1: Methodology Proof (The Hillstrom Benchmark)**
+   - We run our offline statistical audit (`apps/ml-pipeline/src/statistical_audit.py`) on the **Hillstrom MineThatData Email RCT** — a real, public randomised controlled trial dataset. 
+   - **Purpose:** This proves to the data science jury that our XGBoost T-Learner architecture correctly computes Conditional Average Treatment Effects (CATE) and Net Expected Incremental Value (Net EIV) on *real human data*. We do not arbitrarily rename these features; we keep the math pure.
+
+2. **Track 2: Operational Demo (Synthetic Razorpay Webhooks)**
+   - We built a mathematical data generator (`apps/ml-pipeline/src/generate_synthetic_data.py`) to create a strictly synthetic dataset that mirrors Razorpay's actual domain features (`isCardError`, `amountMinor`, `customerLocation`, etc.).
+   - **Purpose:** We train our live inference model (`apps/ml-pipeline/src/train.py`) on this synthetic dataset. This proves that our operational API and NestJS backend integration are perfectly typed and structurally sound for Razorpay.
+
+When deployed to production, we simply point the training pipeline to Razorpay's internal SQL export instead of the synthetic CSV—requiring **zero architectural changes**.
 
 ### Pipeline Files
 
@@ -62,13 +66,14 @@ POST /predict
 Content-Type: application/json
 
 {
-  "recency": 10,
-  "history": 150000,
-  "mens": 1,
-  "womens": 0,
-  "zip_code": "Urban",
-  "channel": "Web",
-  "segment": "Mens E-Mail"
+  "daysSinceLastPayment": 10,
+  "amountMinor": 150000,
+  "isCardError": 1,
+  "isHighValueMerchant": 0,
+  "isFirstAttempt": 1,
+  "amountSegment": "Low",
+  "customerLocation": "Urban",
+  "paymentChannel": "Web"
 }
 
 → {

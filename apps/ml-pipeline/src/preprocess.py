@@ -73,8 +73,9 @@ def split_and_save(df: pd.DataFrame, out_dir: str):
     print(f"Saved {len(test_df)} test rows to {test_path}")
 
 if __name__ == "__main__":
-    raw_path = "../../data/raw/hillstrom/hillstrom.csv"
-    out_dir = "../../data/processed/hillstrom"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    raw_path = os.path.join(base_dir, "../../../data/raw/hillstrom/hillstrom.csv")
+    out_dir = os.path.join(base_dir, "../../../data/processed/hillstrom")
     
     df = load_and_preprocess(raw_path)
     split_and_save(df, out_dir)

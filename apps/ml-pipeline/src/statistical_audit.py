@@ -1,7 +1,20 @@
 """
 FINAL STATISTICAL AUDIT — Razorpay AI Revenue Recovery (Track 03)
-Comprehensive forensic audit of T-Learner model performance,
-calibration, policy value, and scientific validity.
+==================================================================
+PART 1 OF THE DUAL-TRACK ML STRATEGY: METHODOLOGY PROOF
+
+This script executes a comprehensive forensic audit of our T-Learner model 
+performance, calibration, and policy value on the public Hillstrom MineThatData 
+dataset. 
+
+Why use a public dataset?
+Because real Razorpay payment recovery data with randomized interventions is strictly 
+private. We refuse to risk PII breaches. This script proves to the jury that our 
+Causal Inference methodology (XGBoost T-Learner) is mathematically sound, correctly 
+implemented, and achieves measurable uplift on real human RCT data. 
+
+*Note: The live API model (train.py) uses Track 2: a Synthetic Razorpay dataset 
+to safely simulate the production environment without arbitrary feature mapping.*
 """
 import pandas as pd
 import numpy as np
@@ -369,11 +382,10 @@ print("""
      (T1) has a uniformly strong average treatment effect. There is limited
      heterogeneity for a personalization model to exploit.
 
-  6. WHAT THIS PROVES FOR JUDGES: The architecture correctly identifies
-     the dominant treatment, correctly prices interventions via Net EIV,
-     and correctly evaluates policies using offline RCT methodology.
-     On a Razorpay dataset with genuine treatment heterogeneity (e.g.,
-     SMS retry vs. payment link vs. do-nothing for different failure types),
-     this same architecture would produce a policy that materially
-     outperforms any "treat everyone the same" baseline.
+  6. THE DUAL-TRACK STRATEGY: This script represents Track 1 (Methodology Proof).
+     It proves the architecture correctly identifies the dominant treatment and 
+     evaluates policies using offline RCT methodology on real human data.
+     Track 2 (Operational Demo) uses a mathematically synthetic Razorpay dataset 
+     in `train.py` to safely simulate webhooks without risky PII exposure or 
+     misleading feature mappings.
 """)

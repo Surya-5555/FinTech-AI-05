@@ -169,10 +169,13 @@ Net Expected Incremental Value: `NEIV_t = τ̂_t(x) × amountMinor − cost_t`
 
 The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing nothing is optimal — the case is stopped rather than needlessly intervened upon.
 
-- **Privacy-First Proxy Dataset (Hillstrom MineThatData):** Because real Razorpay merchant data and customer PII are strictly confidential and cannot be used in a Buildathon, we use this public Randomised Controlled Trial (RCT) as a **mathematical proxy**. We cleanly map its features to our domain (e.g., `recency` → `daysSinceLastPayment`, `history` → `amountMinor`). This proves our end-to-end XGBoost architecture is 100% production-ready and validates our causal methodology, while guaranteeing absolute zero PII risk. When deployed to production, we simply swap the training CSV to the real Razorpay dataset—requiring zero architectural changes.
+- **Dual-Track ML Strategy for Jury Integrity:** In a Buildathon environment, we absolutely cannot use real Razorpay merchant data (PII risk). Conversely, we refuse to mislead judges by simply renaming retail datasets (like Hillstrom) to look like Razorpay data. Therefore, we implemented a dual-track strategy:
+  1. **Track 1 (Methodology Proof):** We run our offline statistical audit on the public **Hillstrom MineThatData Email RCT**. This mathematically proves our XGBoost T-Learner architecture correctly computes causal uplift on real human data.
+  2. **Track 2 (Operational Demo):** We built a mathematical data generator that creates a purely synthetic dataset exactly mirroring Razorpay's webhook schemas. Our live FastAPI inference server (`train.py` & `server.py`) is trained on this synthetic data, proving our NestJS API integration operates on genuine domain fields (`isCardError`, `amountMinor`, etc.) without hallucinations.
+  When deployed, we simply swap the training CSV to Razorpay's real SQL export—requiring zero architectural changes.
 - **Inference API:** Python FastAPI service on port 8000, called from the NestJS domain layer with a 3-second timeout.
 - **Fallback:** If the ML server is unreachable, a deterministic rule-based heuristic (`bank_timeout → retry`, `card_expired → payment_link`, etc.) is used. The system never stalls waiting for ML.
-- **Evaluation:** `python apps/ml-pipeline/src/statistical_audit.py` generates AUROC, PR-AUC, Brier score, and Bootstrap 95% CIs per treatment arm.
+- **Evaluation:** `python apps/ml-pipeline/src/statistical_audit.py` generates AUROC, PR-AUC, Brier score, and Bootstrap 95% CIs per treatment arm to prove the methodology on the offline benchmark.
 
 ---
 
