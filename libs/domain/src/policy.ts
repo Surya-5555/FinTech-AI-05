@@ -9,6 +9,7 @@ import {
   RootCause,
 } from '@rr/contracts';
 import { ActiveInterventionSummary } from './intervention';
+import { isOutsideTRAIWindow } from './utils/time-compliance';
 
 export interface PolicyEvaluationInput {
   revCase: RecoveryCase;
@@ -150,9 +151,9 @@ export function evaluateRecoveryPolicy(input: PolicyEvaluationInput): PolicyDeci
     return {
       approved: false,
       reasonCodes,
-      requiresHumanApproval: false,
+      requiresHumanApproval: true,
       stopCase: true,
-      escalationRequired: false,
+      escalationRequired: true,
     };
   }
 
@@ -173,6 +174,21 @@ export function evaluateRecoveryPolicy(input: PolicyEvaluationInput): PolicyDeci
          escalationRequired: false,
          retryAfter: new Date(input.now.getTime() + merchantPolicy.contactRules.messageWindowHours * 60 * 60 * 1000)
        };
+    }
+  }
+
+  // RBI Time-of-Day Compliance for Outbound Communication
+  if (proposedIntervention === InterventionType.VOICE_REMINDER || proposedIntervention === InterventionType.SMS_REMINDER) {
+    if (isOutsideTRAIWindow(input.now)) {
+      reasonCodes.push(RecoveryReasonCode.CHANNEL_NOT_ALLOWED);
+      return {
+        approved: false,
+        reasonCodes,
+        requiresHumanApproval: false,
+        stopCase: false,
+        escalationRequired: false,
+        retryAfter: new Date(input.now.getTime() + 12 * 60 * 60 * 1000) // Delay until next compliant window
+      };
     }
   }
 
