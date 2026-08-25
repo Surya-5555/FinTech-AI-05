@@ -172,7 +172,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 
 - **Dual-Track ML Strategy for Jury Integrity:** In a Buildathon environment, we absolutely cannot use real Razorpay merchant data (PII risk). Conversely, we refuse to mislead judges by simply renaming retail datasets (like Hillstrom) to look like Razorpay data. Therefore, we implemented a dual-track strategy:
   1. **Track 1 (Methodology Proof):** We run our offline statistical audit on the public **Hillstrom MineThatData Email RCT**. This mathematically proves our XGBoost T-Learner architecture correctly computes causal uplift on real human data.
-  2. **Track 2 (Operational Demo):** We built a mathematical data generator that creates a purely deterministic generated dataset exactly mirroring Razorpay's webhook schemas. Our live FastAPI inference server (`train.py` & `server.py`) is trained on this generated data, proving our NestJS API integration operates on genuine domain fields (`isCardError`, `amountMinor`, etc.) without hallucinations.
+  2. **Track 2 (Operational Demo):** We built a mathematical data generator that creates a purely benchmark dataset exactly mirroring Razorpay's webhook schemas. Our live FastAPI inference server (`train.py` & `server.py`) is trained on this benchmark data, proving our NestJS API integration operates on genuine domain fields (`isCardError`, `amountMinor`, etc.) without hallucinations.
   When deployed, we simply swap the training CSV to Razorpay's real SQL export—requiring zero architectural changes.
 - **Inference API:** Python FastAPI service on port 8000, called from the NestJS domain layer with a 3-second timeout.
 - **Fallback:** If the ML server is unreachable, a deterministic rule-based heuristic (`bank_timeout → retry`, `card_expired → payment_link`, etc.) is used. The system never stalls waiting for ML.
@@ -232,7 +232,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 
 ## 5. Latest Evaluation Results
 
-> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). **Why a Generated Benchmark?** To ensure absolute zero risk of PII leakage, maintain perfect regulatory compliance, and ensure strict mathematical reproducibility of the evaluation metrics, no real merchant data is used. **Future Path:** The identical evaluation pipeline will seamlessly ingest real Razorpay dataset exports once production access is granted, requiring zero architectural changes.
+> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). **Why Benchmark?** To ensure absolute zero risk of PII leakage, maintain perfect regulatory compliance, and ensure strict mathematical reproducibility of the evaluation metrics, no real merchant data is used. **Future Path:** The identical evaluation pipeline will seamlessly ingest real Razorpay dataset exports once production access is granted, requiring zero architectural changes.
 > **Dataset checksum:** `cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b`
 > **Mode:** `BENCHMARK` — all provider calls use deterministic sandbox adapters. No live API calls.
 > **Reproducible:** `pnpm evaluate-smoke` produces identical numbers on every run.
