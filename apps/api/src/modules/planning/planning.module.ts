@@ -12,5 +12,6 @@ import { PrismaPlanningRepository } from '@rr/persistence';
       useClass: PrismaPlanningRepository,
     },
   ],
+  exports: [PlanningService, 'PlanningRepository'],
 })
 export class PlanningModule {}

@@ -15,6 +15,7 @@ import { diagnoseRevenueCase } from './diagnosis';
 import { ActiveInterventionSummary, recommendIntervention, selectCandidateInterventions } from './intervention';
 import { evaluateRecoveryPolicy } from './policy';
 import { dunningWorkflow, DunningState } from './dunning-graph';
+import { getPrismaClient } from '@rr/persistence';
 
 import { scorePropensity } from './ml/propensity';
 import { isOutsideTRAIWindow } from './utils/time-compliance';
@@ -50,7 +51,42 @@ export async function proposeRecoveryPlan(input: PlanProposalInput): Promise<Rec
     now
   };
   
-  const finalState = await dunningWorkflow.invoke(initialState) as DunningState;
+  let finalState: DunningState;
+  const prisma = getPrismaClient();
+
+  try {
+    finalState = await dunningWorkflow.invoke(initialState) as DunningState;
+    
+    // Save reasoning trace upon successful graph execution
+    await prisma.auditLog.create({
+      data: {
+        entityType: 'REVENUE_CASE',
+        entityId: revCase.caseId,
+        action: 'LANGGRAPH_EXECUTION_SUCCESS',
+        actorType: 'AI_SYSTEM',
+        correlationId: revCase.correlationId,
+        metadataJson: JSON.stringify({ message: 'Graph executed successfully' }),
+        reasoningTrace: JSON.stringify(finalState),
+        timestamp: new Date()
+      }
+    });
+
+  } catch (error: any) {
+    // Log failure securely to AuditLog and halt execution
+    await prisma.auditLog.create({
+      data: {
+        entityType: 'REVENUE_CASE',
+        entityId: revCase.caseId,
+        action: 'LANGGRAPH_EXECUTION_FAILED',
+        actorType: 'AI_SYSTEM',
+        correlationId: revCase.correlationId,
+        metadataJson: JSON.stringify({ error: error.message }),
+        reasoningTrace: JSON.stringify(initialState),
+        timestamp: new Date()
+      }
+    });
+    throw new Error(`LangGraph Execution Failed: ${error.message}`);
+  }
   
   // Extract results from graph execution
   const diagnosis = finalState.diagnosis;

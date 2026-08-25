@@ -183,6 +183,7 @@ model AuditLog {
   previousState String?
   nextState     String?
   metadataJson  String   @db.Text
+  reasoningTrace String? @db.Text
 
   @@index([entityType, entityId, timestamp])
   @@index([correlationId, timestamp])
@@ -248,4 +249,10 @@ model AIInvocation {
   @@index([useCase, status, createdAt])
   @@index([correlationId])
   @@index([caseId])
+}
+
+model EventIdempotency {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  processedAt DateTime @default(now())
 }
