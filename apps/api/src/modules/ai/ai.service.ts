@@ -59,6 +59,7 @@ export class AiService {
         allowedTone: 'professional',
       },
       dataClassification: AIDataClassification.MASKED_DEMO,
+      activeNetworkDowntime: revenueCase.rootCause === 'bank_downtime' || revenueCase.rootCause === 'upi_downtime',
     };
 
     // We use fallback directly for safety/speed unless LLM client is wired
@@ -111,6 +112,7 @@ export class AiService {
         allowedTone: 'analytical',
       },
       dataClassification: AIDataClassification.MASKED_DEMO,
+      activeNetworkDowntime: revenueCase.rootCause === 'bank_downtime' || revenueCase.rootCause === 'upi_downtime',
     };
 
     const explanation = getFallbackDecisionExplanation(context);

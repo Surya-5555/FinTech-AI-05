@@ -12,7 +12,21 @@ export function getFallbackMessageDraft(context: AIRequestContext): RecoveryMess
   let text = '';
   let templateVersion = 'fallback-v1';
 
-  if (context.channel === 'SEND_SMS_REMINDER') {
+  if (context.activeNetworkDowntime) {
+    if (locale === AILocale.HI_IN || locale === AILocale.HINGLISH) {
+      text = `Hi, ${context.merchantDisplayName} ka payment network issue ke karan fail hua. Kripya doosre payment method (Credit/Debit Card) se try karein.`;
+      templateVersion = 'fallback-downtime-hinglish-v1';
+    } else if (locale === AILocale.TA_IN) {
+      text = `வணக்கம், பிணைய பிரச்சனையால் ${context.merchantDisplayName} கட்டணம் தோல்வியடைந்தது. வேறு கட்டண முறையை (கார்டு) பயன்படுத்தவும்.`;
+      templateVersion = 'fallback-downtime-tamil-v1';
+    } else if (locale === AILocale.KN_IN) {
+      text = `ನಮಸ್ಕಾರ, ನೆಟ್‌ವರ್ಕ್ ಸಮಸ್ಯೆಯಿಂದ ${context.merchantDisplayName} ಪಾವತಿ ವಿಫಲವಾಗಿದೆ. ದಯವಿಟ್ಟು ಬೇರೆ ಪಾವತಿ ವಿಧಾನವನ್ನು ಬಳಸಿ.`;
+      templateVersion = 'fallback-downtime-kannada-v1';
+    } else {
+      text = `Hi, your payment to ${context.merchantDisplayName} failed due to an active network downtime. Please retry using an alternative payment method (like a Card).`;
+      templateVersion = 'fallback-downtime-v1';
+    }
+  } else if (context.channel === 'SEND_SMS_REMINDER') {
     // Select message by locale — covers Hindi belt, Tamil Nadu, and Karnataka (Razorpay HQ region)
     if (locale === AILocale.HI_IN || locale === AILocale.HINGLISH) {
       text = `Namaste! ${context.merchantDisplayName} ke liye aapka ${context.amountDisplay} ka payment pending hai. Abhi pay karein.`;

@@ -56,6 +56,7 @@ export interface AIRequestContext {
     allowedTone: string;
   };
   dataClassification: AIDataClassification;
+  activeNetworkDowntime?: boolean;
 }
 
 export interface RecoveryMessageDraft {
