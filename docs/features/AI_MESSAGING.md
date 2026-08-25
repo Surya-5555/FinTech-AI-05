@@ -21,6 +21,12 @@ Planning Service selects channel (SMS | EMAIL | VOICE)
     → If invalid / timeout: getFallbackMessageDraft(context)
 ```
 
+### Downtime-Aware Routing (Context Enrichment)
+
+The messaging engine natively supports Razorpay's Downtime context. If a payment fails with `bank_downtime` or `upi_downtime`, the `AIRequestContext` is enriched with `activeNetworkDowntime: true`.
+
+When this flag is active, both the LLM and the fallback templates automatically pivot their language to explicitly advise the customer to use an alternative payment method (e.g., a Card) rather than fruitlessly retrying on the degraded network.
+
 ### Prompt Construction
 
 Every message prompt includes:
