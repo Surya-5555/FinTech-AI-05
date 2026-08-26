@@ -22,6 +22,14 @@ Building financial infrastructure requires a fundamentally different mindset tha
 3. **Resilience & Graceful Degradation**: Built on an event-driven queue architecture, the system is highly fault-tolerant against external API timeouts, duplicate webhooks, and sudden traffic spikes. If the AI service experiences downtime, the system degrades gracefully without blocking core ingestion.
 4. **Data-Driven Measurement**: Revenue recovery is an optimization problem. This architecture is designed to capture every state transition and outcome, enabling causal ML models (T-Learners) to continually refine intervention strategies based on actual recovered monetary value.
 
+## 1.2 Technology Stack Justification
+
+Every tool in this architecture was selected specifically to enforce strict financial safety and operational resilience:
+
+- **TypeScript & NestJS (vs. Express or purely Python):** Financial routing requires strict domain modeling. NestJS provides enterprise-grade dependency injection, enforcing clean boundaries between external webhooks, domain policies, and infrastructure. Python is strictly isolated to the mathematical ML layer (FastAPI) where it excels.
+- **PostgreSQL & Prisma (vs. MongoDB/NoSQL):** Handling concurrent webhook retries requires true ACID compliance and Optimistic Concurrency Control (OCC). NoSQL databases risk race conditions under high webhook load. PostgreSQL guarantees that state mutations are atomic and idempotent.
+- **BullMQ & Redis (vs. Kafka or RabbitMQ):** Revenue recovery requires precise delayed scheduling (e.g., "retry in 3 hours") and atomic state transitions. BullMQ provides these precise retry semantics natively, whereas Kafka is designed for high-throughput streaming and introduces unnecessary operational overhead for transactional outboxes.
+- **XGBoost (vs. Deep Learning):** For Causal Inference on tabular payment data, XGBoost (via T-Learners) is the industry standard. It is highly interpretable, fast, and does not overfit on smaller datasets the way deep neural networks do. It provides explainable Net Expected Incremental Value (Net EIV) scores.
 ---
 
 ## 2. Global Architecture Diagram
