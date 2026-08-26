@@ -49,14 +49,14 @@ flowchart TB
     class Orchestrator,Idempotency,Planning,Policy,StateMachine domain
 
     subgraph AI_SERVICES ["AI & ML Services"]
-        ML_FastAPI["Causal ML Inference Service (FastAPI)"]
-        LLM_Client["Generative AI Service (LLM)"]
+        ML_FastAPI["XGBoost Causal T-Learner (FastAPI)"]
+        LLM_Client["LangGraph Agentic Workflow (LLM)"]
         Eval["Offline ML Evaluation Pipeline"]
     end
     class ML_FastAPI,LLM_Client,Eval ai
 
     subgraph EXECUTION_LAYER ["Worker Execution Layer"]
-        BullMQ[("BullMQ / Redis Queue")]
+        BullMQ[("BullMQ (Redis Outbox)")]
         Worker["Execution Worker"]
         Adapter["Razorpay Execution Adapter"]
     end
@@ -109,6 +109,65 @@ flowchart TB
 
 ---
 
+## 2.1 Database System Design (HLD & ERD)
+
+To guarantee transaction safety, we use PostgreSQL as our single source of truth. The schema enforces **Optimistic Concurrency Control (OCC)** via the `version` field and strict idempotency via unique constraints, preventing dirty writes under high load.
+
+```mermaid
+erDiagram
+    MERCHANT ||--o{ CUSTOMER : "has"
+    MERCHANT ||--o{ REVENUE_CASE : "owns"
+    MERCHANT ||--o{ REVENUE_EVENT : "receives"
+    CUSTOMER ||--o{ REVENUE_CASE : "experiences"
+    CUSTOMER ||--o{ REVENUE_EVENT : "triggers"
+    REVENUE_EVENT ||--o| REVENUE_CASE : "creates/resolves"
+    REVENUE_CASE ||--o{ AUDIT_LOG : "generates"
+    
+    MERCHANT {
+        string id PK
+        string externalReference UK
+        string name
+        jsonb configJson
+    }
+    
+    CUSTOMER {
+        string id PK
+        string merchantId FK
+        string externalReference
+        string emailEncrypted
+        string phoneEncrypted
+    }
+    
+    REVENUE_EVENT {
+        string id PK
+        string externalEventId
+        string idempotencyKey UK
+        string eventType
+        int amountMinor
+        string currency
+    }
+    
+    REVENUE_CASE {
+        string id PK
+        string sourceEventId FK
+        string state "e.g. DETECTED, PLANNED, EXECUTING"
+        int amountAtRiskMinor
+        int version "Optimistic Concurrency Control"
+        string lockedBy "Worker ID (Distributed Lock)"
+    }
+    
+    AUDIT_LOG {
+        string id PK
+        string entityType
+        string entityId FK
+        string action
+        jsonb metadataJson
+        datetime timestamp
+    }
+```
+
+---
+
 ## 3. End-to-End Execution Flow
 
 1. **Webhook Arrival:** A payment failure event enters the system.
@@ -123,6 +182,56 @@ flowchart TB
 
 ---
 
+## 3.1 Handling High Concurrency (Race Conditions)
+
+To guarantee that a customer is never spammed and a merchant is never double-charged, we engineered a strict combination of **Database Idempotency** and **Distributed Worker Locks**. The diagram below demonstrates how the system perfectly handles massive simultaneous webhook bursts without duplicating efforts.
+
+```mermaid
+sequenceDiagram
+    participant Razorpay as Razorpay Webhook
+    participant API as Ingestion API
+    participant DB as PostgreSQL (Prisma)
+    participant Worker as Background Worker
+
+    Note over Razorpay, API: Simultaneous identical webhooks arrive at the exact same millisecond
+    
+    par Request 1
+        Razorpay->>+API: POST /events/ingest (Event A)
+    and Request 2
+        Razorpay->>+API: POST /events/ingest (Event A duplicate)
+    and Request 3
+        Razorpay->>+API: POST /events/ingest (Event A duplicate)
+    end
+
+    Note over API, DB: All 3 requests attempt to acquire a unique constraint on 'idempotencyKey'
+
+    API->>DB: INSERT INTO RevenueEvent (idempotencyKey=A)
+    DB-->>API: Success (Row Created)
+    
+    API->>DB: INSERT INTO RevenueEvent (idempotencyKey=A)
+    DB-->>API: ❌ Unique Constraint Violation (HTTP 409)
+    
+    API->>DB: INSERT INTO RevenueEvent (idempotencyKey=A)
+    DB-->>API: ❌ Unique Constraint Violation (HTTP 409)
+
+    API-->>-Razorpay: 200 OK (Processed successfully)
+    API-->>-Razorpay: 409 Conflict (Dropped duplicate)
+    API-->>-Razorpay: 409 Conflict (Dropped duplicate)
+
+    Note over API, Worker: Only ONE valid event makes it to the queue
+    API-)Worker: Queue Job (Event A)
+    
+    Note over Worker, DB: Worker acquires Distributed Lock for execution
+    Worker->>DB: UPDATE RevenueCase SET lockedBy = 'Worker-1' WHERE lockedBy IS NULL
+    DB-->>Worker: Success (1 row updated)
+    
+    Note over Worker, DB: If another worker tries to lock it simultaneously...
+    Worker->>DB: UPDATE RevenueCase SET lockedBy = 'Worker-2' WHERE lockedBy IS NULL
+    DB-->>Worker: ❌ Failed (0 rows updated) - Silently aborts duplicate execution
+```
+
+---
+
 ## 4. Feature Inventory
 
 ### Core Platform
@@ -131,6 +240,28 @@ flowchart TB
 - **State Machine:** Enforces strict lifecycle transitions: `DETECTED` → `PLANNED` → `EXECUTING` → `RECOVERED` / `FAILED` / `STOPPED` / `ESCALATED`. Invalid transitions are rejected with a typed error.
 - **Case Orchestrator:** A highly resilient background cron service (`CaseOrchestratorService`) actively sweeps the database for new `DETECTED` cases. It autonomously batches them, executes the LangGraph AI Dunning Workflow to generate recovery plans, and securely pushes them into the Redis Outbox—completely eliminating manual case interventions.
 - **Terminal States:** `RECOVERED`, `STOPPED`, `ESCALATED` are terminal — any subsequent attempt to execute an intervention on a terminal case is rejected before touching the DB.
+
+#### Lifecycle State Machine (Fintech Strict Transitions)
+
+```mermaid
+stateDiagram-v2
+    [*] --> DETECTED : Webhook Ingested
+    
+    DETECTED --> PLANNED : AI Plans & Policy Approves
+    DETECTED --> STOPPED : Policy Blocks (e.g., Fraud, Cooldown)
+    
+    PLANNED --> EXECUTING : Worker Acquires Lock
+    
+    EXECUTING --> RECOVERED : Payment Captured
+    EXECUTING --> FAILED : Payment Failed / Link Expired
+    EXECUTING --> ESCALATED : Max Retries Exceeded
+    
+    FAILED --> DETECTED : Reset for Retry (if < maxAttempts)
+    
+    RECOVERED --> [*]
+    STOPPED --> [*]
+    ESCALATED --> [*]
+```
 
 ---
 
@@ -209,6 +340,26 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 **Structured Output:** All LLM responses are validated through a Zod schema. A response that fails validation (malformed JSON, missing fields, safety violation) immediately triggers the deterministic fallback — the LLM cannot produce an unvalidated string that reaches a customer.
 
 **Fallback Templates:** Locale-aware deterministic templates for all 4 locales × 3 channels (SMS, Voice, Email) = **12 fallback templates total**. The system runs fully without any LLM API key in benchmark mode.
+
+#### AI & Policy Decision Flow (Bounded Autonomy)
+
+This diagram proves that the AI is fully "bounded". It can never independently trigger a financial action without passing through the deterministic policy engine.
+
+```mermaid
+flowchart TD
+    Start([Case DETECTED]) --> LLM[LLM: Root Cause Diagnosis]
+    Start --> ML[ML: Causal T-Learner Propensity]
+    
+    LLM --> Plan[AI Recovery Plan Formulated]
+    ML --> Plan
+    
+    Plan --> Policy{Deterministic Policy Gate}
+    
+    Policy -- Fraud / No Consent / Stale --> Block[Reject & State = STOPPED]
+    Policy -- Valid & Safe --> Approve[Approve & State = PLANNED]
+    
+    Approve --> Queue[(BullMQ Dispatch)]
+```
 
 ---
 
