@@ -11,7 +11,7 @@ Write-Host ""
 
 # 1. Infra: Postgres + Redis
 Write-Host "[1/5] Starting infrastructure (Postgres + Redis)..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; docker compose -f infra/compose/compose.yaml up postgres redis -d"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; docker compose up postgres redis -d"
 
 Write-Host "      Waiting 10s for Postgres to spin up..."
 Start-Sleep -Seconds 10

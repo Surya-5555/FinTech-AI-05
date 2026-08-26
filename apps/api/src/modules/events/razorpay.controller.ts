@@ -1,8 +1,9 @@
-import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, Logger, UseGuards } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { getPrismaClient } from '@rr/persistence';
 import { RevenueCaseState } from '@rr/contracts';
+import { RazorpayWebhookGuard } from '../../common/guards/razorpay-webhook.guard';
 
 @Controller('razorpay')
 export class RazorpayController {
@@ -14,6 +15,7 @@ export class RazorpayController {
 
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RazorpayWebhookGuard)
   async handleWebhook(
     @Body() payload: any,
     @Headers('x-razorpay-signature') signature: string,

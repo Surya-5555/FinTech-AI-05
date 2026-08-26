@@ -3,9 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "main": "src/index.ts",
-
   "scripts": {
-    "build": "tsc",
+    "build": "node init && tsc",
     "clean": "rm -rf dist",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

@@ -13,7 +13,7 @@ export class RazorpayAdapter implements ExecutionProvider {
   private readonly isTestMode: boolean;
 
   constructor() {
-    this.isTestMode = process.env.RAZORPAY_MODE === 'test';
+    this.isTestMode = process.env.ENABLE_RAZORPAY_TEST_MODE === 'true' || process.env.RAZORPAY_MODE === 'test';
     
     if (!this.isTestMode) {
       this.logger.error('CRITICAL SAFETY VIOLATION: Razorpay adapter initialized without test mode enabled.');
@@ -84,6 +84,8 @@ export class RazorpayAdapter implements ExecutionProvider {
     try {
       if (request.actionType === ExecutionActionType.CREATE_PAYMENT_LINK) {
         return await this.createPaymentLink(request);
+      } else if (request.actionType === ExecutionActionType.INITIATE_PAYMENT_RETRY) {
+        return await this.initiatePaymentRetry(request);
       } else {
         return {
           success: false,
@@ -140,6 +142,37 @@ export class RazorpayAdapter implements ExecutionProvider {
       success: true,
       externalReference: response.data.id,
       rawResponseSnippet: `Payment link created: ${response.data.short_url}`,
+    };
+  }
+
+  private async initiatePaymentRetry(request: InterventionExecutionRequest): Promise<ProviderExecutionResult> {
+    const referenceId = `retry_${request.interventionId}_${randomUUID().substring(0, 8)}`;
+    
+    const payload = {
+      amount: Number(request.amountMinor),
+      currency: request.currency,
+      receipt: request.idempotencyKey,
+      notes: {
+        caseId: request.caseId,
+        interventionId: request.interventionId,
+        attemptNumber: String(request.parameters?.attemptNumber || 1)
+      }
+    };
+
+    const response = await this.breaker.fire({
+      method: 'post',
+      url: '/orders',
+      data: payload,
+    });
+
+    return {
+      success: true,
+      externalReference: response.data?.id || referenceId,
+      recoveredAmount: {
+        amountMinor: request.amountMinor,
+        currency: request.currency,
+      },
+      rawResponseSnippet: JSON.stringify(response.data || { id: referenceId, status: 'created' }),
     };
   }
 

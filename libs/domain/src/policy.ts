@@ -80,8 +80,10 @@ export function evaluateRecoveryPolicy(input: PolicyEvaluationInput): PolicyDeci
   }
 
   if (merchantPolicy.allowCrossBorder === false) {
-    // Assuming 'INR' is the domestic currency. If not INR, block cross-border.
-    if (revCase.amountAtRisk.currency !== 'INR') {
+    const domesticCurrencies = merchantPolicy.supportedCurrencies && merchantPolicy.supportedCurrencies.length > 0
+      ? merchantPolicy.supportedCurrencies
+      : ['INR'];
+    if (!domesticCurrencies.includes(revCase.amountAtRisk.currency)) {
       reasonCodes.push(RecoveryReasonCode.CROSS_BORDER_RESTRICTED);
       return {
         approved: false,

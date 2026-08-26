@@ -5,7 +5,10 @@ import * as path from 'path';
 @Injectable()
 export class EvaluationService {
   private get artifactsDir() {
-    return path.join(process.cwd(), '..', '..', 'artifacts', 'evaluation');
+    const root = process.cwd().includes('apps') 
+      ? path.join(process.cwd(), '..', '..')
+      : process.cwd();
+    return path.join(root, 'artifacts', 'evaluation');
   }
 
   async getRuns() {

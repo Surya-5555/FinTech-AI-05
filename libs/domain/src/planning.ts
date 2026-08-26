@@ -52,39 +52,52 @@ export async function proposeRecoveryPlan(input: PlanProposalInput): Promise<Rec
   };
   
   let finalState: DunningState;
-  const prisma = getPrismaClient();
 
   try {
     finalState = await dunningWorkflow.invoke(initialState) as DunningState;
     
     // Save reasoning trace upon successful graph execution
-    await prisma.auditLog.create({
-      data: {
-        entityType: 'REVENUE_CASE',
-        entityId: revCase.caseId,
-        action: 'LANGGRAPH_EXECUTION_SUCCESS',
-        actorType: 'AI_SYSTEM',
-        correlationId: revCase.correlationId,
-        metadataJson: JSON.stringify({ message: 'Graph executed successfully' }, (key, value) => typeof value === 'bigint' ? value.toString() : value),
-        reasoningTrace: JSON.stringify(finalState, (key, value) => typeof value === 'bigint' ? value.toString() : value),
-        timestamp: new Date()
+    if (process.env.DATABASE_URL && !process.env.OFFLINE_EVALUATION) {
+      try {
+        const prisma = getPrismaClient();
+        await prisma.auditLog.create({
+          data: {
+            entityType: 'REVENUE_CASE',
+            entityId: revCase.caseId,
+            action: 'LANGGRAPH_EXECUTION_SUCCESS',
+            actorType: 'AI_SYSTEM',
+            correlationId: revCase.correlationId,
+            metadataJson: JSON.stringify({ message: 'Graph executed successfully' }, (key, value) => typeof value === 'bigint' ? value.toString() : value),
+            reasoningTrace: JSON.stringify(finalState, (key, value) => typeof value === 'bigint' ? value.toString() : value),
+            timestamp: new Date()
+          }
+        });
+      } catch {
+        // Safe degrade if database audit logging fails
       }
-    });
+    }
 
   } catch (error: any) {
     // Log failure securely to AuditLog and halt execution
-    await prisma.auditLog.create({
-      data: {
-        entityType: 'REVENUE_CASE',
-        entityId: revCase.caseId,
-        action: 'LANGGRAPH_EXECUTION_FAILED',
-        actorType: 'AI_SYSTEM',
-        correlationId: revCase.correlationId,
-        metadataJson: JSON.stringify({ error: error.message }, (key, value) => typeof value === 'bigint' ? value.toString() : value),
-        reasoningTrace: JSON.stringify(initialState, (key, value) => typeof value === 'bigint' ? value.toString() : value),
-        timestamp: new Date()
+    if (process.env.DATABASE_URL && !process.env.OFFLINE_EVALUATION) {
+      try {
+        const prisma = getPrismaClient();
+        await prisma.auditLog.create({
+          data: {
+            entityType: 'REVENUE_CASE',
+            entityId: revCase.caseId,
+            action: 'LANGGRAPH_EXECUTION_FAILED',
+            actorType: 'AI_SYSTEM',
+            correlationId: revCase.correlationId,
+            metadataJson: JSON.stringify({ error: error.message }, (key, value) => typeof value === 'bigint' ? value.toString() : value),
+            reasoningTrace: JSON.stringify(initialState, (key, value) => typeof value === 'bigint' ? value.toString() : value),
+            timestamp: new Date()
+          }
+        });
+      } catch {
+        // Safe degrade if database audit logging fails
       }
-    });
+    }
     throw new Error(`LangGraph Execution Failed: ${error.message}`);
   }
   

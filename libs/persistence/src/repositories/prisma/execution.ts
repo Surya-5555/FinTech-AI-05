@@ -207,36 +207,75 @@ export class PrismaExecutionRepository implements ExecutionRepository {
     const prisma = getPrismaClient();
     const staleThreshold = new Date(Date.now() - staleLockMinutes * 60 * 1000);
     
-    // We assume EXECUTING status means it is locked and currently running.
-    // We revert it to PENDING if we release the lock. Or we can just leave it EXECUTING and wait for retry,
-    // but typically we'd just clear the lock and let the system pick it up again if it matches picking criteria.
-    // Wait, the status should be reverted or we just release the lock.
     const updated = await prisma.intervention.updateMany({
-      where: {
-        lockedAt: {
-          lte: staleThreshold,
-        },
-      },
-      data: {
-        lockedAt: null,
-        lockedBy: null,
-      },
+      where: { lockedAt: { lte: staleThreshold } },
+      data: { lockedAt: null, lockedBy: null },
     });
 
-    // Also handle OutboxEvents that are stale
     const updatedOutbox = await prisma.outboxEvent.updateMany({
-      where: {
-        lockedAt: {
-          lte: staleThreshold,
-        },
-      },
-      data: {
-        lockedAt: null,
-        lockedBy: null,
-      },
+      where: { lockedAt: { lte: staleThreshold } },
+      data: { lockedAt: null, lockedBy: null },
     });
 
     return updated.count + updatedOutbox.count;
+  }
+
+  async escalateStaleLocks(staleLockMinutes: number, reason: string): Promise<number> {
+    const prisma = getPrismaClient();
+    const staleThreshold = new Date(Date.now() - staleLockMinutes * 60 * 1000);
+    
+    // Find stale interventions
+    const staleInterventions = await prisma.intervention.findMany({
+      where: {
+        lockedAt: { lte: staleThreshold },
+      },
+      select: { id: true, caseId: true }
+    });
+
+    if (staleInterventions.length === 0) return 0;
+
+    let escalatedCount = 0;
+    for (const intervention of staleInterventions) {
+       await prisma.$transaction(async (tx) => {
+         // Clear the lock and set status to failed
+         await tx.intervention.update({
+           where: { id: intervention.id },
+           data: { lockedAt: null, lockedBy: null, status: 'FAILED', failureCode: 'SYSTEM_CRASH' }
+         });
+
+         const existingCase = await tx.revenueCase.findUnique({ where: { id: intervention.caseId } });
+         if (existingCase && existingCase.state !== RevenueCaseState.ESCALATED && existingCase.state !== RevenueCaseState.STOPPED) {
+           await tx.revenueCase.updateMany({
+             where: { id: existingCase.id, version: existingCase.version },
+             data: { state: RevenueCaseState.ESCALATED, version: existingCase.version + 1, updatedAt: new Date() }
+           });
+
+           await tx.auditLog.create({
+             data: {
+               id: generateId('audit'),
+               timestamp: new Date(),
+               actorType: 'SYSTEM',
+               action: 'CASE_ESCALATED',
+               entityType: 'RevenueCase',
+               entityId: existingCase.id,
+               correlationId: existingCase.correlationId,
+               previousState: existingCase.state,
+               nextState: RevenueCaseState.ESCALATED,
+               metadataJson: JSON.stringify({ reason }),
+             },
+           });
+           escalatedCount++;
+         }
+       });
+    }
+    
+    // Also clear outbox locks but don't escalate cases for outbox
+    await prisma.outboxEvent.updateMany({
+      where: { lockedAt: { lte: staleThreshold } },
+      data: { lockedAt: null, lockedBy: null },
+    });
+
+    return escalatedCount;
   }
 
   async persistExecutionResult(result: any, resultingCaseState: string, remainingAmountAtRiskMinor?: bigint): Promise<void> {

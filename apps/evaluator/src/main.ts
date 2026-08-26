@@ -20,6 +20,8 @@ program
   .option('-o, --output-dir <path>', 'Output directory for evaluation artifacts', 'artifacts/evaluation')
   .action(async (options) => {
     try {
+      // Force offline evaluation mode for benchmark purity (0 live API calls)
+      process.env.OFFLINE_EVALUATION = 'true';
       await runEvaluation(options);
       process.exit(0);
     } catch (err) {

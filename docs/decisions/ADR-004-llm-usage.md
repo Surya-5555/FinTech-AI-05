@@ -8,7 +8,7 @@
 The goal of this track is "AI Revenue Recovery." However, granting autonomous AI systems direct control over financial transactions or customer communications poses unacceptable risks (hallucinations, infinite retry loops, spam, unbounded cost). The system must utilize AI for intelligence while deterministically enforcing financial safety.
 
 ## Decision
-We will enforce a strict architectural boundary where **AI Proposes, but Deterministic Policy Disposes**. AI models (Causal ML and LLMs) are restricted solely to the `RecoveryPlan` generation phase. All plans must pass through a hardcoded, deterministic TypeScript policy engine before execution.
+We will enforce a strict architectural boundary where **AI Proposes, but Deterministic Policy Disposes**. AI models (Causal ML and LLMs) are restricted solely to the `RecoveryPlan` generation phase. All plans must pass through a rule-based, deterministic TypeScript policy engine before execution.
 
 ## Rationale
 1. **Financial Safety:** The policy engine (`libs/domain/src/policy.ts`) enforces hard rules that the AI cannot override. This includes:
@@ -17,7 +17,7 @@ We will enforce a strict architectural boundary where **AI Proposes, but Determi
    - Explicit verification of customer consent channels (SMS/Email).
 2. **Causal ML for Advisory Targeting:** We utilize XGBoost/T-Learners offline to calculate a Net Expected Intervention Value (Net EIV). This score dictates *which* channel to use, but the policy engine dictates *whether* it is legally and financially permissible to use it.
 3. **LLMs for Templating:** LLMs are used to analyze raw failure reasons (e.g., "insufficient_funds") and generate contextually appropriate SMS templates, but they cannot trigger the SMS themselves.
-4. **Graceful Degradation:** By isolating the AI, if the LLM provider experiences an outage, the deterministic policy engine seamlessly falls back to a standard, hardcoded retry strategy.
+4. **Graceful Degradation:** By isolating the AI, if the LLM provider experiences an outage, the deterministic policy engine seamlessly falls back to a standard, rule-based retry strategy.
 
 ## Consequences
 - AI decisions must be serialized into a strict JSON format (`RecoveryPlan`) capable of being evaluated by the policy engine.

@@ -19,6 +19,7 @@ export interface ExecutionRepository {
   
   claimExecutionLock(interventionId: string, workerId: string): Promise<boolean>;
   releaseStaleLocks(staleLockMinutes: number): Promise<number>;
+  escalateStaleLocks(staleLockMinutes: number, reason: string): Promise<number>;
   persistExecutionResult(result: InterventionExecutionResult, resultingCaseState: string, remainingAmountAtRiskMinor?: bigint): Promise<void>;
   scheduleRetry(interventionId: string, delayMs: number): Promise<void>;
   blockExecution(interventionId: string, reason: string): Promise<void>;

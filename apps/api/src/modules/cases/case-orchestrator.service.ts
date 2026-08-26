@@ -15,6 +15,7 @@ export class CaseOrchestratorService {
 
   @Cron(CronExpression.EVERY_5_SECONDS)
   async handleCron() {
+    if (process.env.DISABLE_CASE_ORCHESTRATOR_CRON === 'true') return;
     if (this.isProcessing) return;
     this.isProcessing = true;
 

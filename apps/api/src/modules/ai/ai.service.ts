@@ -12,6 +12,9 @@ import {
 import { 
   getFallbackMessageDraft,
   getFallbackDecisionExplanation,
+  HostedLLMClient,
+  getRecoveryMessagePrompt,
+  getDecisionExplanationPrompt
 } from '@rr/llm';
 import { generateId } from '@rr/utils';
 import { AIInvocationRepository } from '@rr/persistence';
@@ -22,9 +25,21 @@ export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly prisma = new PrismaClient();
   private readonly aiRepo = new AIInvocationRepository(this.prisma);
+  private llmClient: HostedLLMClient | null = null;
 
-  // For this buildathon, we simply use fallbacks as requested if no LLM configured 
-  // or preferLLM is false. True LLM integration can be injected via module providers.
+  constructor() {
+    const apiKey = process.env.GEMINI_API_KEY || process.env.LLM_API_KEY;
+    if (apiKey) {
+      this.llmClient = new HostedLLMClient({
+        apiKey,
+        model: process.env.LLM_MODEL || 'gemini-1.5-flash',
+        timeoutMs: 15000
+      });
+      this.logger.log('HostedLLMClient initialized with real LLM API Key');
+    } else {
+      this.logger.warn('No LLM_API_KEY provided. AI service will use deterministic fallbacks.');
+    }
+  }
 
   async getMessageDraft(caseId: string, dto: DraftRequestDto): Promise<RecoveryMessageDraft> {
     const revenueCase = await this.prisma.revenueCase.findUnique({
@@ -35,14 +50,12 @@ export class AiService {
       throw new NotFoundException(`Case ${caseId} not found`);
     }
 
-    // In a real flow, we check if plan exists in POLICY_APPROVED
-    // For now we build the deterministic context
     const context: AIRequestContext = {
       requestId: generateId('req'),
       correlationId: revenueCase.correlationId as CorrelationId,
       useCase: AIUseCase.RECOVERY_MESSAGE_DRAFT,
       locale: dto.locale || AILocale.EN_IN,
-      merchantDisplayName: 'Razorpay Merchant', // In real, fetch from Merchant repo
+      merchantDisplayName: 'Razorpay Merchant',
       maskedCustomerReference: 'CUST-XXXX',
       amountDisplay: `${revenueCase.currency} ${Number(revenueCase.amountAtRiskMinor) / 100}`,
       currency: revenueCase.currency,
@@ -61,6 +74,26 @@ export class AiService {
       dataClassification: AIDataClassification.MASKED_DEMO,
       activeNetworkDowntime: revenueCase.rootCause === 'bank_downtime' || revenueCase.rootCause === 'upi_downtime',
     };
+
+    if (this.llmClient) {
+      try {
+        const systemPrompt = "You are a recovery assistant. Output valid JSON.";
+        const userPrompt = getRecoveryMessagePrompt(context);
+        const res = await this.llmClient.generateStructured<RecoveryMessageDraft>({
+          context,
+          systemPrompt,
+          userPrompt,
+          schema: {} as any
+        });
+        
+        if (!res.isFallback && res.data) {
+          await this.aiRepo.recordAIInvocation(res.record, { caseId });
+          return res.data;
+        }
+      } catch (err: any) {
+        this.logger.error(`LLM error, falling back: ${err.message}`);
+      }
+    }
 
     // We use fallback directly for safety/speed unless LLM client is wired
     const draft = getFallbackMessageDraft(context);
@@ -115,6 +148,26 @@ export class AiService {
       activeNetworkDowntime: revenueCase.rootCause === 'bank_downtime' || revenueCase.rootCause === 'upi_downtime',
     };
 
+    if (this.llmClient) {
+      try {
+        const systemPrompt = "You are an analytical assistant explaining a system decision. Output valid JSON.";
+        const userPrompt = getDecisionExplanationPrompt(context);
+        const res = await this.llmClient.generateStructured<DecisionExplanation>({
+          context,
+          systemPrompt,
+          userPrompt,
+          schema: {} as any
+        });
+        
+        if (!res.isFallback && res.data) {
+          await this.aiRepo.recordAIInvocation(res.record, { caseId });
+          return res.data;
+        }
+      } catch (err: any) {
+        this.logger.error(`LLM error, falling back: ${err.message}`);
+      }
+    }
+
     const explanation = getFallbackDecisionExplanation(context);
 
     // Telemetry
@@ -134,6 +187,9 @@ export class AiService {
   }
 
   async getHealth() {
+    if (this.llmClient) {
+      return this.llmClient.healthCheck();
+    }
     return {
       enabled: false,
       providerName: 'FALLBACK',

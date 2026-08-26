@@ -6,9 +6,9 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "start:ml": "cd apps/ml-pipeline && .\\venv\\Scripts\\Activate.ps1 && python src/server.py",
-    "dev": "pnpm --filter \"./apps/*\" dev",
-    "build": "pnpm -r build",
+    "start:ml": "node init && cd apps/ml-pipeline && .\\venv\\Scripts\\Activate.ps1 && python src/server.py",
+    "dev": "node init && pnpm --filter \"./apps/*\" dev",
+    "build": "node init && pnpm -r build",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
