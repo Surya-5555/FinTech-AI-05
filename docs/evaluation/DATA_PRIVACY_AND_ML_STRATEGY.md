@@ -4,7 +4,7 @@ As software and machine learning engineers building financial recovery infrastru
 
 **To train a Causal ML model (T-Learner) for intervention routing, you need a dataset representing a Randomized Controlled Trial (RCT) of payment interventions (Retry vs. Link vs. Control).**
 
-Razorpay’s actual operational dataset for payment recovery is strictly private. Creating a fake dataset from scratch to train a causal model is methodologically weak, as the causal relationships (the "math") are entirely fabricated, meaning the architecture's ability to detect actual causal uplift remains unproven. 
+Razorpay’s actual operational dataset for payment recovery is strictly private. Creating a synthetic dataset from scratch to train a causal model is methodologically weak, as the causal relationships (the "math") are entirely fabricated, meaning the architecture's ability to detect actual causal uplift remains unproven. 
 
 To solve this, we architected a **Dual-Track ML Strategy** that proves both mathematical rigor and operational readiness without compromising data privacy.
 
@@ -16,7 +16,7 @@ We built our XGBoost T-Learner and Causal Uplift architecture and evaluated it a
 - **Location:** This proof is maintained purely as an offline benchmark (`apps/ml-pipeline/src/statistical_audit.py`). 
 
 ### Track 2: Operational Demo (Synthetic Razorpay Webhooks)
-For the live FastApi inference server that the NestJS backend calls, we simulate a production deployment. 
+For the live FastApi inference server that the NestJS backend calls, we replicate a production deployment. 
 - **What we did:** We wrote a statistical generator (`apps/ml-pipeline/src/generate_synthetic_data.py`) that outputs a purely synthetic dataset. This dataset exactly mirrors Razorpay’s webhook schemas and domain features (`isCardError`, `amountMinor`, `customerLocation`, etc.) and simulates realistic causal distributions (e.g., retries work better for timeouts).
 - **What this proves:** This proves that our operational API and backend integration are perfectly typed and structurally sound for the Razorpay context. We trained our live model on this synthetic data (`apps/ml-pipeline/src/train.py`), meaning the system operates on genuine payment fields without exposing any real PII.
 

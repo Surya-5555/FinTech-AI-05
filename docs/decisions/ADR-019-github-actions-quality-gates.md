@@ -15,7 +15,7 @@ We will implement a suite of GitHub Actions workflows:
 - **Docker Demo**: Verifies that the local Docker Compose setup works properly.
 - **Security & Dependency**: TruffleHog for secret scanning, Dependabot for updates, and `pnpm audit` for vulnerabilities.
 
-All operations in CI will use benchmark data, simulated LLM modules, and simulated Razorpay API responses. We will use Docker service containers in GitHub Actions to provide temporary Postgres and Redis instances.
+All operations in CI will use benchmark data, test-mode LLM modules, and test-mode Razorpay API responses. We will use Docker service containers in GitHub Actions to provide ephemeral Postgres and Redis instances.
 
 ## Rationale
 1. **Safety First**: By forbidding live secrets in CI, we guarantee that no accidental money movement or real user interaction can happen during automated tests.

@@ -82,7 +82,7 @@ This document outlines the complete sequence for implementing the AI Revenue Rec
 - **Branch:** `feature/final-hardening`
 - **Features:**
   - Verify all documentation matches final implementation.
-  - Create the explicit "Failure Recovery Scenario" (e.g., triggering a simulated provider timeout and demonstrating safe recovery).
+  - Create the explicit "Failure Recovery Scenario" (e.g., triggering a controlled provider timeout and demonstrating safe recovery).
   - Finalize the root `README.md` setup/demo instructions.
 - **Dependencies:** All previous phases.
 

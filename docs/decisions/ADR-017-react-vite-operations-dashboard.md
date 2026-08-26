@@ -11,7 +11,7 @@ Track 03 (AI Revenue Recovery) requires an internal operations console to view r
 We will build the operations dashboard as a Single Page Application (SPA) using:
 - **React 18** for component-based UI.
 - **Vite** for fast, modern build tooling.
-- **TypeScript** for end-to-end type safety, integrated with the backend via shared types (if needed) or typed fetch wrappers.
+- **TypeScript** for end-to-end type safety, integrated with the backend via shared types (if needed) or typed fetch clients.
 - **Tailwind CSS (v3/v4 via Vite plugin)** for rapid, utility-first styling without external UI component library overhead.
 - **TanStack React Query** for data fetching, caching, and state management.
 - **React Router** for client-side routing.

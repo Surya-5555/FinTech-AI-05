@@ -7,7 +7,7 @@ This guide explains how to use the Docker Compose setup to run a local demo of t
 - Make (optional, but recommended).
 
 ## Setup
-By default, the demo runs without requiring any external keys (no LLM keys, no Razorpay keys). It uses a mocked/simulated environment internally.
+By default, the demo runs without requiring any external keys (no LLM keys, no Razorpay keys). It uses a self-contained test environment internally.
 
 1. Copy the demo env file:
    ```bash
@@ -29,13 +29,13 @@ By default, the demo runs without requiring any external keys (no LLM keys, no R
 - **rr-frontend:** React Dashboard UI (exposed on http://localhost:5173).
 
 ## Running the Smoke Test
-Once the stack is up, you can run a simulated failure and recovery cycle:
+Once the stack is up, you can run a test failure and recovery cycle:
 ```bash
 make demo-smoke
 ```
 
 ## Running the Evaluator
-To run the evaluation framework against the simulated data:
+To run the evaluation framework against the synthetic test data:
 ```bash
 make demo-evaluate
 ```

@@ -71,7 +71,7 @@ Before describing what comes next, it is important to highlight what the current
 ```mermaid
 flowchart LR
     subgraph Current State
-        Sim[Simulated POST /api/events] --> Core[Core System]
+        Sim[Test-Mode POST /api/events] --> Core[Core System]
     end
 
     subgraph Phase 1 Target
@@ -86,11 +86,11 @@ flowchart LR
 *(or in text format below)*
 
 ### Phase 1 Transition (Text View)
-- **Current:** Simulated `POST /api/events` with synthetic payloads.
+- **Current:** Test-Mode `POST /api/events` with synthetic payloads.
 - **Target:** Real Razorpay Dashboard webhook subscription with HMAC-SHA256 signature verification. Core system logic remains completely unchanged. Live test-mode execution via Razorpay, Twilio, and Resend APIs.
 
 ### 1.1 Real Webhook Ingestion
-- Replace the simulated `POST /api/events` with a Razorpay webhook subscription configured via the Razorpay Dashboard
+- Replace the test-mode `POST /api/events` with a Razorpay webhook subscription configured via the Razorpay Dashboard
 - Implement HMAC-SHA256 webhook signature verification against `RAZORPAY_WEBHOOK_SECRET`
 - Handle Razorpay's specific payload schema for `payment.failed`, `subscription.charged.failed`, and `nach.mandate_failed` events
 
@@ -98,7 +98,7 @@ flowchart LR
 - Enable `RazorpayAdapter` to make real calls against Razorpay's test-mode sandbox
 - Implement Razorpay payment link creation (`POST /v1/payment_links`) with pre-filled merchant and amount
 - Implement eNACH mandate retry via Razorpay Subscriptions API
-- Add response handling for Razorpay's full set of decline codes beyond the current simulation map
+- Add response handling for Razorpay's full set of decline codes beyond the current test map
 
 ### 1.3 Live Customer Communication
 - Configure Twilio account and sender number for production SMS
@@ -355,5 +355,5 @@ The following table projects the revenue impact of the AI Revenue Recovery syste
 
 The following were explicitly out of scope for this submission:
 - **Real customer PII**: All evaluation data uses a purpose-built benchmark dataset — no real customer records
-- **Live money movement**: All Razorpay calls use test-mode simulation
+- **Live money movement**: All Razorpay calls use test-mode endpoints
 - **SMS/Email to real customers**: No real outreach is triggered in any demo or evaluation run

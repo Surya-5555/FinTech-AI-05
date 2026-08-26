@@ -8,7 +8,7 @@ The persistence layer abstracts all database I/O behind strict interfaces, ensur
 We strictly adhere to the Repository Pattern to decouple business logic from data access.
 - **Contracts (`libs/contracts/src`):** Define the shapes of the repositories (e.g., `IRevenueCaseRepository`). These interfaces belong to the application core.
 - **Prisma Repositories (`libs/persistence/src/repositories/prisma`):** The concrete implementations of those contracts. They inject the `PrismaClient` and perform the actual SQL queries.
-- **Dependency Injection:** The NestJS IoC container binds the concrete Prisma repositories to the abstract contract tokens at startup. This enables seamless mocking during unit tests.
+- **Dependency Injection:** The NestJS IoC container binds the concrete Prisma repositories to the abstract contract tokens at startup. This enables seamless test doubles during unit tests.
 
 ## Transaction Management & Consistency
 

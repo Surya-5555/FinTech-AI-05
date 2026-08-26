@@ -78,7 +78,7 @@ Two concurrent processes attempt to transition the same revenue case from `DETEC
 An external provider API times out, returns a transient 5xx error, or receives an unsupported action type.
 
 ### System Response
-1. **Bounded Execution**: The worker invokes the adapter with a timeout and retry wrapper.
+1. **Bounded Execution**: The worker invokes the adapter with a timeout and retry mechanism.
 2. **Safe Failure Mapping**: If the adapter fails, the failure is caught and mapped to a structured code (e.g., `TIMEOUT`, `CONFIGURATION_ERROR`).
 3. **No Double Execution**: The result is recorded atomically. The intervention cannot be re-executed.
 4. **Escalation Path**: The failure increments the attempt count. Once `maxAttemptsPerCase` is exhausted, the workflow halts and marks the case as `ESCALATED`.
@@ -104,7 +104,7 @@ An external system continues to fail, or a customer repeatedly fails retries. Th
 ## 6. Database Transaction Failure
 
 ### Scenario
-The system attempts to record an intervention result and transition the case state, but the underlying database transaction fails (e.g., foreign key violation, temporary disconnect).
+The system attempts to record an intervention result and transition the case state, but the underlying database transaction fails (e.g., foreign key violation, transient disconnect).
 
 ### System Response
 1. **Transaction Rollback**: The persistence layer wraps these operations in strict ACID transactions via Prisma.

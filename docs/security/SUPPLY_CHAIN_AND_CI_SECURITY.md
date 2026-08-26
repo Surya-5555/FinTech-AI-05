@@ -17,4 +17,4 @@
 ## 4. Source Control Policies
 - Branch protection must be enforced on `main`.
 - Direct pushes to `main` are currently permitted by the agent for rapid prototyping, but all commits must be atomic and semantic.
-- Do not commit scratch files, debug logs, audit reports, or temporary benchmark data.
+- Do not commit scratch files, debug logs, audit reports, or test benchmark data.

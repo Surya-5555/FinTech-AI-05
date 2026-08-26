@@ -219,4 +219,4 @@ This is intentional and represents the system's primary safety value.
 
 ### Why AI Fallbacks = 155/155
 
-In `BENCHMARK` mode, the LLM is intentionally mocked (no API key is required). All 155 AI requests use the deterministic fallback template. This proves the system operates correctly without any LLM dependency — exactly as designed for evaluation reproducibility.
+In `BENCHMARK` mode, the LLM uses a deterministic test adapter (no API key is required). All 155 AI requests use the deterministic fallback template. This proves the system operates correctly without any LLM dependency — exactly as designed for evaluation reproducibility.

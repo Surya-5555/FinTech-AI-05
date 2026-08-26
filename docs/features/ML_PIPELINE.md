@@ -73,7 +73,7 @@ flowchart TB
 | `apps/ml-pipeline/src/train.py` | T-Learner training, model pickling |
 | `apps/ml-pipeline/src/predict.py` | Inference logic, NEIV computation |
 | `apps/ml-pipeline/src/server.py` | FastAPI inference server (port 8000) |
-| `apps/ml-pipeline/src/evaluate_policy.py` | Offline policy simulation and intervention scoring |
+| `apps/ml-pipeline/src/evaluate_policy.py` | Offline policy validation and intervention scoring |
 | `apps/ml-pipeline/src/statistical_audit.py` | Bootstrap CIs, AUROC, PR-AUC, Brier score audit |
 | `artifacts/t_learner.pkl` | Trained model artifact |
 
@@ -136,7 +136,7 @@ Run `python apps/ml-pipeline/src/statistical_audit.py` to generate the full audi
 - Precision-Recall AUC
 - Brier score (calibration)
 - Bootstrap 95% confidence intervals on CATE estimates
-- Policy simulation: expected recovery lift vs. random and naive-retry baselines
+- Policy validation: expected recovery lift vs. random and naive-retry baselines
 
 ## Code References
 

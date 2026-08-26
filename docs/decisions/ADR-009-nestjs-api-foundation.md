@@ -11,7 +11,7 @@ The backend requires an HTTP framework to handle incoming Razorpay webhooks, aut
 We will use **NestJS** as the core API framework.
 
 ## Rationale
-1. **Built-in Dependency Injection (DI):** NestJS's DI container is enterprise-grade. It allows us to easily bind abstract interfaces (`libs/contracts`) to concrete Prisma repositories (`libs/persistence`) at runtime. This fulfills the inversion of control required by our Domain-Driven Design (ADR-007) and makes unit testing trivial by injecting mocks.
+1. **Built-in Dependency Injection (DI):** NestJS's DI container is enterprise-grade. It allows us to easily bind abstract interfaces (`libs/contracts`) to concrete Prisma repositories (`libs/persistence`) at runtime. This fulfills the inversion of control required by our Domain-Driven Design (ADR-007) and makes unit testing trivial by injecting test doubles.
 2. **Modular Architecture:** NestJS enforces a modular structure out of the box, perfectly complementing our monorepo setup.
 3. **Robust Request Lifecycle:** We heavily utilize NestJS's request lifecycle tools:
    - **Pipes:** `ValidationPipe` combined with `class-validator` strictly enforces payload integrity at the boundary.

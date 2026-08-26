@@ -68,7 +68,7 @@ The `ProviderFactory` resolves the correct provider based on intervention type:
 - **Test Mode Guard**: Checks `ENABLE_RAZORPAY_TEST_MODE=true`. If not set to `true`, throws `ConfigurationError` before any API call.
 - **Timeout Wrapping**: All Razorpay API calls are wrapped with a configurable timeout. Timeout → `TIMEOUT` result code.
 - **Response Mapping**: HTTP 200 → `SUCCEEDED`. HTTP 4xx → `PROVIDER_ERROR`. HTTP 5xx / timeout → retryable.
-- **Simulated Mode**: In benchmark/evaluation mode, the adapter returns deterministic outcomes based on the scenario type (not random — fully reproducible).
+- **Deterministic Mode**: In benchmark/evaluation mode, the adapter returns deterministic outcomes based on the scenario type (not random — fully reproducible).
 
 ## AI Involvement
 

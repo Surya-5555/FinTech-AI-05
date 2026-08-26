@@ -11,7 +11,7 @@ The dashboard is built within the React 18 / Vite frontend and leverages `@tanst
 - **Revenue Cases Table (`CasesPage.tsx`)**: Offers a paginated list of all recovery cases with clear status indicators, risk scores, root cause tags, and proposed interventions.
 - **Case Detail & Audit Timeline (`CaseDetailPage.tsx`)**: Presents an immutable chronological timeline of all AI reasoning and system actions, explicitly labeling AI-generated diagnosis/plans and exposing execution outcomes and failure details.
 - **Evaluation Run View (`EvaluationRunsPage.tsx`)**: Exposes historical batch evaluation metrics, separating baseline recovery from incremental AI-driven recovery and proving precision limits.
-- **Failure & Safety Proofs (`FailuresPage.tsx`)**: Highlights the core "Safety Cards" (Idempotency, Concurrency, etc.) and visualizes resilient simulated failure tests to prove the boundaries hold in extreme conditions.
+- **Failure & Safety Proofs (`FailuresPage.tsx`)**: Highlights the core "Safety Cards" (Idempotency, Concurrency, etc.) and visualizes resilient controlled failure tests to prove the boundaries hold in extreme conditions.
 
 ## 3. Engineering Reasoning & Decision Choices
 - **Backend Serialization Patch**: During implementation, the NestJS API crashed (HTTP 500) when serializing Prisma's `BigInt` monetary values (e.g. `amountAtRiskMinor`). A global `BigInt.prototype.toJSON` override was chosen in `main.ts` as the safest, most performant fix to cleanly bridge the ORM to the frontend without heavy DTO mapping refactors.

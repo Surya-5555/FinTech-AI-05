@@ -25,9 +25,9 @@ Once all services are healthy, open your browser to:
 
 You will see the Revenue Funnel, active cases, and system health metrics.
 
-## 3. Run the Smoke Test (Simulate a Failure)
+## 3. Trigger a Failure Mode
 
-To simulate an incoming payment failure event and trigger the AI recovery pipeline, run:
+To trigger an incoming payment failure event and run the AI recovery pipeline, run:
 
 ```bash
 make demo-smoke

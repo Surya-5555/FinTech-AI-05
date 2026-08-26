@@ -28,7 +28,7 @@ See [`docs/demo/DEMO_SCRIPT.md`](../../docs/demo/DEMO_SCRIPT.md) for the full ma
 
 ## Integration Tests (CI-Safe)
 
-The **integration tests** in [`tests/integration/`](../integration/) cover the same scenarios against a local Docker PostgreSQL database — with all external provider calls mocked. These run in CI on every push:
+The **integration tests** in [`tests/integration/`](../integration/) cover the same scenarios against a local Docker PostgreSQL database — with all external provider calls handled by test adapters. These run in CI on every push:
 
 ```bash
 pnpm test:integration
