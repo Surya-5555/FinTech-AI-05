@@ -13,6 +13,15 @@ Merchants lose significant revenue when recurring payments fail. Blindly retryin
 **Why does it exist?** 
 To maximize recovered revenue by personalizing the recovery intervention (e.g., silent API retry vs. SMS payment link) based on the specific context of the failure, while ensuring that AI hallucinations or ML errors can never trigger unsafe financial operations.
 
+## 1.1 Core Design Philosophy (How I Think)
+
+Building financial infrastructure requires a fundamentally different mindset than building standard AI applications. My architecture is driven by the following core principles:
+
+1. **Bounded AI over Unbounded Autonomy**: AI is exceptionally good at reasoning (diagnosing failure context, writing personalized messages, calculating causal uplift), but it cannot be trusted with unstructured money movement. I use AI exclusively for *intent generation*, while a hardcoded, deterministic **Policy Engine** serves as the final authority on execution.
+2. **Deterministic Financial Safety**: Every AI-proposed action passes through strict idempotency checks, merchant consent validation, attempt limits, and chronological bounds. If an AI hallucinates an unauthorized intervention, the policy engine safely intercepts and rejects it, maintaining a complete immutable audit trail.
+3. **Resilience & Graceful Degradation**: Built on an event-driven queue architecture, the system is highly fault-tolerant against external API timeouts, duplicate webhooks, and sudden traffic spikes. If the AI service experiences downtime, the system degrades gracefully without blocking core ingestion.
+4. **Data-Driven Measurement**: Revenue recovery is an optimization problem. This architecture is designed to capture every state transition and outcome, enabling causal ML models (T-Learners) to continually refine intervention strategies based on actual recovered monetary value.
+
 ---
 
 ## 2. Global Architecture Diagram
