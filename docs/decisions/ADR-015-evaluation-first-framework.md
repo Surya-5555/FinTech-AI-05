@@ -4,6 +4,34 @@
 The Razorpay AI Buildathon requires an honest, reproducible report showing incremental revenue recovery, intervention precision, safety blocks, and AI behavior. We must ensure that the AI decision-support layer is strictly evaluated in isolation on a deterministic dataset without risking live external API calls, and without fabricating numbers.
 
 ## Decision
+
+```mermaid
+flowchart TD
+    subgraph Input
+        SyntheticData[Seeded Synthetic Data]
+    end
+    
+    subgraph Execution Arms
+        SyntheticData --> Base0[Baseline0: No Recovery]
+        SyntheticData --> Base1[Baseline1: Naive Retry]
+        SyntheticData --> SUT[SystemUnderTest: AI + Policy Engine]
+    end
+    
+    subgraph Evaluation
+        Base0 --> Compare
+        Base1 --> Compare
+        SUT --> Compare[Deterministic Comparison vs Hidden Ground Truth]
+        Compare --> Metrics[Output Metrics: systemRecoveredMinor, falseInterventionCost]
+    end
+```
+
+*(or in text format below)*
+
+### Evaluation Flow (Text View)
+- **Input:** Seeded, deterministic synthetic data generation.
+- **Execution Arms:** The data is run through three isolated pipelines: Baseline0 (No Recovery), Baseline1 (Naive Retry), and SystemUnderTest (AI + Policy Engine).
+- **Evaluation:** Outcomes from all three arms are deterministically compared against a hidden ground truth label to calculate accurate metrics like `systemRecoveredMinor` and false intervention costs.
+
 We have built a completely isolated evaluation framework (`@rr/evaluator`) that runs locally using seeded, deterministic synthetic data generated via an LCG (Linear Congruential Generator). 
 
 1. **Benchmark Data**: We generate cases dynamically using a seeded random number generator so all developers get the exact same dataset without sharing PII. 

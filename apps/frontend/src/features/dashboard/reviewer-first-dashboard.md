@@ -6,6 +6,29 @@ The system lacked an explicit, internal operations console to visualize and prov
 ## 2. Design & Architecture
 The dashboard is built within the React 18 / Vite frontend and leverages `@tanstack/react-query` to fetch real-time data from the NestJS API. It avoids heavy state-management libraries to maintain simplicity and performance.
 
+```mermaid
+flowchart TD
+    subgraph Frontend - React/Vite
+        Dash[DashboardPage] --> RQ[React Query]
+        Cases[CasesPage] --> RQ
+        Detail[CaseDetailPage] --> RQ
+        RQ --> Fetch[Typed Fetch Client]
+    end
+    
+    subgraph Backend - NestJS API
+        Fetch --> Controller[Dashboard / Cases Controllers]
+        Controller --> Override[BigInt.prototype.toJSON Override]
+        Override --> DB[(PostgreSQL)]
+    end
+```
+
+*(or in text format below)*
+
+### Architecture Flow (Text View)
+- **Frontend (React/Vite):** Core views like `DashboardPage`, `CasesPage`, and `CaseDetailPage` use React Query for state management and caching.
+- **Data Fetching:** A strongly typed fetch client handles API communication.
+- **Backend (NestJS API):** Controllers serve the data directly from the PostgreSQL database, utilizing a global `BigInt` override to safely serialize monetary fields without crashing.
+
 ### Key Components Built
 - **Executive Recovery Dashboard (`DashboardPage.tsx`)**: Displays aggregate financial metrics (Total Revenue at Risk, Baseline vs. System Recovered, Incremental Recovery, False Intervention Rates) and a funnel visualization mapping states from `DETECTED` to `RECOVERED` or `STOPPED`.
 - **Revenue Cases Table (`CasesPage.tsx`)**: Offers a paginated list of all recovery cases with clear status indicators, risk scores, root cause tags, and proposed interventions.
