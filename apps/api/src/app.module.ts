@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
 import { OperatorAuthGuard } from './common/guards/operator-auth.guard';
 import { LoggerModule } from 'nestjs-pino';
 import { HealthModule } from './health/health.module';
@@ -26,6 +27,12 @@ import { FailuresModule } from './modules/failures/failures.module';
       isGlobal: true,
       envFilePath: '../../.env',
       load: [configuration],
+    }),
+    BullModule.forRoot({
+      connection: {
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+      },
+      prefix: process.env.QUEUE_PREFIX || 'rr',
     }),
     LoggerModule.forRoot({
       pinoHttp: ({

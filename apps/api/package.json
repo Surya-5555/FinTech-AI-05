@@ -29,6 +29,7 @@
     "class-validator": "^0.14.0",
     "express": "^5.2.1",
     "helmet": "^7.0.0",
+    "ioredis": "^6.0.0",
     "nestjs-pino": "^4.0.0",
     "pg": "^8.23.0",
     "pino": "^8.0.0",

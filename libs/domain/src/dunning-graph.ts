@@ -67,7 +67,7 @@ dunningGraph.addNode('recommend', async (state: DunningState) => {
   let recommended = recommendIntervention(state.revCase, state.diagnosis, candidates, state.merchantPolicy, state.activeInterventionSummary);
 
   // Smart Dunning Overrides
-  const failureCode = state.revCase.failureCode;
+  const failureCode = state.revCase.rootCause;
   const attemptCount = state.revCase.attemptCount;
   
   if (failureCode === 'card_expired') {
@@ -127,7 +127,7 @@ dunningGraph.addNode('create_plan', async (state: any) => {
   const idempotencyKey = `${revCase.caseId}_${merchantPolicy.policyVersion}_${recommended}_${revCase.attemptCount + 1}` as any;
   
   let plannedAt = now;
-  if (revCase.failureCode === 'insufficient_funds' && recommended === InterventionType.PAYMENT_RETRY) {
+  if (revCase.rootCause === 'insufficient_funds' && recommended === InterventionType.PAYMENT_RETRY) {
     const nextPayday = new Date(now);
     // Move to 1st of next month for payday heuristics
     nextPayday.setMonth(nextPayday.getMonth() + 1);

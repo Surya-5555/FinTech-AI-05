@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import * as crypto from 'crypto';
 
 const API_BASE = process.env.API_URL || 'http://localhost:3000/api/v1';
 const CONCURRENT_REQUESTS = 50;
@@ -13,29 +14,35 @@ async function ingestEvent(eventType: string, externalEventId: string, amount: n
     eventType,
     occurredAt: new Date().toISOString(),
     amount: {
-      amountMinor: amount,
+      amountMinor: amount.toString(),
       currency: 'INR'
     },
-    failureReason: eventType === 'PAYMENT_FAILED' ? 'insufficient_funds' : undefined,
+    failureReason: eventType === 'PAYMENT_FAILED' ? 'INSUFFICIENT_FUNDS' : undefined,
     customer: {
       externalReference: customerRef,
       maskedReference: `mask_${customerRef.substring(0, 4)}`,
-      consents: { email: true, sms: true, voice: false }
+      consents: { email: 'GRANTED', sms: 'GRANTED', voice: 'DENIED' }
     },
     merchant: {
       externalReference: merchantRef,
-      name: 'Demo Load Merchant'
+      name: 'Demo Load Merchant',
+      segment: 'ENTERPRISE'
     },
     metadata: { loadTest: true }
   };
+
+  const bodyStr = JSON.stringify(payload);
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'test-secret';
+  const signature = crypto.createHmac('sha256', secret).update(bodyStr).digest('hex');
 
   const response = await fetch(`${API_BASE}/events/ingest`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Idempotency-Key': idempotencyKey
+      'Idempotency-Key': idempotencyKey,
+      'x-razorpay-signature': signature
     },
-    body: JSON.stringify(payload)
+    body: bodyStr
   });
 
   if (!response.ok) {

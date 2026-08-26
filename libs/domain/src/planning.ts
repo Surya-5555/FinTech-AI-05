@@ -65,8 +65,8 @@ export async function proposeRecoveryPlan(input: PlanProposalInput): Promise<Rec
         action: 'LANGGRAPH_EXECUTION_SUCCESS',
         actorType: 'AI_SYSTEM',
         correlationId: revCase.correlationId,
-        metadataJson: JSON.stringify({ message: 'Graph executed successfully' }),
-        reasoningTrace: JSON.stringify(finalState),
+        metadataJson: JSON.stringify({ message: 'Graph executed successfully' }, (key, value) => typeof value === 'bigint' ? value.toString() : value),
+        reasoningTrace: JSON.stringify(finalState, (key, value) => typeof value === 'bigint' ? value.toString() : value),
         timestamp: new Date()
       }
     });
@@ -80,8 +80,8 @@ export async function proposeRecoveryPlan(input: PlanProposalInput): Promise<Rec
         action: 'LANGGRAPH_EXECUTION_FAILED',
         actorType: 'AI_SYSTEM',
         correlationId: revCase.correlationId,
-        metadataJson: JSON.stringify({ error: error.message }),
-        reasoningTrace: JSON.stringify(initialState),
+        metadataJson: JSON.stringify({ error: error.message }, (key, value) => typeof value === 'bigint' ? value.toString() : value),
+        reasoningTrace: JSON.stringify(initialState, (key, value) => typeof value === 'bigint' ? value.toString() : value),
         timestamp: new Date()
       }
     });

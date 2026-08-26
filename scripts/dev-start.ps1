@@ -11,10 +11,14 @@ Write-Host ""
 
 # 1. Infra: Postgres + Redis
 Write-Host "[1/5] Starting infrastructure (Postgres + Redis)..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; docker compose -f infra/compose/compose.yaml up"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ROOT'; docker compose -f infra/compose/compose.yaml up postgres redis -d"
 
-Write-Host "      Waiting 5s for Docker to spin up..."
-Start-Sleep -Seconds 5
+Write-Host "      Waiting 10s for Postgres to spin up..."
+Start-Sleep -Seconds 10
+
+Write-Host "      Syncing Database Schema..." -ForegroundColor Yellow
+$env:DATABASE_URL = (Get-Content .env | Select-String "^DATABASE_URL=").Line.Split("=",2)[1].Trim('"')
+pnpm --filter @rr/persistence exec prisma db push --skip-generate
 
 # 2. ML Pipeline on port 8000
 Write-Host "[2/5] Starting ML Pipeline (port 8000)..." -ForegroundColor Yellow
