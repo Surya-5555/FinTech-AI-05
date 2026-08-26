@@ -763,7 +763,7 @@ Each feature doc explains: Problem → Design → Data Flow → AI Involvement �
 |---|---|
 | [Architecture & Systems Design](docs/architecture/) | Detailed diagrams and sequence flows of ingestion and execution pipelines |
 | [Architectural Decision Records](docs/decisions/) | Immutable records of why NestJS, XGBoost, Prisma, BullMQ were chosen |
-| [Security & Resilience Model](docs/security/SECURITY.md) | How the system handles duplicate webhooks, stale states, LLM hallucinations, and API timeouts |
+| [Security, Compliance & Data Privacy](SECURITY.md) | Defense-in-depth architecture, webhook cryptography, and zero-PII data models |
 | [Failure Mode Recovery](docs/failures/FAILURES.md) | All 7 failure scenarios documented with evidence trails and test references |
 | [Evaluation Methodology](docs/evaluation/EVALUATION.md) | Metrics framework, baselines, latest benchmark results, and cost-model interpretation |
 | [Production Roadmap](docs/roadmap/ROADMAP.md) | 5-phase plan for live Razorpay merchant deployment |

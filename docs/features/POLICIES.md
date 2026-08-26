@@ -12,18 +12,37 @@ The Policy Engine is the system's primary safety gate. It sits between the AI Pl
 
 ### Policy Engine Location
 
+```mermaid
+flowchart TD
+    Plan[AI Planning Service / RecoveryPlan] --> Gate[Policy Engine sync in-process gate]
+    
+    subgraph Deterministic Checks
+        Gate --> Consent[Consent Validation]
+        Gate --> Max[Maximum Attempt Enforcement]
+        Gate --> Fraud[Fraud Code Check]
+        Gate --> Cool[Channel-Specific Cooldown]
+        Gate --> Excep[Merchant-Configured Exception List]
+    end
+    
+    Consent & Max & Fraud & Cool & Excep --> Decision[PolicyDecision]
+    
+    Decision -- Approved --> Action[Intervention CREATED, BullMQ dispatched]
+    Decision -- Rejected --> Stop[Case status to STOPPED or ESCALATED]
 ```
-AI Planning Service → RecoveryPlan
-    → Policy Engine (sync, in-process gate)
-        ├── Consent Validation
-        ├── Maximum Attempt Enforcement
-        ├── Fraud Code Check
-        ├── Channel-Specific Cooldown
-        └── Merchant-Configured Exception List
-    → PolicyDecision { approved: boolean, reasonCodes: string[] }
-    → If approved: Intervention CREATED, BullMQ dispatched
-    → If rejected: Case status → STOPPED (or ESCALATED if max attempts)
-```
+
+*(or in text format below)*
+
+### Policy Engine Location (Text View)
+1. The **AI Planning Service** submits a proposed `RecoveryPlan`.
+2. Evaluated by the **Policy Engine** (sync, in-process gate) which runs strict deterministic checks:
+   - **Consent Validation:** Ensures user opted in.
+   - **Maximum Attempt Enforcement:** Blocks if retries exceeded.
+   - **Fraud Code Check:** Hard blocks any fraud-related cases.
+   - **Channel-Specific Cooldown:** Enforces time delays between actions.
+   - **Merchant-Configured Exception List:** Respects merchant-level overrides.
+3. Yields a **PolicyDecision** (`{ approved: boolean, reasonCodes: string[] }`).
+4. **If approved:** An Intervention is `CREATED` and dispatched to BullMQ.
+5. **If rejected:** Case status becomes `STOPPED` (or `ESCALATED` if max attempts reached).
 
 ### Policy Rules
 

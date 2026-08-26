@@ -35,19 +35,39 @@ A typed intervention entity decouples the *decision* (what to do) from the *exec
 
 ## Data Flow
 
+```mermaid
+flowchart TD
+    Plan[Planning Service selects type via AI+ML] --> Policy[Policy Engine validates rules]
+    
+    Policy -- Approved --> Create[Intervention CREATED status=PENDING]
+    Create --> Queue[BullMQ job dispatched]
+    Queue --> Worker[Worker picks up job]
+    
+    subgraph Execution Safety
+        Worker --> Lock[Worker claims execution lock via atomic DB update]
+        Lock --> Adapter[Worker calls ExecutionProvider adapter]
+        Adapter --> Outcome[Provider returns outcome]
+    end
+    
+    Outcome --> Persist[Worker persists result status=SUCCEEDED or FAILED]
+    Persist --> Audit[Audit log entry written]
+    Audit --> UpdateCase[Case state updated RECOVERED or FAILED]
 ```
-Planning Service → selects intervention type based on AI + ML scores
-    → Policy Engine validates (consent, cooldown, attempt count)
-    → Approved: intervention record CREATED (status=PENDING)
-    → BullMQ job dispatched with interventionId
-    → Worker picks up job
-    → Worker claims execution lock (atomic DB update)
-    → Worker calls ExecutionProvider adapter
-    → Provider returns outcome
-    → Worker persists result (status=SUCCEEDED | FAILED)
-    → Audit log entry written
-    → Case state updated (RECOVERED | FAILED)
-```
+
+*(or in text format below)*
+
+### Data Flow (Text View)
+1. **Planning Service** selects intervention type based on AI + ML scores.
+2. **Policy Engine** validates the plan (consent, cooldown, attempt count).
+3. **If Approved**, the intervention record is `CREATED` (`status=PENDING`).
+4. **BullMQ** job is dispatched with the `interventionId`.
+5. **Worker** picks up the job.
+6. **Worker** claims the execution lock (atomic DB update).
+7. **Worker** calls the `ExecutionProvider` adapter.
+8. **Provider** returns the outcome.
+9. **Worker** persists the result (`status=SUCCEEDED` | `FAILED`).
+10. **Audit log** entry is written.
+11. **Case state** updated (`RECOVERED` | `FAILED`).
 
 ## AI Involvement
 

@@ -12,18 +12,36 @@ Idempotency is a first-class financial safety requirement. The ingestion layer i
 
 ### Ingestion Flow
 
+```mermaid
+flowchart TD
+    Req[POST /api/events] --> Auth[Auth Middleware API token validation]
+    Auth --> DTO[DTO Validation class-validator / Zod]
+    DTO --> Guard[Idempotency Guard]
+    
+    subgraph Idempotency Logic
+        Guard --> Compute[Compute idempotency key: merchantId + externalEventId + eventType]
+        Compute --> Insert[Attempt INSERT with UNIQUE constraint]
+        Insert -- Conflict --> Return[Return existing caseId HTTP 200, not 201]
+    end
+    
+    Insert -- Success --> Create[Case Created]
+    Create --> State[State Machine: INITIAL to DETECTED]
+    State --> Dispatch[Async dispatch to Planning Service]
 ```
-POST /api/events
-    ├── Auth Middleware (API token validation)
-    ├── DTO Validation (class-validator / Zod)
-    ├── Idempotency Guard
-    │     ├── Compute idempotency key: merchantId + externalEventId + eventType
-    │     ├── Attempt INSERT with UNIQUE constraint on (merchantId, externalEventId, eventType)
-    │     └── On conflict: return existing caseId (HTTP 200, not 201)
-    ├── Case Created (if new)
-    ├── State Machine: INITIAL → DETECTED
-    └── Async dispatch to Planning Service
-```
+
+*(or in text format below)*
+
+### Ingestion Flow (Text View)
+1. Request arrives at `POST /api/events`.
+2. Validated by **Auth Middleware** (API token validation).
+3. Validated by **DTO Validation** (class-validator / Zod).
+4. Enters the **Idempotency Guard**:
+   - Computes idempotency key: `merchantId` + `externalEventId` + `eventType`.
+   - Attempts `INSERT` with `UNIQUE` constraint on these fields.
+   - On conflict: returns existing caseId (HTTP 200, not 201).
+5. If new, **Case Created**.
+6. **State Machine** transitions from `INITIAL` to `DETECTED`.
+7. **Async dispatch** to Planning Service.
 
 ### Idempotency Implementation
 

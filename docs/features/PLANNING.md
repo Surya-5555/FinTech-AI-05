@@ -12,28 +12,38 @@ The Planning Service combines two AI systems — a Large Language Model for fail
 
 ### Planning Pipeline
 
+```mermaid
+flowchart LR
+    Case[RevenueCase DETECTED]
+    
+    subgraph AI Planning Phase
+        Case --> LLM[LLM: Failure Diagnosis]
+        Case --> ML[ML: Causal Inference]
+        
+        LLM --> |rootCause, summary| Selection[Intervention Selection]
+        ML --> |CATE, NEIV per arm| Selection
+        
+        Selection --> |argmax NEIV - cost| Draft[LLM: Communication Draft]
+        Selection --> |Fraud Detected| Override[Forced ESCALATE]
+    end
+    
+    Draft --> Plan[RecoveryPlan]
+    Override --> Plan
 ```
-RevenueCase (DETECTED)
-    │
-    ├─► [1] LLM: Failure Diagnosis
-    │     Input:  failureCode, merchantName, amount, locale
-    │     Output: rootCause, humanReadableSummary
-    │
-    ├─► [2] ML Causal Inference (FastAPI)
-    │     Input:  customer features (history proxy)
-    │     Output: CATE per treatment arm (Control, Retry, PayLink)
-    │             Net Expected Incremental Value (NEIV) per arm
-    │
-    ├─► [3] Intervention Selection
-    │     Logic:  argmax(NEIV) subject to cost constraints
-    │             Fraud codes → forced ESCALATE regardless of ML score
-    │
-    ├─► [4] LLM: Communication Draft (if channel is SMS/Email)
-    │     Input:  selected channel, rootCause, locale, constraints
-    │     Output: RecoveryMessageDraft (text, locale, safetyChecks)
-    │
-    └─► RecoveryPlan { interventionType, messageDraft, diagnosis, mlScores }
-```
+
+*(or in text format below)*
+
+### Planning Pipeline (Text View)
+1. **Input:** `RevenueCase` in `DETECTED` state.
+2. **Parallel AI Branches:**
+   - **LLM Failure Diagnosis:** Takes `failureCode`, `merchantName`, `amount`, `locale` and outputs `rootCause`, `humanReadableSummary`.
+   - **ML Causal Inference:** Takes customer features and outputs CATE (Propensity) and Net Expected Incremental Value (NEIV) per treatment arm.
+3. **Intervention Selection:**
+   - Evaluates `argmax(NEIV)` subject to cost constraints.
+   - If fraud codes are detected, it forces an `ESCALATE` regardless of ML scores.
+4. **Communication Draft:** 
+   - If the selected channel is SMS/Email, the LLM drafts a recovery message based on the root cause and locale constraints.
+5. **Output:** A structured `RecoveryPlan` containing the `interventionType`, `messageDraft`, `diagnosis`, and `mlScores`.
 
 ### ML Model: Multi-Treatment T-Learner
 
