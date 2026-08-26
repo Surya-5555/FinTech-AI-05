@@ -518,7 +518,28 @@ pnpm --filter @rr/frontend dev
 | `pnpm lint` | Run ESLint across the monorepo |
 | `pnpm test:integration` | Integration tests against live DB |
 | `pnpm evaluate-smoke` | Offline batch evaluation run |
-| `cd apps/ml-pipeline/src && python statistical_audit.py` | ML causal AI audit report |
+
+---
+
+### Verification & Audit (Jury Validation)
+
+To mathematically and technically prove the safety and methodology of this system, we have included two deterministic audit scripts. Judges and new users can run these directly to verify the system's claims.
+
+#### 1. Concurrency & Idempotency Proof (Resilience Test)
+Proves the system strictly guarantees at-most-once execution even under severe race conditions. It fires 10 identical webhook payloads at the exact same millisecond. 
+**Expected result:** Exactly 1 webhook creates a case, and 9 are safely rejected with HTTP 409 Conflict.
+```bash
+# Run from the project root
+pnpm dlx tsx scripts/resilience-test.ts
+```
+
+#### 2. Causal AI Methodology Proof (Statistical Audit)
+Proves our XGBoost T-Learner architecture is mathematically sound using the public Hillstrom MineThatData RCT (real human data, no PII risk). It trains the metalearner inline and outputs a 9-step causal inference report, proving the system identifies the dominant treatment strategy without hallucination.
+```bash
+# Run from the ml-pipeline directory
+cd apps/ml-pipeline/src
+python statistical_audit.py
+```
 
 ---
 

@@ -33,9 +33,6 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 test_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/test.csv'))
 train_df = pd.read_csv(os.path.join(base_dir, '../../../data/processed/hillstrom/train.csv'))
 
-with open(os.path.join(base_dir, '../../../artifacts/t_learner.pkl'), 'rb') as f:
-    learner = pickle.load(f)
-
 exclude_cols = ['T', 'Y', 'visit', 'spend', 'invoice_amount_proxy']
 feature_cols = [c for c in test_df.columns if c not in exclude_cols]
 
@@ -47,6 +44,10 @@ spend_test = test_df['spend'].values
 X_train = train_df[feature_cols]
 T_train = train_df['T'].values
 Y_train = train_df['Y'].values
+
+print("Training T-Learner on Hillstrom training set for the audit...")
+learner = MultiTreatmentTLearner(treatments=[0, 1, 2])
+learner.fit(X_train, T_train, Y_train)
 
 separator = "=" * 65
 
