@@ -127,12 +127,39 @@ export function recommendIntervention(
     return InterventionType.PAYMENT_LINK;
   }
 
-  if (candidates.includes(InterventionType.EMAIL_REMINDER) && !activeInterventionSummary.hasActiveCommunication) {
-    return InterventionType.EMAIL_REMINDER;
+  // Causal ML Propensity Guidance:
+  // When multiple intervention arms are eligible, utilize causal uplift predictions to guide treatment selection.
+  if (diagnosis.shadowPropensity) {
+    const pLink = Number(diagnosis.shadowPropensity.probabilityOfRecoveryWithLink || 0);
+    const pRetry = Number(diagnosis.shadowPropensity.probabilityOfRecoveryWithRetry || 0);
+
+    if (pLink > pRetry && candidates.includes(InterventionType.PAYMENT_LINK) && !activeInterventionSummary.hasActivePaymentLink) {
+      if (
+        diagnosis.rootCause === RootCause.AUTHENTICATION_OR_CUSTOMER_ACTION_REQUIRED ||
+        diagnosis.rootCause === RootCause.INSUFFICIENT_FUNDS_LIKELY ||
+        diagnosis.rootCause === RootCause.MANDATE_OR_SUBSCRIPTION_ISSUE
+      ) {
+        return InterventionType.PAYMENT_LINK;
+      }
+    }
   }
 
-  if (candidates.includes(InterventionType.SMS_REMINDER) && !activeInterventionSummary.hasActiveCommunication) {
-    return InterventionType.SMS_REMINDER;
+  // Communication Channel Selection guided by ML channel propensity signals
+  const prefersEmail = diagnosis.shadowPropensity?.shadowFeatureVector?.customerLocation === 'Urban';
+  if (prefersEmail) {
+    if (candidates.includes(InterventionType.EMAIL_REMINDER) && !activeInterventionSummary.hasActiveCommunication) {
+      return InterventionType.EMAIL_REMINDER;
+    }
+    if (candidates.includes(InterventionType.SMS_REMINDER) && !activeInterventionSummary.hasActiveCommunication) {
+      return InterventionType.SMS_REMINDER;
+    }
+  } else {
+    if (candidates.includes(InterventionType.SMS_REMINDER) && !activeInterventionSummary.hasActiveCommunication) {
+      return InterventionType.SMS_REMINDER;
+    }
+    if (candidates.includes(InterventionType.EMAIL_REMINDER) && !activeInterventionSummary.hasActiveCommunication) {
+      return InterventionType.EMAIL_REMINDER;
+    }
   }
 
   if (candidates.includes(InterventionType.HUMAN_ESCALATION)) {

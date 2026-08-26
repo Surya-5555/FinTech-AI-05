@@ -2,6 +2,9 @@
 
 An evaluation-first, causal-AI revenue recovery system designed with enterprise-grade deterministic financial safety.
 
+###  A Special Thanks to Razorpay :)
+> *This Buildathon has been an incredible journey that pushed my engineering limits. Building under intense pressure forced me to think deeply about architectural trade-offs, fault tolerance, and the non-negotiable nature of distributed state. It taught me the true value of selecting the right stack for the problem, designing with failure as a first principle, and treating infrastructure as a core component of the business logic. It instilled a rigorous discipline for uncompromising code quality, deterministic financial safety, and resilient system design. Thank you for the challenge and the opportunity to elevate my craft. I'm looking forward to connecting with the Razorpay team!*
+
 ## 1. System Overview
 
 **What is this system?** 
@@ -11,13 +14,13 @@ This is a comprehensive, asynchronous revenue recovery architecture for processi
 Merchants lose significant revenue when recurring payments fail. Blindly retrying cards wastes API calls, triggers fraud alerts, and annoys customers. Doing nothing loses the customer. 
 
 **Why does it exist?** 
-To maximize recovered revenue by personalizing the recovery intervention (e.g., silent API retry vs. SMS payment link) based on the specific context of the failure, while ensuring that AI hallucinations or ML errors can never trigger unsafe financial operations.
+To maximize recovered revenue by personalizing the recovery intervention (e.g., silent API retry vs. SMS payment link) based on the specific context of the failure, while ensuring that AI hallucinations or ML errors cannot bypass deterministic policy gates to trigger unsafe financial operations.
 
 ## 1.1 Core Design Philosophy (How I Think)
 
 Building financial infrastructure requires a fundamentally different mindset than building standard AI applications. My architecture is driven by the following core principles:
 
-1. **Bounded AI over Unbounded Autonomy**: AI is exceptionally good at reasoning (diagnosing failure context, writing personalized messages, calculating causal uplift), but it cannot be trusted with unstructured money movement. I use AI exclusively for *intent generation*, while a hardcoded, deterministic **Policy Engine** serves as the final authority on execution.
+1. **Bounded AI over Unbounded Autonomy**: AI is exceptionally good at reasoning (diagnosing failure context, writing personalized messages, calculating causal uplift), but it cannot be trusted with unstructured money movement. I use AI exclusively for *intent generation*, while a rule-based, deterministic **Policy Engine** serves as the final authority on execution.
 2. **Deterministic Financial Safety**: Every AI-proposed action passes through strict idempotency checks, merchant consent validation, attempt limits, and chronological bounds. If an AI hallucinates an unauthorized intervention, the policy engine safely intercepts and rejects it, maintaining a complete immutable audit trail.
 3. **Resilience & Graceful Degradation**: Built on an event-driven queue architecture, the system is highly fault-tolerant against external API timeouts, duplicate webhooks, and sudden traffic spikes. If the AI service experiences downtime, the system degrades gracefully without blocking core ingestion.
 4. **Data-Driven Measurement**: Revenue recovery is an optimization problem. This architecture is designed to capture every state transition and outcome, enabling causal ML models (T-Learners) to continually refine intervention strategies based on actual recovered monetary value.
@@ -27,9 +30,9 @@ Building financial infrastructure requires a fundamentally different mindset tha
 Every tool in this architecture was selected specifically to enforce strict financial safety and operational resilience:
 
 - **TypeScript & NestJS (vs. Express or purely Python):** Financial routing requires strict domain modeling. NestJS provides enterprise-grade dependency injection, enforcing clean boundaries between external webhooks, domain policies, and infrastructure. Python is strictly isolated to the mathematical ML layer (FastAPI) where it excels.
-- **PostgreSQL & Prisma (vs. MongoDB/NoSQL):** Handling concurrent webhook retries requires true ACID compliance and Optimistic Concurrency Control (OCC). NoSQL databases risk race conditions under high webhook load. PostgreSQL guarantees that state mutations are atomic and idempotent.
+- **PostgreSQL & Prisma (vs. MongoDB/NoSQL):** Handling concurrent webhook retries requires ACID compliance and Optimistic Concurrency Control (OCC). NoSQL databases increase the risk of race conditions under high webhook concurrency. PostgreSQL enforces atomic transactions and unique constraint checks.
 - **BullMQ & Redis (vs. Kafka or RabbitMQ):** Revenue recovery requires precise delayed scheduling (e.g., "retry in 3 hours") and atomic state transitions. BullMQ provides these precise retry semantics natively, whereas Kafka is designed for high-throughput streaming and introduces unnecessary operational overhead for transactional outboxes.
-- **XGBoost (vs. Deep Learning):** For Causal Inference on tabular payment data, XGBoost (via T-Learners) is the industry standard. It is highly interpretable, fast, and does not overfit on smaller datasets the way deep neural networks do. It provides explainable Net Expected Incremental Value (Net EIV) scores.
+- **XGBoost (vs. Deep Learning):** For Causal Inference on tabular payment data, XGBoost (via T-Learners) is selected for this workload. It is highly interpretable, fast, and typically requires less tuning to achieve high performance on structured tabular datasets compared to deep neural networks. It provides explainable Net Expected Incremental Value (Net EIV) scores.
 ---
 
 ## 2. Global Architecture Diagram
@@ -74,10 +77,11 @@ flowchart TB
 
     subgraph EXECUTION_LAYER ["Worker Execution Layer"]
         BullMQ[("BullMQ (Redis Outbox)")]
+        IngestionProcessor["Ingestion Processor"]
         Worker["Execution Worker"]
         Adapter["Razorpay Execution Adapter"]
     end
-    class BullMQ,Worker,Adapter api
+    class BullMQ,IngestionProcessor,Worker,Adapter api
 
     subgraph PERSISTENCE ["Persistence & Audit"]
         Postgres[("PostgreSQL (Prisma)")]
@@ -131,7 +135,7 @@ flowchart TB
 
 ## 2.1 Database System Design (HLD & ERD)
 
-To guarantee transaction safety, we use PostgreSQL as our single source of truth. The schema enforces **Optimistic Concurrency Control (OCC)** via the `version` field and strict idempotency via unique constraints, preventing dirty writes under high load.
+To enforce transaction safety, we use PostgreSQL as our single source of truth. The schema enforces **Optimistic Concurrency Control (OCC)** via the `version` field and strict idempotency via unique constraints, preventing dirty writes under high load.
 
 ```mermaid
 erDiagram
@@ -173,7 +177,6 @@ erDiagram
         string state "e.g. DETECTED, PLANNED, EXECUTING"
         int amountAtRiskMinor
         int version "Optimistic Concurrency Control"
-        string lockedBy "Worker ID (Distributed Lock)"
     }
     
     AUDIT_LOG {
@@ -192,7 +195,7 @@ erDiagram
 - **MERCHANT:** 1-to-many with CUSTOMER, REVENUE_CASE, and REVENUE_EVENT.
 - **CUSTOMER:** 1-to-many with REVENUE_CASE and REVENUE_EVENT.
 - **REVENUE_EVENT:** 1-to-1 with REVENUE_CASE. Contains unique `idempotencyKey` to prevent duplicate ingestion.
-- **REVENUE_CASE:** 1-to-many with AUDIT_LOG. Uses `version` for Optimistic Concurrency Control and `lockedBy` for Distributed Locks.
+- **REVENUE_CASE:** 1-to-many with AUDIT_LOG. Uses `version` for Optimistic Concurrency Control. Distributed execution locks are enforced at the Intervention level.
 - **AUDIT_LOG:** Immutable append-only ledger tracking all AI and system decisions.
 
 ---
@@ -213,7 +216,7 @@ erDiagram
 
 ## 3.1 Handling High Concurrency (Race Conditions)
 
-To guarantee that a customer is never spammed and a merchant is never double-charged, we engineered a strict combination of **Database Idempotency** and **Distributed Worker Locks**. The diagram below demonstrates how the system perfectly handles massive simultaneous webhook bursts without duplicating efforts.
+To ensure that a customer is not spammed and a merchant is not double-charged, we engineered a strict combination of **Database Idempotency** and **Distributed Worker Locks**. The diagram below demonstrates how the system safely processes concurrent duplicate webhook delivery without duplicating efforts.
 
 ```mermaid
 sequenceDiagram
@@ -222,7 +225,7 @@ sequenceDiagram
     participant DB as PostgreSQL (Prisma)
     participant Worker as Background Worker
 
-    Note over Razorpay, API: Simultaneous identical webhooks arrive at the exact same millisecond
+    Note over Razorpay, API: Simultaneous identical webhooks<br/>arrive at the exact same millisecond
     
     par Request 1
         Razorpay->>+API: POST /events/ingest (Event A)
@@ -232,7 +235,7 @@ sequenceDiagram
         Razorpay->>+API: POST /events/ingest (Event A duplicate)
     end
 
-    Note over API, DB: All 3 requests attempt to acquire a unique constraint on 'idempotencyKey'
+    Note over API, DB: All 3 requests attempt to acquire<br/>a unique constraint on 'idempotencyKey'
 
     API->>DB: INSERT INTO RevenueEvent (idempotencyKey=A)
     DB-->>API: Success (Row Created)
@@ -254,7 +257,7 @@ sequenceDiagram
     Worker->>DB: UPDATE RevenueCase SET lockedBy = 'Worker-1' WHERE lockedBy IS NULL
     DB-->>Worker: Success (1 row updated)
     
-    Note over Worker, DB: If another worker tries to lock it simultaneously...
+    Note over Worker, DB: If another worker tries to<br/>lock it simultaneously...
     Worker->>DB: UPDATE RevenueCase SET lockedBy = 'Worker-2' WHERE lockedBy IS NULL
     DB-->>Worker: ❌ Failed (0 rows updated) - Silently aborts duplicate execution
 ```
@@ -266,7 +269,7 @@ sequenceDiagram
 2. **Database Idempotency Check:** All requests attempt to insert into `RevenueEvent` with the same `idempotencyKey`.
 3. **Optimistic Rejection:** Exactly ONE insert succeeds. The database rejects the others with a Unique Constraint Violation.
 4. **Graceful Drop:** The API returns `409 Conflict` for the duplicates, silently dropping them without processing.
-5. **Worker Execution Lock:** The background worker attempts to lock the case via `UPDATE ... WHERE lockedBy IS NULL`. If another worker tries simultaneously, the database rejects it (0 rows updated), strictly enforcing at-most-once execution.
+5. **Worker Execution Lock:** The background worker attempts to lock the case via `UPDATE ... WHERE lockedBy IS NULL`. If another worker tries simultaneously, the database rejects it (0 rows updated), strictly preventing concurrent duplicate execution.
 
 ---
 
@@ -275,9 +278,9 @@ sequenceDiagram
 ### Core Platform
 - **Webhook Ingestion:** NestJS controllers securely authenticate JSON payloads from Razorpay using HMAC-SHA256 signatures against the raw byte stream. To strictly respect the 5-second gateway timeout and prevent webhook disablement, the controller immediately pushes the validated payload to a BullMQ queue and returns a fast `200 OK`.
 - **Event Processing & Case Creation:** Background workers asynchronously parse the JSON payload, mapping it to typed `RecoveryCase` entities with strict BigInt arithmetic for all monetary values (no floating point).
-- **State Machine:** Enforces strict lifecycle transitions: `DETECTED` → `PLANNED` → `EXECUTING` → `RECOVERED` / `FAILED` / `STOPPED` / `ESCALATED`. Invalid transitions are rejected with a typed error.
-- **Case Orchestrator:** A highly resilient background cron service (`CaseOrchestratorService`) actively sweeps the database for new `DETECTED` cases. It autonomously batches them, executes the LangGraph AI Dunning Workflow to generate recovery plans, and securely pushes them into the Redis Outbox—completely eliminating manual case interventions.
-- **Terminal States:** `RECOVERED`, `STOPPED`, `ESCALATED` are terminal — any subsequent attempt to execute an intervention on a terminal case is rejected before touching the DB.
+- **State Machine:** Enforces strict lifecycle transitions: `DETECTED` → `PLANNED` → `POLICY_CHECKED` → `QUEUED` → `EXECUTING` → `RECOVERED` / `RETRYABLE` / `FAILED` / `STOPPED` / `ESCALATED`. Invalid transitions are rejected with a typed error.
+- **Case Orchestrator:** A background cron service (`CaseOrchestratorService`) sweeps the database for new `DETECTED` cases. It autonomously batches them, executes the LangGraph AI Dunning Workflow to generate recovery plans, and securely pushes them into the Redis Outbox—automating routine recovery planning while escalating complex cases for human review.
+- **Terminal States:** `RECOVERED`, `FAILED`, `STOPPED`, `REJECTED`, and `EXPIRED` are terminal (enforced via `isTerminal()`) — any subsequent attempt to execute an intervention on a terminal case is rejected before touching the DB. (Note: `ESCALATED` pauses automated retries and requires operator intervention.)
 
 #### Lifecycle State Machine (Fintech Strict Transitions)
 
@@ -287,14 +290,16 @@ stateDiagram-v2
     
     DETECTED --> PLANNED : AI Plans & Policy Approves
     DETECTED --> STOPPED : Policy Blocks (e.g., Fraud, Cooldown)
+    DETECTED --> ESCALATED : Policy Requires Human Approval
     
     PLANNED --> EXECUTING : Worker Acquires Lock
     
     EXECUTING --> RECOVERED : Payment Captured
-    EXECUTING --> FAILED : Payment Failed / Link Expired
+    EXECUTING --> RETRYABLE : Transient Failure (< max attempts)
+    EXECUTING --> FAILED : Payment Hard Failed
     EXECUTING --> ESCALATED : Max Retries Exceeded
-    
-    FAILED --> DETECTED : Reset for Retry (if < maxAttempts)
+    RETRYABLE --> QUALIFIED : Cooldown Passed
+    QUALIFIED --> PLANNED : AI Re-Plans
     
     RECOVERED --> [*]
     STOPPED --> [*]
@@ -311,29 +316,30 @@ stateDiagram-v2
   - Transitions to **EXECUTING** when Worker acquires the lock.
 - **EXECUTING:** Provider API is called.
   - Transitions to **RECOVERED** if payment is captured successfully.
-  - Transitions to **FAILED** if payment fails or link expires.
+  - Transitions to **FAILED** if payment hard fails.
+  - Transitions to **RETRYABLE** if there is a transient failure and attempts < maxAttempts.
   - Transitions to **ESCALATED** if the max retry limit is exceeded.
-- **FAILED:** Resets back to **DETECTED** for a new AI retry strategy, provided attempts < maxAttempts.
-- **Terminal States:** RECOVERED, STOPPED, ESCALATED.
+- **RETRYABLE:** Resets back to **PLANNED** for a new AI retry strategy.
+- **Terminal States:** RECOVERED, FAILED, STOPPED, REJECTED, EXPIRED.
 
 ---
 
 ### Financial Safety Controls
-- **Strict Header-Based Idempotency:** A dedicated PostgreSQL `EventIdempotency` table explicitly checks the `x-razorpay-event-id` header upon ingestion. Because Razorpay operates on at-least-once delivery, this guarantees duplicate webhook payloads are silently dropped before they ever reach the background worker.
-- **Immutable AI Audit Trails:** When the LangGraph AI orchestrator produces a recovery plan, its complete multi-node reasoning dictionary (the state object) is serialized into the `reasoningTrace` column of the `AuditLog`. This guarantees every probabilistic AI decision is deterministically explainable.
+- **Strict Header-Based Idempotency:** A dedicated PostgreSQL `EventIdempotency` table explicitly checks the `x-razorpay-event-id` header upon ingestion. Because Razorpay operates on at-least-once delivery, this ensures duplicate webhook payloads are silently dropped before they ever reach the background worker.
+- **Immutable AI Audit Trails:** When the LangGraph AI orchestrator produces a recovery plan, its complete multi-node reasoning dictionary (the state object) is serialized into the `reasoningTrace` column of the `AuditLog`. This ensures every probabilistic AI decision is auditable and traceable.
 - **Optimistic Concurrency Control (OCC):** Every case update checks the current `version` field. A stale update (version mismatch) is rejected with a conflict error — the caller must re-fetch before retrying.
 - **In-Flight Payment Race Conditions:** A dedicated webhook controller (`razorpay.controller.ts`) catches live `payment.captured` and `order.paid` events. It uses OCC to preemptively halt any scheduled AI interventions if the customer pays on their own before the worker runs.
-- **Distributed Execution Lock:** Before any provider call, the worker does an atomic `UPDATE ... WHERE lockedBy IS NULL`. If another worker already holds the lock, 0 rows are updated → silent drop. Enforces at-most-once execution.
+- **Distributed Execution Lock:** Before any provider call, the worker does an atomic `UPDATE ... WHERE lockedBy IS NULL`. If another worker already holds the lock, 0 rows are updated → silent drop. Prevents concurrent duplicate execution.
 - **Stale-Lock Scanner (Crash Recovery):** A cron-driven `StaleLockScannerProcessor` automatically detects and clears locks held by workers that crashed mid-execution, restoring cases to a retryable state without human intervention.
 - **Partial Payment Settlements:** When `INITIATE_PAYMENT_RETRY` results in a partial capture, the system deterministically updates `amountAtRiskMinor` and reverts the case state to `DETECTED`. This securely kicks the case back to the AI orchestrator to dynamically plan a new intervention for the *remaining* balance instead of falsely marking it recovered.
 - **Currency Mismatch & Cross-Border Guard:** `evaluateRecoveryPolicy` strictly blocks interventions if the event currency isn't configured in the merchant's supported ledger (`MerchantRecoveryPolicyConfig`), and automatically stops international payment recovery attempts if `allowCrossBorderRecovery` is disabled.
 - **Maximum-Attempt Enforcement:** `merchantPolicy.maxAttemptsPerCase` (default: 3) is checked synchronously. Exceeding it forces `ESCALATED` state before any API call.
 - **Consent Enforcement:** SMS requires `smsConsent=true`; email requires `emailConsent=true`. Missing consent → `CONSENT_MISSING` reason code → intervention blocked.
 - **Mandatory Fraud Hard-Block:** If `failureCode` maps to a known fraud indicator (e.g. `SUSPECTED_FRAUD`), the root cause is deterministically flagged as `FRAUD` (0% recovery confidence), and all interventions are hard-blocked (`stopCase: true`) regardless of AI recommendation.
-- **TRAI Calling Window & Frequency Compliance:** Strictly enforces the 09:00 AM – 08:00 PM IST contact window and daily maximum messaging limits (via `contactWindowMetadataJson`). Interventions outside this window are gracefully deferred with a `RETRY_AFTER` directive.
+- **Calling Window & Frequency Compliance:** Strictly enforces the configured 09:00 AM – 08:00 PM IST contact window and daily maximum messaging limits (via `contactWindowMetadataJson`), and independently enforces customer consent and preference compliance. Interventions outside this window are gracefully deferred with a `RETRY_AFTER` directive.
 - **Secure Webhook Verification:** Cryptographically validates `x-razorpay-signature` using HMAC-SHA256 against raw buffers (via NestJS `rawBody`) and `crypto.timingSafeEqual()` to prevent timing side-channel attacks.
 - **Cooldown Gate:** `lastAttemptAt + cooldownPeriodMs > now()` blocks rapid re-attempts on the same case.
-- **Failure Isolation:** AI failures, ML timeouts, and provider errors are caught within their bounded context. They never propagate to the ingestion layer — the system degrades gracefully.
+- **Failure Isolation:** AI failures, ML timeouts, and provider errors are caught within their bounded context. They do not propagate to the ingestion layer — the system degrades gracefully.
 
 ---
 
@@ -355,15 +361,14 @@ CATE per treatment: `τ̂_t(x) = μ̂_t(x) − μ̂_0(x)`
 
 Net Expected Incremental Value: `NEIV_t = τ̂_t(x) × amountMinor − cost_t`
 
-The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing nothing is optimal — the case is stopped rather than needlessly intervened upon.
+The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing nothing is optimal — the system stops the case.
 
-- **Dual-Track ML Strategy for Jury Integrity:** In a Buildathon environment, we absolutely cannot use real Razorpay merchant data (PII risk). Conversely, we refuse to mislead judges by simply renaming retail datasets (like Hillstrom) to look like Razorpay data. Therefore, we implemented a dual-track strategy:
-  1. **Track 1 (Methodology Proof):** We run our offline statistical audit on the public **Hillstrom MineThatData Email RCT**. This mathematically proves our XGBoost T-Learner architecture correctly computes causal uplift on real human data.
-  2. **Track 2 (Operational Demo):** We built a mathematical data generator that creates a purely benchmark dataset exactly mirroring Razorpay's webhook schemas. Our live FastAPI inference server (`train.py` & `server.py`) is trained on this benchmark data, proving our NestJS API integration operates on genuine domain fields (`isCardError`, `amountMinor`, etc.) without hallucinations.
-  When deployed, we simply swap the training CSV to Razorpay's real SQL export—requiring zero architectural changes.
+- **Dual-Track ML Strategy for Scientific Integrity:** In a Buildathon environment, real Razorpay merchant data is strictly protected due to PII compliance and privacy restrictions. To maintain scientific integrity, we do not rename public retail datasets (like Hillstrom) to resemble proprietary payment data. Therefore, we implemented a dual-track strategy:
+  1. *Track 1 (Methodology Proof on Human RCT Data):* We downloaded the public Hillstrom Email Marketing dataset (64,000 real human customers) and ran causal uplift modeling using our exact T-Learner algorithm (`statistical_audit.py`). This demonstrates to the jury that our causal methodology works on real human behavior with statistically significant uplift.
+  2. *Track 2 (Operational Payment Demo):* We trained the production service (`train.py`) on a synthetic Razorpay failure dataset with realistic payment features (mandate type, error codes, network tokenization). This powers the live API and dashboard without risking PII.
+- **Explainability:** For every case, the model logs the predicted CATE (Conditional Average Treatment Effect) across all 3 treatment arms, along with feature attributions (SHAP values). The operator can see *why* the model chose SMS over Email for a specific failure.
 - **Inference API:** Python FastAPI service on port 8000, called from the NestJS domain layer with a 3-second timeout.
-- **Fallback:** If the ML server is unreachable, a deterministic rule-based heuristic (`bank_timeout → retry`, `card_expired → payment_link`, etc.) is used. The system never stalls waiting for ML.
-- **Evaluation:** `python apps/ml-pipeline/src/statistical_audit.py` generates AUROC, PR-AUC, Brier score, and Bootstrap 95% CIs per treatment arm to prove the methodology on the offline benchmark.
+- **Evaluation:** `python apps/ml-pipeline/src/statistical_audit.py` generates AUROC, PR-AUC, Brier score, and Bootstrap 95% CIs per treatment arm to validate the methodology on the offline benchmark.
 
 ---
 
@@ -394,11 +399,11 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 
 **Structured Output:** All LLM responses are validated through a Zod schema. A response that fails validation (malformed JSON, missing fields, safety violation) immediately triggers the deterministic fallback — the LLM cannot produce an unvalidated string that reaches a customer.
 
-**Fallback Templates:** Locale-aware deterministic templates for all 4 locales × 3 channels (SMS, Voice, Email) = **12 fallback templates total**. The system runs fully without any LLM API key in benchmark mode.
+**Fallback Templates:** Locale-aware deterministic templates for all 4 locales × 4 contexts (Downtime, SMS, Voice, Email) = **16 fallback templates total**. The system runs fully without any LLM API key in benchmark mode.
 
 #### AI & Policy Decision Flow (Bounded Autonomy)
 
-This diagram proves that the AI is fully "bounded". It can never independently trigger a financial action without passing through the deterministic policy engine.
+This diagram illustrates that the AI is fully "bounded". It is designed not to independently trigger a financial action without passing through the deterministic policy engine.
 
 ```mermaid
 flowchart TD
@@ -411,9 +416,9 @@ flowchart TD
     Plan --> Policy{Deterministic Policy Gate}
     
     Policy -- Fraud / No Consent / Stale --> Block[Reject & State = STOPPED]
-    Policy -- Valid & Safe --> Approve[Approve & State = PLANNED]
+    Policy -- Valid & Safe --> Approve[Approve & State = POLICY_CHECKED]
     
-    Approve --> Queue[(BullMQ Dispatch)]
+    Approve --> Queue[Dispatch to BullMQ & State = QUEUED]
 ```
 
 *(or in text format below)*
@@ -421,9 +426,9 @@ flowchart TD
 ### AI & Policy Decision Flow (Text View)
 1. **Inputs:** A case enters as `DETECTED`. The **LLM** diagnoses the root cause, while the **ML Model (T-Learner)** calculates causal propensity scores.
 2. **Plan Formulation:** Both AI signals combine into an AI Recovery Plan.
-3. **Deterministic Policy Gate:** The plan MUST pass through strict, hardcoded policy rules.
+3. **Deterministic Policy Gate:** The plan MUST pass through strict, rule-based policies.
 4. **Rejection:** If the policy detects Fraud, Missing Consent, or Stale State, the plan is blocked and the case is **STOPPED**.
-5. **Approval:** If the policy validates it as safe, the plan is approved, state becomes **PLANNED**, and it is dispatched to the Queue (BullMQ) for execution.
+5. **Approval:** If the policy validates it as safe, the plan is approved, state becomes **POLICY_CHECKED**, and when dispatched to BullMQ for execution, state transitions to **QUEUED**.
 
 ---
 
@@ -437,7 +442,7 @@ flowchart TD
 ---
 
 ### Dashboard UI (React)
-- **Data Mode Transparency:** Explicit `RAZORPAY_TEST` and `Offline Benchmark Model` labels throughout — judges and operators can always see what data mode the system is in.
+- **Data Mode Transparency:** Explicit `RAZORPAY_TEST` and `Offline Benchmark Model` labels throughout — allowing operators to clearly observe what data mode the system is operating in.
 - **Financial Funnels:** Total At Risk → System Recovered → False Intervention Rate → Active Escalations — the key business metrics on the home screen.
 - **Case Pipeline:** Table with filter by state (`DETECTED`, `PLANNED`, `EXECUTING`, `RECOVERED`, `FAILED`, `STOPPED`, `ESCALATED`). Sortable by amount, date, merchant.
 - **Case Detail Audit View:** Clicking any case reveals the full lifecycle trace: original webhook payload → ML propensity scores (CATE per arm) → LLM diagnosis text → policy gate decision with reason codes → worker execution result → final state transition.
@@ -448,8 +453,8 @@ flowchart TD
 
 ## 5. Latest Evaluation Results
 
-> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). **Why Benchmark?** To ensure absolute zero risk of PII leakage, maintain perfect regulatory compliance, and ensure strict mathematical reproducibility of the evaluation metrics, no real merchant data is used. **Future Path:** The identical evaluation pipeline will seamlessly ingest real Razorpay dataset exports once production access is granted, requiring zero architectural changes.
-> **Dataset checksum:** `cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b`
+> **Dataset:** Purpose-built deterministic benchmark (seed=42, 500 cases). **Why Benchmark?** To ensure strict isolation of PII leakage, maintain strict regulatory compliance, and ensure mathematical reproducibility of the evaluation metrics, no real merchant data is used. **Future Path:** The identical evaluation pipeline will seamlessly ingest real Razorpay dataset exports once production access is granted, intended to minimize architectural changes.
+> **Dataset checksum:** `d659a33b911118706d5cc4e6c206a92ef12557d5dfe8f06e1d5aa056155decd8`
 > **Mode:** `BENCHMARK` — all provider calls use deterministic sandbox adapters. No live API calls.
 > **Reproducible:** `pnpm evaluate-smoke` produces identical numbers on every run.
 
@@ -473,46 +478,48 @@ flowchart TD
 - **Baseline 1 Total Cost**: 459600 (including 3 fraud chargebacks)
 - **Baseline 1 Net ROI**: 21656404
 - **System Gross Recovered**: 9185069
-- **System Total Cost**: 12300 (including 0 fraud chargebacks)
-- **System Net ROI**: 9172769
+- **System Total Cost**: 6600 (including 0 fraud chargebacks)
+- **System Net ROI**: 9178469
+- **Incremental Risk-Adjusted Value (System vs B1)**: -12477935
+
 
 ## Intervention Metrics
-- **Attempted**: 246
+- **Attempted**: 132
 - **Succeeded**: 35
-- **Precision**: 14.23%
-- **Failed**: 211 (85.77%)
+- **Precision**: 26.52%
+- **Failed**: 97 (73.48%)
 - **False Interventions**: 0 (0.00%)
-- **Avg Attempts Per Case**: 1.45
+- **Avg Attempts Per Case**: 0.78
 
 ## Safety & Compliance
-- **Policy Blocks**: 0
-- **Escalations**: 135 (79.41%)
-- **Stopped Cases**: 0 (0.00%)
+- **Policy Blocks**: 38
+- **Escalations**: 97 (57.06%)
+- **Stopped Cases**: 38 (22.35%)
 - **Unsafe Prevented**: 0
 - **Stale Prevented**: 0
 - **Consent Blocks**: 0
 - **Idempotent Replays**: 0
 
 ## Reliability & Errors
-- **Evaluation Runtime**: 6761ms
+- **Evaluation Runtime**: 1914ms
 - **Provider Timeouts**: 22
-- **Provider Final Failures**: 189
+- **Provider Final Failures**: 75
 - **Workflow Failures**: 0
-- **AI Requests**: 318
-- **AI Fallbacks**: 318
+- **AI Requests**: 113
+- **AI Fallbacks**: 0
 <!-- EVALUATION_RESULTS_END -->
-### Why the AI System Wins Despite Lower Gross Recovery
+### AI System Safety Constraints
 
-Baseline 1 (Naive Retry) recovers ~₹774K by **blindly retrying every case** — including:
-- **23 fraud cases** (`SCN_FRAUD_SUSPECTED`) that must never be retried — doing so risks chargeback liability, fraud re-classification, and Razorpay account suspension
-- **205 insufficient-funds cases** — statistically unlikely to succeed on immediate retry; burns API quota and triggers customer friction
+Baseline 1 (Naive Retry) recovers more gross value by **blindly retrying every case** — including:
+- **Fraud cases** (`SCN_FRAUD_SUSPECTED`) that are blocked from retry by policy — doing so risks chargeback liability, fraud re-classification, and Razorpay account suspension
+- **Insufficient-funds cases** — statistically unlikely to succeed on immediate retry; burns API quota and triggers customer friction
 
-The AI-assisted system **correctly refuses** these, stopping 67.33% of cases via safety rules. The result:
-- ✅ **0.00% false intervention rate** — no unsafe actions executed
-- ✅ **22.33% escalation rate** — genuinely ambiguous cases surfaced to humans
-- ✅ **0 workflow failures** — full resilience across all 300 evaluated cases
+The AI-assisted system **correctly refuses** unsafe cases. The result:
+- ✅ **No false interventions were observed in the benchmark** — no unsafe actions executed
+- ✅ **57.06% escalation rate** — genuinely ambiguous cases surfaced to humans
+- ✅ **0 workflow failures** — full resilience across all 500 evaluated cases
 
-In production cost modelling (SMS ~₹0.50/message, chargeback liability ~₹1,500/dispute), the AI system's **net expected value exceeds Baseline 1** even at lower gross recovery. Full interpretation: [`docs/evaluation/EVALUATION.md`](docs/evaluation/EVALUATION.md)
+Full interpretation: [`docs/evaluation/EVALUATION.md`](docs/evaluation/EVALUATION.md)
 
 
 ## 6. Directory Structure & Services
@@ -556,8 +563,8 @@ The system is managed as a pnpm monorepo.
 ### Step 1 — Clone & Install
 
 ```bash
-git clone https://github.com/Surya-5555/RazorPay-Buildathon.git
-cd RazorPay-Buildathon
+git clone https://github.com/Surya-5555/FinTech-AI-05.git
+cd FinTech-AI-05
 
 # Install all Node dependencies across the monorepo
 pnpm install
@@ -738,18 +745,18 @@ pnpm --filter @rr/frontend dev
 
 ### Verification & Audit (Jury Validation)
 
-To mathematically and technically prove the safety and methodology of this system, we have included two deterministic audit scripts. Judges and new users can run these directly to verify the system's claims.
+To technically validate the safety and methodology of this system, we have included two deterministic audit scripts. Judges and new users can run these directly to verify the system's claims.
 
-#### 1. Concurrency & Idempotency Proof (Resilience Test)
-Proves the system strictly guarantees at-most-once execution even under severe race conditions. It fires 10 identical webhook payloads at the exact same millisecond. 
+#### 1. Concurrency & Idempotency Audit (Resilience Test)
+Validates the system prevents concurrent duplicate execution even under severe race conditions. It fires 10 identical webhook payloads at the exact same millisecond. 
 **Expected result:** Exactly 1 webhook creates a case, and 9 are safely rejected with HTTP 409 Conflict.
 ```bash
 # Run from the project root
 pnpm dlx tsx scripts/resilience-test.ts
 ```
 
-#### 2. Causal AI Methodology Proof (Statistical Audit)
-Proves our XGBoost T-Learner architecture is mathematically sound using the public Hillstrom MineThatData RCT (real human data, no PII risk). It trains the metalearner inline and outputs a 9-step causal inference report, proving the system identifies the dominant treatment strategy without hallucination.
+#### 2. Causal AI Methodology Verification (Statistical Audit)
+Validates our XGBoost T-Learner architecture using the public Hillstrom MineThatData RCT (real human data, no PII risk). It trains the metalearner inline and outputs a causal inference report, demonstrating the system's ability to identify treatment strategies probabilistically.
 ```bash
 # Run from the ml-pipeline directory
 cd apps/ml-pipeline/src
@@ -760,7 +767,7 @@ python statistical_audit.py
 
 ## 8. Production Roadmap (Brief)
 
-> The system has been explicitly designed for incremental production deployment. Each phase is architecturally independent — Phase 1 can ship before Phase 2 begins, requiring **zero architectural changes** to the core system.
+> The system has been explicitly designed for incremental production deployment. Each phase is architecturally independent — Phase 1 can ship before Phase 2 begins, intended to minimize architectural changes to the core system.
 
 For the full detailed roadmap with per-phase diagrams, effort estimates, and revenue projections, see [Production Roadmap](docs/roadmap/ROADMAP.md).
 
@@ -794,35 +801,35 @@ gantt
 *(or in text format below)*
 
 ### Deployment Phases (Text View)
-- **Phase 1 (Weeks 1–4): Live Razorpay Integration** — Connect real Razorpay webhooks (HMAC-SHA256 verified), enable test-mode payment link creation and eNACH mandate retry, configure Twilio SMS and Resend email for live customer communication. The core system remains completely unchanged.
-- **Phase 2 (Weeks 4–8): Merchant Configuration Portal** — Merchant self-service UI for configuring `maxAttemptsPerCase`, `cooldownPeriodMs`, `allowedChannels`, and LLM message tone. Row-level security for strict multi-merchant data isolation.
-- **Phase 3 (Weeks 8–12): Customer Consent Database** — Production-grade consent management compliant with the Digital Personal Data Protection (DPDP) Act, 2023. Consent withdrawal immediately halts all in-flight interventions. Preference learning feeds channel response data back into the ML pipeline.
-- **Phase 4 (Weeks 12–20): A/B Experimentation Framework** — Hash-based deterministic treatment assignment for online experiments. Periodic T-Learner retraining on real merchant data with shadow scoring before promotion. Long-term migration to contextual bandit with Thompson Sampling.
-- **Phase 5 (Ongoing): Observability & Operations** — Prometheus + Grafana monitoring with automated alerts (recovery rate drops, AI fallback spikes, worker lag). 90-day immutable audit trail with cryptographic hash chain. PCI-DSS scope review and incident response runbooks.
+- **Phase 1: Live Razorpay Integration** — Connect real Razorpay webhooks (HMAC-SHA256 verified), enable test-mode payment link creation and eNACH mandate retry, configure Twilio SMS and Resend email for live customer communication. The core system architecture remains unchanged.
+- **Phase 2: Merchant Configuration Portal** — Merchant self-service UI for configuring `maxAttemptsPerCase`, `cooldownPeriodMs`, `allowedChannels`, and LLM message tone. Row-level security for strict multi-merchant data isolation.
+- **Phase 3: Advanced Consent Portal & Preference Learning** — *Note: Strict DPDP Act consent enforcement is already live in Phase 1 via the Deterministic Policy Engine (which hard-blocks interventions if consent is missing).* Phase 3 will expand this by introducing a standalone customer-facing portal for granular consent management and introducing ML preference learning, which will feed channel-response data (e.g., "User prefers SMS over Email") back into the diagnostic pipeline.
+- **Phase 4: A/B Experimentation Framework** — Hash-based deterministic treatment assignment for online experiments. Periodic T-Learner retraining on real merchant data with shadow scoring before promotion. Long-term migration to contextual bandit with Thompson Sampling.
+- **Phase 5: Observability & Operations** — Prometheus + Grafana monitoring with automated alerts (recovery rate drops, AI fallback spikes, worker lag). 90-day immutable audit trail with cryptographic hash chain. PCI-DSS scope review and incident response runbooks.
 
-### What Is Already Production-Ready
+### What Is Already Built (Production-Oriented Prototype)
 
 | Capability | Status |
 |---|---|
-| Idempotent Webhook Ingestion (DB-level unique constraints) | ✅ Production-Ready |
-| Causal ML Intervention Selection (XGBoost T-Learner) | ✅ Production-Ready |
-| LLM Failure Diagnosis + 4-Locale Messaging | ✅ Production-Ready |
-| Deterministic Policy Engine (Consent, Fraud, Cooldown) | ✅ Production-Ready |
-| At-Most-Once Execution Lock (Distributed DB Lock) | ✅ Production-Ready |
-| Optimistic Concurrency Control (Version-based OCC) | ✅ Production-Ready |
-| Immutable Audit Trail (Full reasoning trace) | ✅ Production-Ready |
-| Reproducible Evaluation Framework (Checksummed datasets) | ✅ Production-Ready |
+| Idempotent Webhook Ingestion (DB-level unique constraints) | ✅ Implemented Capability |
+| Causal ML Intervention Selection (XGBoost T-Learner) | ✅ Implemented Capability |
+| LLM Failure Diagnosis + 4-Locale Messaging | ✅ Implemented Capability |
+| Deterministic Policy Engine (Consent, Fraud, Cooldown) | ✅ Implemented Capability |
+| Execution Lock (Distributed DB Lock prevents duplicate execution) | ✅ Implemented Capability |
+| Optimistic Concurrency Control (Version-based OCC) | ✅ Implemented Capability |
+| Immutable Audit Trail (Full reasoning trace) | ✅ Implemented Capability |
+| Reproducible Evaluation Framework (Checksummed datasets) | ✅ Implemented Capability |
 
 ### Revenue Impact Projection
 
 | Merchant Scale | Monthly At Risk | System Recovery (20.7%) | False Intervention Cost |
 |---|---|---|---|
-| Small (1 merchant) | ₹4,00,000 | ₹82,800 | ₹0 (0% rate) |
-| Medium (10 merchants) | ₹60,00,000 | ₹12,42,000 | ₹0 (0% rate) |
-| Large (100 merchants) | ₹10,00,00,000 | ₹2,07,00,000 | ₹0 (0% rate) |
-| Enterprise (1000+ merchants) | ₹175,00,00,000 | ₹36,22,50,000 | ₹0 (0% rate) |
+| Small (1 merchant) | ₹4,00,000 | ₹82,800 | 0 observed in benchmark |
+| Medium (10 merchants) | ₹60,00,000 | ₹12,42,000 | 0 observed in benchmark |
+| Large (100 merchants) | ₹10,00,00,000 | ₹2,07,00,000 | 0 observed in benchmark |
+| Enterprise (1000+ merchants) | ₹175,00,00,000 | ₹36,22,50,000 | 0 observed in benchmark |
 
-> **Key Insight:** The system's **0.00% false intervention rate** means every recovery action is mathematically justified by the causal ML model. At enterprise scale, this translates to **₹36+ crore in monthly recovered revenue** with zero wasted interventions.
+> **Key Insight:** 0 false interventions were observed in the benchmark. ML/LLM signals are bounded by deterministic policy.
 
 ---
 
@@ -851,11 +858,9 @@ Each feature doc explains: Problem → Design → Data Flow → AI Involvement �
 |---|---|
 | [Architecture & Systems Design](docs/architecture/) | Detailed diagrams and sequence flows of ingestion and execution pipelines |
 | [Architectural Decision Records](docs/decisions/) | Immutable records of why NestJS, XGBoost, Prisma, BullMQ were chosen |
-| [Security, Compliance & Data Privacy](SECURITY.md) | Defense-in-depth architecture, webhook cryptography, and zero-PII data models |
+| [Security, Compliance & Data Privacy](SECURITY.md) | Defense-in-depth architecture, webhook cryptography, and synthetic PII risk isolation |
 | [Failure Mode Recovery](docs/failures/FAILURES.md) | All 7 failure scenarios documented with evidence trails and test references |
 | [Evaluation Methodology](docs/evaluation/EVALUATION.md) | Metrics framework, baselines, latest benchmark results, and cost-model interpretation |
 | [Production Roadmap](docs/roadmap/ROADMAP.md) | 5-phase plan for live Razorpay merchant deployment |
-| [Demo Script](docs/demo/DEMO_SCRIPT.md) | 5-minute judge walkthrough with exact CLI commands and expected outputs |
-
 
 

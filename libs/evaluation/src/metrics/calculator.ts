@@ -10,6 +10,7 @@ export interface EvaluationMetrics {
   systemRecoveredMinor: string;
   incrementalRecoveredVsBaseline0: string;
   incrementalRecoveredVsBaseline1: string;
+  incrementalNetRoiVsBaseline1: string;
   recoveryRate: number; // percentage
   
   // Interventions
@@ -142,6 +143,7 @@ export class MetricsCalculator {
       systemRecoveredMinor: sysRecovered.toString(),
       incrementalRecoveredVsBaseline0: incrementalVsB0.toString(),
       incrementalRecoveredVsBaseline1: incrementalVsB1.toString(),
+      incrementalNetRoiVsBaseline1: (BigInt(sysRoi.netRoiMinor) - BigInt(b1Roi.netRoiMinor)).toString(),
       recoveryRate,
       interventionsAttempted,
       interventionsSucceeded,

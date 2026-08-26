@@ -13,7 +13,7 @@ import { evaluateRecoveryPolicy } from './policy';
 import { scorePropensity } from './ml/propensity';
 import { isOutsideTRAIWindow } from './utils/time-compliance';
 import { generateId } from '@rr/utils';
-import { DiagnosisResult, InterventionType } from '@rr/contracts';
+import { DiagnosisResult, InterventionType, RootCause } from '@rr/contracts';
 
 export interface DunningState {
   revCase: RecoveryCase;
@@ -66,13 +66,21 @@ dunningGraph.addNode('recommend', async (state: DunningState) => {
   state.diagnosis.candidateInterventions = candidates;
   let recommended = recommendIntervention(state.revCase, state.diagnosis, candidates, state.merchantPolicy, state.activeInterventionSummary);
 
-  // Smart Dunning Overrides
-  const failureCode = state.revCase.rootCause;
+  // Smart Dunning Overrides (Typed RootCause & Event Failure Reason)
+  const rootCause = state.diagnosis.rootCause;
+  const failureReason = state.sourceEvent.failureReason?.toUpperCase() || '';
   const attemptCount = state.revCase.attemptCount;
   
-  if (failureCode === 'card_expired') {
+  if (
+    (failureReason === 'CARD_EXPIRED' || failureReason === 'EXPIRED_CARD' || rootCause === RootCause.AUTHENTICATION_OR_CUSTOMER_ACTION_REQUIRED) &&
+    candidates.includes(InterventionType.PAYMENT_LINK)
+  ) {
     recommended = InterventionType.PAYMENT_LINK;
-  } else if (['insufficient_funds', 'bank_technical_error'].includes(failureCode || '') && attemptCount < 3) {
+  } else if (
+    (rootCause === RootCause.TRANSIENT_BANK_OR_NETWORK_FAILURE || failureReason === 'BANK_TIMEOUT' || failureReason === 'NETWORK_ERROR') &&
+    attemptCount < 3 &&
+    candidates.includes(InterventionType.PAYMENT_RETRY)
+  ) {
     recommended = InterventionType.PAYMENT_RETRY;
   }
 

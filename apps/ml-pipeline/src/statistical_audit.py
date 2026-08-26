@@ -9,7 +9,7 @@ dataset.
 
 Why use a public dataset?
 Because real Razorpay payment recovery data with randomized interventions is strictly 
-private. We refuse to risk PII breaches. This script proves to the jury that our 
+private. We refuse to risk PII breaches. This script demonstrates to the jury that our 
 Causal Inference methodology (XGBoost T-Learner) is mathematically sound, correctly 
 implemented, and achieves measurable uplift on real human RCT data. 
 
@@ -384,7 +384,7 @@ print("""
      heterogeneity for a personalization model to exploit.
 
   6. THE DUAL-TRACK STRATEGY: This script represents Track 1 (Methodology Proof).
-     It proves the architecture correctly identifies the dominant treatment and 
+     It demonstrates the architecture correctly identifies the dominant treatment and 
      evaluates policies using offline RCT methodology on real human data.
      Track 2 (Operational Demo) uses a mathematically synthetic Razorpay dataset 
      in `train.py` to safely simulate webhooks without risky PII exposure or 

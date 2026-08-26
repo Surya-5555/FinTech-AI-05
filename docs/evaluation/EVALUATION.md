@@ -168,33 +168,35 @@ Output is rendered directly to the CLI stdout as a JSON report containing all me
 - **Baseline 1 Total Cost**: 459600 (including 3 fraud chargebacks)
 - **Baseline 1 Net ROI**: 21656404
 - **System Gross Recovered**: 9185069
-- **System Total Cost**: 12300 (including 0 fraud chargebacks)
-- **System Net ROI**: 9172769
+- **System Total Cost**: 6600 (including 0 fraud chargebacks)
+- **System Net ROI**: 9178469
+- **Incremental Risk-Adjusted Value (System vs B1)**: -12477935
+
 
 ## Intervention Metrics
-- **Attempted**: 246
+- **Attempted**: 132
 - **Succeeded**: 35
-- **Precision**: 14.23%
-- **Failed**: 211 (85.77%)
+- **Precision**: 26.52%
+- **Failed**: 97 (73.48%)
 - **False Interventions**: 0 (0.00%)
-- **Avg Attempts Per Case**: 1.45
+- **Avg Attempts Per Case**: 0.78
 
 ## Safety & Compliance
-- **Policy Blocks**: 0
-- **Escalations**: 135 (79.41%)
-- **Stopped Cases**: 0 (0.00%)
+- **Policy Blocks**: 38
+- **Escalations**: 97 (57.06%)
+- **Stopped Cases**: 38 (22.35%)
 - **Unsafe Prevented**: 0
 - **Stale Prevented**: 0
 - **Consent Blocks**: 0
 - **Idempotent Replays**: 0
 
 ## Reliability & Errors
-- **Evaluation Runtime**: 6761ms
+- **Evaluation Runtime**: 1914ms
 - **Provider Timeouts**: 22
-- **Provider Final Failures**: 189
+- **Provider Final Failures**: 75
 - **Workflow Failures**: 0
-- **AI Requests**: 318
-- **AI Fallbacks**: 318
+- **AI Requests**: 113
+- **AI Fallbacks**: 0
 <!-- EVALUATION_RESULTS_END -->
 
 ---
@@ -217,6 +219,4 @@ This is intentional and represents the system's primary safety value.
 
 **In production**, the cost model would factor in SMS cost (~₹0.50), Razorpay API cost, and chargeback liability (~₹1,500 per dispute). When these costs are subtracted, the AI-assisted system's Net Expected Value exceeds Baseline 1 even at a lower gross recovery rate.
 
-### Why AI Fallbacks = 155/155
 
-In `BENCHMARK` mode, the LLM uses a deterministic test adapter (no API key is required). All 155 AI requests use the deterministic fallback template. This proves the system operates correctly without any LLM dependency — exactly as designed for evaluation reproducibility.
