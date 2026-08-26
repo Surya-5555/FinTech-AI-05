@@ -58,13 +58,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.warn({ err: exception, correlationId, url: request.url }, 'Handled Exception');
     }
 
-    response.status(status).json({
+    const errorResponse = {
       error: {
-        code,
-        message,
+        code: code,
+        message: Array.isArray(message) ? message[0] : message,
         correlationId,
-        details,
+        details: Array.isArray(message) && message.length > 1 ? message.slice(1) : (status === HttpStatus.INTERNAL_SERVER_ERROR ? [exception instanceof Error ? exception.stack : String(exception)] : []),
       }
-    });
+    };
+
+    response.status(status).json(errorResponse);
   }
 }

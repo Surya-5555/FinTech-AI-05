@@ -69,14 +69,23 @@ async function runLoadTest() {
   }));
 
   let failedResponses = [];
-  for (let i = 0; i < testCases.length; i += chunkLimit) {
-    const chunk = testCases.slice(i, i + chunkLimit);
+
+  // Send the very first request synchronously to prevent a race condition 
+  // where 50 concurrent requests all try to create the same Demo Merchant.
+  console.log(`  Seeding initial merchant with 1st event...`);
+  const firstEvent = await ingestEvent('PAYMENT_FAILED', testCases[0].failedEventId, testCases[0].amount, testCases[0].customerRef, merchantRef, `idk_fail_${testCases[0].failedEventId}`);
+  failedResponses.push(firstEvent);
+
+  // Now blast the remaining 99 requests concurrently
+  const remainingCases = testCases.slice(1);
+  for (let i = 0; i < remainingCases.length; i += chunkLimit) {
+    const chunk = remainingCases.slice(i, i + chunkLimit);
     const promises = chunk.map(tc => 
       ingestEvent('PAYMENT_FAILED', tc.failedEventId, tc.amount, tc.customerRef, merchantRef, `idk_fail_${tc.failedEventId}`)
     );
     const results = await Promise.all(promises);
     failedResponses.push(...results);
-    console.log(`  Ingested ${Math.min(i + chunkLimit, totalCases)} / ${totalCases}...`);
+    console.log(`  Ingested ${Math.min(i + chunkLimit + 1, totalCases)} / ${totalCases}...`);
   }
 
   console.log(`Phase B: Waiting for worker to process cases...`);

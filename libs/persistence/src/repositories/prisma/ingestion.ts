@@ -185,9 +185,59 @@ export class PrismaIngestionRepository implements IngestionRepository {
 
         const qual = qualifyFn(command.event, merchantConfig, merchant.segment);
 
-        // 7. Create case if eligible
+        // 7. Handle Existing Cases or Create New
         let rc: RecoveryCase | null = null;
-        if (qual.shouldCreateCase && qual.initialState && qual.amountAtRisk) {
+        
+        if (command.event.eventType === 'PAYMENT_RECOVERED') {
+          // Find the active case for this customer to mark as recovered
+          const activeCase = await tx.revenueCase.findFirst({
+            where: {
+              merchantId: merchant.id,
+              customerId: customer.id,
+              state: { notIn: ['RECOVERED', 'CLOSED', 'ABANDONED'] }
+            },
+            orderBy: { createdAt: 'desc' }
+          });
+          
+          if (activeCase) {
+             const updatedCase = await tx.revenueCase.update({
+               where: { id: activeCase.id },
+               data: {
+                 state: 'RECOVERED',
+                 terminalAt: new Date(),
+                 version: { increment: 1 }
+               }
+             });
+             
+             await tx.auditLog.create({
+               data: {
+                 timestamp: new Date(),
+                 actorType: 'SYSTEM',
+                 action: 'CASE_RECOVERED_BY_EVENT',
+                 entityType: 'RevenueCase',
+                 entityId: activeCase.id,
+                 correlationId: command.event.correlationId,
+                 previousState: activeCase.state,
+                 nextState: 'RECOVERED',
+                 metadataJson: JSON.stringify({ recoveryEventId: eventId })
+               }
+             });
+             
+             rc = {
+                caseId: updatedCase.id as any,
+                sourceEventId: updatedCase.sourceEventId as any,
+                merchantId: updatedCase.merchantId as any,
+                customerId: updatedCase.customerId as any,
+                amountAtRisk: { amountMinor: updatedCase.amountAtRiskMinor, currency: updatedCase.currency },
+                state: updatedCase.state as any,
+                attemptCount: updatedCase.attemptCount,
+                version: updatedCase.version,
+                correlationId: updatedCase.correlationId as any,
+                createdAt: updatedCase.createdAt,
+                updatedAt: updatedCase.updatedAt
+             };
+          }
+        } else if (qual.shouldCreateCase && qual.initialState && qual.amountAtRisk) {
           const caseId = generateId('case');
           const caseModel = await tx.revenueCase.create({
             data: {
