@@ -122,6 +122,7 @@ describe('Phase 2: End-to-End Golden Path', () => {
       .post('/events/ingest')
       .set('x-razorpay-signature', signature)
       .set('Idempotency-Key', `idemp_${randomUUID()}`)
+      .set('x-razorpay-event-id', eventId)
       .send(payload);
       
     if (response.status !== 200) {
@@ -164,7 +165,7 @@ describe('Phase 2: End-to-End Golden Path', () => {
     expect(enqueueResponse.status).toBe(201);
 
     // Trigger outbox processing manually since cron might not fire in test
-    const { OutboxPublisherService } = await import('../../apps/api/src/modules/outbox-publisher/outbox-publisher.service');
+    const { OutboxPublisherService } = await import('../../apps/api/src/modules/outbox-publisher/outbox-publisher.service.js');
     const outboxService = apiApp.get(OutboxPublisherService);
     await (outboxService as any).poll();
 
