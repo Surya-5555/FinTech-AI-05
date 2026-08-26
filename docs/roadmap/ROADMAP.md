@@ -2,6 +2,42 @@
 
 > This document describes what would be built next if this system were deployed into production at Razorpay merchant scale. All features listed here are currently out of scope for the buildathon submission but represent the natural engineering evolution of the architecture.
 
+```mermaid
+gantt
+    title Production Deployment Roadmap
+    dateFormat YYYY-MM-DD
+    
+    section Phase 1: Live Razorpay
+    Real Webhook Ingestion       :p1a, 2025-01-01, 14d
+    Live Test-Mode Execution     :p1b, after p1a, 7d
+    Live Customer Communication  :p1c, after p1b, 7d
+    
+    section Phase 2: Merchant Portal
+    Self-Service Policy Config   :p2a, after p1c, 14d
+    Multi-Merchant Isolation     :p2b, after p2a, 14d
+    
+    section Phase 3: Consent DB
+    Consent Management           :p3a, after p2b, 14d
+    Preference Learning          :p3b, after p3a, 14d
+    
+    section Phase 4: A/B Framework
+    Online Experiment Harness    :p4a, after p3b, 28d
+    Causal Model Retraining      :p4b, after p4a, 28d
+    
+    section Phase 5: Observability
+    Production Monitoring        :p5a, after p1c, 120d
+    Audit Compliance             :p5b, after p1c, 120d
+```
+
+*(or in text format below)*
+
+### Deployment Timeline (Text View)
+- **Phase 1 (Weeks 1–4):** Live Razorpay Integration — real webhook ingestion, test-mode execution, live customer communication channels.
+- **Phase 2 (Weeks 4–8):** Merchant Configuration Portal — self-service policy config, multi-merchant row-level security.
+- **Phase 3 (Weeks 8–12):** Customer Consent Database — DPDP Act 2023 compliance, preference learning pipeline.
+- **Phase 4 (Weeks 12–20):** A/B Experimentation Framework — online experiment harness, causal model retraining, contextual bandit (long-term).
+- **Phase 5 (Ongoing):** Observability & Operations — Prometheus/Grafana monitoring, immutable audit trail, incident response runbooks.
+
 ---
 
 ## Phase 1: Live Razorpay Integration (Weeks 1–4)

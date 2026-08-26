@@ -4,6 +4,32 @@
 
 This document describes how the Revenue Recovery system is measured. The evaluation framework computes reproducible, batch-level metrics comparing the AI-assisted system against two baselines. All claims are backed by deterministic computation over a checksummed benchmark dataset.
 
+```mermaid
+flowchart LR
+    Dataset[Deterministic Benchmark Dataset seed=42, 500 cases] --> B0[Baseline 0: No Recovery]
+    Dataset --> B1[Baseline 1: Naive Retry All]
+    Dataset --> SUT[AI System Under Test]
+    
+    B0 --> Compare[Metrics Engine BigInt precision]
+    B1 --> Compare
+    SUT --> Compare
+    
+    Compare --> Revenue[Revenue Metrics: At Risk vs Recovered]
+    Compare --> Safety[Safety Metrics: Policy Blocks, Consent, Fraud Prevention]
+    Compare --> Reliability[Reliability Metrics: Timeouts, Fallbacks, Retries]
+```
+
+*(or in text format below)*
+
+### Evaluation Pipeline (Text View)
+1. **Input:** A deterministic benchmark dataset (`seed=42`, 500 cases) with a SHA-256 checksum for reproducibility.
+2. **Three Parallel Evaluations:**
+   - **Baseline 0 (No Recovery):** Measures organic/natural recovery rate.
+   - **Baseline 1 (Naive Retry):** Blindly retries every case regardless of failure reason.
+   - **AI System Under Test (SUT):** Uses the full AI pipeline (diagnosis, ML scoring, policy gating, execution).
+3. **Metrics Engine:** Computes all metrics using `BigInt` (minor units) to prevent floating-point precision loss.
+4. **Output:** Revenue Metrics, Safety Metrics, and Reliability Metrics — all deterministically reproducible.
+
 ## Dataset
 
 ### Provenance

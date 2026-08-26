@@ -12,14 +12,25 @@ The LLM messaging system handles the contextual, language-specific content gener
 
 ### Message Generation Pipeline
 
+```mermaid
+flowchart TD
+    Plan[Planning Service selects channel: SMS | EMAIL | VOICE] --> Prompt[builds structured prompt]
+    Prompt --> Gen[HostedLLMClient.generateStructured]
+    Gen --> Val[Zod validation: text, locale, channel, safetyChecks]
+    
+    Val -- Valid --> Draft[RecoveryMessageDraft used in intervention]
+    Val -- Invalid / Timeout --> Fallback[Fallback: getFallbackMessageDraft]
 ```
-Planning Service selects channel (SMS | EMAIL | VOICE)
-    → getRecoveryMessagePrompt(context) builds structured prompt
-    → HostedLLMClient.generateStructured(prompt, schema)
-    → Zod validation: { text, locale, channel, safetyChecks }
-    → If valid: RecoveryMessageDraft used in intervention
-    → If invalid / timeout: getFallbackMessageDraft(context)
-```
+
+*(or in text format below)*
+
+### Message Generation Pipeline (Text View)
+1. **Planning Service** selects the communication channel (`SMS` | `EMAIL` | `VOICE`).
+2. **Prompt Builder** generates a structured prompt including context and safety bounds.
+3. **LLM Client** (`HostedLLMClient.generateStructured`) requests the message draft.
+4. **Zod Validation** strictly checks the response structure (`text`, `locale`, `channel`, `safetyChecks`).
+5. **If Valid:** The `RecoveryMessageDraft` is bundled into the intervention plan.
+6. **If Invalid or Timeout:** A deterministic fallback template is instantly loaded via `getFallbackMessageDraft`.
 
 ### Downtime-Aware Routing (Context Enrichment)
 

@@ -12,21 +12,44 @@ The execution layer decouples the decision (what to do) from the action (doing i
 
 ### Worker Architecture
 
+```mermaid
+sequenceDiagram
+    participant Queue as BullMQ (Redis)
+    participant Worker as NestJS Worker
+    participant DB as Database (OCC Lock)
+    participant Provider as ExecutionProvider
+
+    Queue->>Worker: Dispatch Intervention Job
+    Worker->>DB: Fetch intervention record
+    Worker->>Worker: Validate case EXECUTING state
+    
+    Worker->>DB: Claim execution lock (atomic UPDATE)
+    alt Lock Fails
+        DB-->>Worker: 0 rows updated
+        Worker-->>Queue: Drop job silently (at-most-once)
+    else Lock Succeeds
+        DB-->>Worker: Lock acquired
+        Worker->>Worker: Resolve Provider via factory
+        Worker->>Provider: execute(intervention)
+        Provider-->>Worker: ExecutionResult
+        Worker->>DB: Persist result (atomic txn)
+        Worker->>DB: Release lock
+        Worker->>DB: Transition case state
+    end
 ```
-BullMQ Queue (Redis-backed)
-    → NestJS Worker Module (apps/worker/)
-    → InterventionProcessor (processes one job at a time)
-        ├── Fetch intervention record from DB
-        ├── Validate case is in EXECUTING state
-        ├── Claim execution lock (atomic DB update)
-        │     └── If lock fails: drop job silently (at-most-once)
-        ├── Resolve ExecutionProvider via factory
-        ├── Call provider.execute(intervention)
-        ├── Receive ExecutionResult { success, resultCode, payload }
-        ├── Persist result (atomic transaction)
-        ├── Release lock
-        └── Transition case state (RECOVERED | FAILED)
-```
+
+*(or in text format below)*
+
+### Worker Architecture (Text View)
+1. **BullMQ Queue** dispatches the intervention job.
+2. **InterventionProcessor** (in NestJS Worker) picks up the job.
+3. **Fetch & Validate:** Fetches intervention record from DB and validates the case is in the `EXECUTING` state.
+4. **Claim Execution Lock:** Performs an atomic DB update.
+   - *If lock fails:* Drops the job silently to guarantee at-most-once execution.
+   - *If lock succeeds:* Proceeds to execution.
+5. **Execution:** Resolves the `ExecutionProvider` via factory and calls `provider.execute(intervention)`.
+6. **Result:** Receives the `ExecutionResult` (`{ success, resultCode, payload }`).
+7. **Persist & Release:** Persists the result in an atomic transaction, releases the lock, and transitions the case state (`RECOVERED` or `FAILED`).
 
 ### Provider Factory
 

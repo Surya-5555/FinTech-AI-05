@@ -35,15 +35,35 @@ In a Buildathon environment, we absolutely cannot use real Razorpay merchant dat
 
 To ensure both mathematical rigor and operational integrity, we architected a **Dual-Track ML Strategy**:
 
-1. **Track 1: Methodology Proof (The Hillstrom Benchmark)**
-   - We run our offline statistical audit (`apps/ml-pipeline/src/statistical_audit.py`) on the **Hillstrom MineThatData Email RCT** — a real, public randomised controlled trial dataset. 
-   - **Purpose:** This proves to the data science jury that our XGBoost T-Learner architecture correctly computes Conditional Average Treatment Effects (CATE) and Net Expected Incremental Value (Net EIV) on *real human data*. We do not arbitrarily rename these features; we keep the math pure.
+```mermaid
+flowchart TB
+    subgraph Privacy-First ML Strategy
+        direction LR
+        
+        subgraph Track 1: Methodology Proof
+            Hill[Hillstrom MineThatData Public RCT] --> Audit[Offline Statistical Audit]
+            Audit --> Output1[Proves CATE Math on Real Human Data]
+        end
+        
+        subgraph Track 2: Operational Demo
+            Gen[Mathematical Data Generator] --> Synth[Synthetic Razorpay Webhooks]
+            Synth --> Train[Live Inference Model Training]
+            Train --> API[NestJS Backend Integration]
+        end
+    end
+```
 
-2. **Track 2: Operational Demo (Synthetic Razorpay Webhooks)**
-   - We built a mathematical data generator (`apps/ml-pipeline/src/generate_synthetic_data.py`) to create a strictly synthetic dataset that mirrors Razorpay's actual domain features (`isCardError`, `amountMinor`, `customerLocation`, etc.).
-   - **Purpose:** We train our live inference model (`apps/ml-pipeline/src/train.py`) on this synthetic dataset. This proves that our operational API and NestJS backend integration are perfectly typed and structurally sound for Razorpay.
+*(or in text format below)*
 
-When deployed to production, we simply point the training pipeline to Razorpay's internal SQL export instead of the synthetic CSV—requiring **zero architectural changes**.
+### The Dual-Track ML Strategy (Text View)
+1. **Track 1: Methodology Proof**
+   - **Input:** Hillstrom MineThatData Public RCT dataset.
+   - **Process:** We run an offline statistical audit (`statistical_audit.py`).
+   - **Output:** Proves to the data science jury that our XGBoost T-Learner mathematically works on *real human data*.
+2. **Track 2: Operational Demo**
+   - **Input:** Mathematical Data Generator creates purely Synthetic Razorpay Webhooks.
+   - **Process:** The live inference model trains exclusively on synthetic data.
+   - **Output:** Proves the NestJS backend integration is structurally sound, requiring zero architectural changes for a live deployment while guaranteeing zero PII leakage.
 
 ### Pipeline Files
 

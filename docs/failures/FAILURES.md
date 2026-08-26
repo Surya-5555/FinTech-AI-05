@@ -2,6 +2,34 @@
 
 This document describes the failure scenarios the AI Revenue Recovery system handles, and how it safely recovers from each one. All scenarios are verified by deterministic integration tests in `tests/integration/resilience_flow.test.ts`.
 
+```mermaid
+flowchart TD
+    subgraph Failure Scenarios
+        F1[Duplicate Webhook] --> R1[DB Unique Constraint Blocks]
+        F2[Worker Crash Mid-Execution] --> R2[Distributed Lock Prevents Re-execution]
+        F3[Stale State Race Condition] --> R3[OCC Version Mismatch Rejects]
+        F4[Provider API Timeout/5xx] --> R4[Safe Failure Code + Bounded Retry]
+        F5[Max Retries Exhausted] --> R5[Deterministic Stopping Rule + ESCALATED]
+        F6[DB Transaction Failure] --> R6[ACID Rollback, No Partial State]
+        F7[LLM Unavailable] --> R7[Deterministic Fallback Templates]
+    end
+    
+    R1 & R2 & R3 & R4 & R5 & R6 & R7 --> Safe[System Remains Safe and Auditable]
+```
+
+*(or in text format below)*
+
+### Resilience Overview (Text View)
+1. **Duplicate Webhook** → Database unique constraint deterministically blocks duplicate events.
+2. **Worker Crash Mid-Execution** → Distributed lock prevents any second worker from re-executing the same intervention.
+3. **Stale State Race Condition** → Optimistic Concurrency Control (OCC) version mismatch instantly rejects the stale update.
+4. **Provider API Timeout/5xx** → Failure is safely mapped to a structured code; BullMQ retries are bounded.
+5. **Max Retries Exhausted** → Deterministic stopping rule fires; case transitions to `ESCALATED`.
+6. **DB Transaction Failure** → Full ACID rollback ensures no partial state corruption.
+7. **LLM Unavailable** → Deterministic fallback templates activate instantly; no stalling.
+
+**Result:** The system remains safe and fully auditable across all 7 failure modes.
+
 ## 1. Duplicate Event Ingestion
 
 ### Scenario
