@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 
 export function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return '-';
