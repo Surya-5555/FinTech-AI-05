@@ -17,7 +17,7 @@ Worker execution must not hang indefinitely.
 
 ### 3. Graceful Degradation
 Third-party providers go down. The worker architecture is designed to gracefully degrade:
-- If the AI Model (LLM) fails, the worker catches the exception and falls back to a hardcoded, deterministic SMS template.
+- If the AI Model (LLM) fails, the worker catches the exception and falls back to a static, deterministic SMS template.
 - If Twilio is down, the job fails gracefully, and BullMQ applies exponential backoff, retrying the intervention hours later rather than hammering a downed API.
 
 ### 4. Memory and Resource Constraints

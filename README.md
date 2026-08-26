@@ -2,6 +2,9 @@
 
 An evaluation-first, causal-AI revenue recovery system designed with enterprise-grade deterministic financial safety.
 
+###  A Special Thanks to Razorpay :)
+> *This Buildathon has been an incredible journey that pushed my engineering limits. Building under intense pressure forced me to think deeply about architectural trade-offs, fault tolerance, and the non-negotiable nature of distributed state. It taught me the true value of selecting the right stack for the problem, designing with failure as a first principle, and treating infrastructure as a core component of the business logic. It instilled a rigorous discipline for uncompromising code quality, deterministic financial safety, and resilient system design. Thank you for the challenge and the opportunity to elevate my craft. I'm looking forward to connecting with the Razorpay team!*
+
 ## 1. System Overview
 
 **What is this system?** 
@@ -17,7 +20,7 @@ To maximize recovered revenue by personalizing the recovery intervention (e.g., 
 
 Building financial infrastructure requires a fundamentally different mindset than building standard AI applications. My architecture is driven by the following core principles:
 
-1. **Bounded AI over Unbounded Autonomy**: AI is exceptionally good at reasoning (diagnosing failure context, writing personalized messages, calculating causal uplift), but it cannot be trusted with unstructured money movement. I use AI exclusively for *intent generation*, while a hardcoded, deterministic **Policy Engine** serves as the final authority on execution.
+1. **Bounded AI over Unbounded Autonomy**: AI is exceptionally good at reasoning (diagnosing failure context, writing personalized messages, calculating causal uplift), but it cannot be trusted with unstructured money movement. I use AI exclusively for *intent generation*, while a rule-based, deterministic **Policy Engine** serves as the final authority on execution.
 2. **Deterministic Financial Safety**: Every AI-proposed action passes through strict idempotency checks, merchant consent validation, attempt limits, and chronological bounds. If an AI hallucinates an unauthorized intervention, the policy engine safely intercepts and rejects it, maintaining a complete immutable audit trail.
 3. **Resilience & Graceful Degradation**: Built on an event-driven queue architecture, the system is highly fault-tolerant against external API timeouts, duplicate webhooks, and sudden traffic spikes. If the AI service experiences downtime, the system degrades gracefully without blocking core ingestion.
 4. **Data-Driven Measurement**: Revenue recovery is an optimization problem. This architecture is designed to capture every state transition and outcome, enabling causal ML models (T-Learners) to continually refine intervention strategies based on actual recovered monetary value.
@@ -74,10 +77,11 @@ flowchart TB
 
     subgraph EXECUTION_LAYER ["Worker Execution Layer"]
         BullMQ[("BullMQ (Redis Outbox)")]
+        IngestionProcessor["Ingestion Processor"]
         Worker["Execution Worker"]
         Adapter["Razorpay Execution Adapter"]
     end
-    class BullMQ,Worker,Adapter api
+    class BullMQ,IngestionProcessor,Worker,Adapter api
 
     subgraph PERSISTENCE ["Persistence & Audit"]
         Postgres[("PostgreSQL (Prisma)")]
@@ -173,7 +177,6 @@ erDiagram
         string state "e.g. DETECTED, PLANNED, EXECUTING"
         int amountAtRiskMinor
         int version "Optimistic Concurrency Control"
-        string lockedBy "Worker ID (Distributed Lock)"
     }
     
     AUDIT_LOG {
@@ -192,7 +195,7 @@ erDiagram
 - **MERCHANT:** 1-to-many with CUSTOMER, REVENUE_CASE, and REVENUE_EVENT.
 - **CUSTOMER:** 1-to-many with REVENUE_CASE and REVENUE_EVENT.
 - **REVENUE_EVENT:** 1-to-1 with REVENUE_CASE. Contains unique `idempotencyKey` to prevent duplicate ingestion.
-- **REVENUE_CASE:** 1-to-many with AUDIT_LOG. Uses `version` for Optimistic Concurrency Control and `lockedBy` for Distributed Locks.
+- **REVENUE_CASE:** 1-to-many with AUDIT_LOG. Uses `version` for Optimistic Concurrency Control. Distributed execution locks are enforced at the Intervention level.
 - **AUDIT_LOG:** Immutable append-only ledger tracking all AI and system decisions.
 
 ---
@@ -222,7 +225,7 @@ sequenceDiagram
     participant DB as PostgreSQL (Prisma)
     participant Worker as Background Worker
 
-    Note over Razorpay, API: Simultaneous identical webhooks arrive at the exact same millisecond
+    Note over Razorpay, API: Simultaneous identical webhooks<br/>arrive at the exact same millisecond
     
     par Request 1
         Razorpay->>+API: POST /events/ingest (Event A)
@@ -232,7 +235,7 @@ sequenceDiagram
         Razorpay->>+API: POST /events/ingest (Event A duplicate)
     end
 
-    Note over API, DB: All 3 requests attempt to acquire a unique constraint on 'idempotencyKey'
+    Note over API, DB: All 3 requests attempt to acquire<br/>a unique constraint on 'idempotencyKey'
 
     API->>DB: INSERT INTO RevenueEvent (idempotencyKey=A)
     DB-->>API: Success (Row Created)
@@ -254,7 +257,7 @@ sequenceDiagram
     Worker->>DB: UPDATE RevenueCase SET lockedBy = 'Worker-1' WHERE lockedBy IS NULL
     DB-->>Worker: Success (1 row updated)
     
-    Note over Worker, DB: If another worker tries to lock it simultaneously...
+    Note over Worker, DB: If another worker tries to<br/>lock it simultaneously...
     Worker->>DB: UPDATE RevenueCase SET lockedBy = 'Worker-2' WHERE lockedBy IS NULL
     DB-->>Worker: ❌ Failed (0 rows updated) - Silently aborts duplicate execution
 ```
@@ -421,7 +424,7 @@ flowchart TD
 ### AI & Policy Decision Flow (Text View)
 1. **Inputs:** A case enters as `DETECTED`. The **LLM** diagnoses the root cause, while the **ML Model (T-Learner)** calculates causal propensity scores.
 2. **Plan Formulation:** Both AI signals combine into an AI Recovery Plan.
-3. **Deterministic Policy Gate:** The plan MUST pass through strict, hardcoded policy rules.
+3. **Deterministic Policy Gate:** The plan MUST pass through strict, rule-based policies.
 4. **Rejection:** If the policy detects Fraud, Missing Consent, or Stale State, the plan is blocked and the case is **STOPPED**.
 5. **Approval:** If the policy validates it as safe, the plan is approved, state becomes **PLANNED**, and it is dispatched to the Queue (BullMQ) for execution.
 
@@ -794,11 +797,11 @@ gantt
 *(or in text format below)*
 
 ### Deployment Phases (Text View)
-- **Phase 1 (Weeks 1–4): Live Razorpay Integration** — Connect real Razorpay webhooks (HMAC-SHA256 verified), enable test-mode payment link creation and eNACH mandate retry, configure Twilio SMS and Resend email for live customer communication. The core system remains completely unchanged.
-- **Phase 2 (Weeks 4–8): Merchant Configuration Portal** — Merchant self-service UI for configuring `maxAttemptsPerCase`, `cooldownPeriodMs`, `allowedChannels`, and LLM message tone. Row-level security for strict multi-merchant data isolation.
-- **Phase 3 (Weeks 8–12): Customer Consent Database** — Production-grade consent management compliant with the Digital Personal Data Protection (DPDP) Act, 2023. Consent withdrawal immediately halts all in-flight interventions. Preference learning feeds channel response data back into the ML pipeline.
-- **Phase 4 (Weeks 12–20): A/B Experimentation Framework** — Hash-based deterministic treatment assignment for online experiments. Periodic T-Learner retraining on real merchant data with shadow scoring before promotion. Long-term migration to contextual bandit with Thompson Sampling.
-- **Phase 5 (Ongoing): Observability & Operations** — Prometheus + Grafana monitoring with automated alerts (recovery rate drops, AI fallback spikes, worker lag). 90-day immutable audit trail with cryptographic hash chain. PCI-DSS scope review and incident response runbooks.
+- **Phase 1: Live Razorpay Integration** — Connect real Razorpay webhooks (HMAC-SHA256 verified), enable test-mode payment link creation and eNACH mandate retry, configure Twilio SMS and Resend email for live customer communication. The core system remains completely unchanged.
+- **Phase 2: Merchant Configuration Portal** — Merchant self-service UI for configuring `maxAttemptsPerCase`, `cooldownPeriodMs`, `allowedChannels`, and LLM message tone. Row-level security for strict multi-merchant data isolation.
+- **Phase 3: Customer Consent Database** — Production-grade consent management compliant with the Digital Personal Data Protection (DPDP) Act, 2023. Consent withdrawal immediately halts all in-flight interventions. Preference learning feeds channel response data back into the ML pipeline.
+- **Phase 4: A/B Experimentation Framework** — Hash-based deterministic treatment assignment for online experiments. Periodic T-Learner retraining on real merchant data with shadow scoring before promotion. Long-term migration to contextual bandit with Thompson Sampling.
+- **Phase 5: Observability & Operations** — Prometheus + Grafana monitoring with automated alerts (recovery rate drops, AI fallback spikes, worker lag). 90-day immutable audit trail with cryptographic hash chain. PCI-DSS scope review and incident response runbooks.
 
 ### What Is Already Production-Ready
 
@@ -855,7 +858,5 @@ Each feature doc explains: Problem → Design → Data Flow → AI Involvement �
 | [Failure Mode Recovery](docs/failures/FAILURES.md) | All 7 failure scenarios documented with evidence trails and test references |
 | [Evaluation Methodology](docs/evaluation/EVALUATION.md) | Metrics framework, baselines, latest benchmark results, and cost-model interpretation |
 | [Production Roadmap](docs/roadmap/ROADMAP.md) | 5-phase plan for live Razorpay merchant deployment |
-| [Demo Script](docs/demo/DEMO_SCRIPT.md) | 5-minute judge walkthrough with exact CLI commands and expected outputs |
-
 
 
