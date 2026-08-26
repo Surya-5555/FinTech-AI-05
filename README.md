@@ -103,8 +103,8 @@ flowchart TB
 - **External Boundaries:** Razorpay Webhook -> Razorpay Test-Mode Sandbox
 - **API Layer:** Webhook Ingestion Controller, React Operations Dashboard
 - **Domain Layer:** Recovery Orchestrator, Idempotency Guards, Recovery Planning Service, Deterministic Policy Engine, Lifecycle State Machine
-- **AI & ML Services:** Causal ML Inference Service (FastAPI), Generative AI Service (LLM), Offline ML Evaluation Pipeline
-- **Worker Execution Layer:** BullMQ / Redis Queue, Execution Worker, Razorpay Execution Adapter
+- **AI & ML Services:** XGBoost Causal T-Learner (FastAPI), LangGraph Agentic Workflow (LLM), Offline ML Evaluation Pipeline
+- **Worker Execution Layer:** BullMQ (Redis Outbox), Execution Worker, Razorpay Execution Adapter
 - **Persistence & Audit:** PostgreSQL (Prisma), Immutable Audit Trail
 
 ---
@@ -165,6 +165,15 @@ erDiagram
         datetime timestamp
     }
 ```
+
+*(or in text format below)*
+
+### Database System Design (Text View)
+- **MERCHANT:** 1-to-many with CUSTOMER, REVENUE_CASE, and REVENUE_EVENT.
+- **CUSTOMER:** 1-to-many with REVENUE_CASE and REVENUE_EVENT.
+- **REVENUE_EVENT:** 1-to-1 with REVENUE_CASE. Contains unique `idempotencyKey` to prevent duplicate ingestion.
+- **REVENUE_CASE:** 1-to-many with AUDIT_LOG. Uses `version` for Optimistic Concurrency Control and `lockedBy` for Distributed Locks.
+- **AUDIT_LOG:** Immutable append-only ledger tracking all AI and system decisions.
 
 ---
 
@@ -230,6 +239,15 @@ sequenceDiagram
     DB-->>Worker: ❌ Failed (0 rows updated) - Silently aborts duplicate execution
 ```
 
+*(or in text format below)*
+
+### Handling High Concurrency (Text View)
+1. **Simultaneous Arrival:** Multiple identical webhooks hit the API at the exact same millisecond.
+2. **Database Idempotency Check:** All requests attempt to insert into `RevenueEvent` with the same `idempotencyKey`.
+3. **Optimistic Rejection:** Exactly ONE insert succeeds. The database rejects the others with a Unique Constraint Violation.
+4. **Graceful Drop:** The API returns `409 Conflict` for the duplicates, silently dropping them without processing.
+5. **Worker Execution Lock:** The background worker attempts to lock the case via `UPDATE ... WHERE lockedBy IS NULL`. If another worker tries simultaneously, the database rejects it (0 rows updated), strictly enforcing at-most-once execution.
+
 ---
 
 ## 4. Feature Inventory
@@ -262,6 +280,21 @@ stateDiagram-v2
     STOPPED --> [*]
     ESCALATED --> [*]
 ```
+
+*(or in text format below)*
+
+### Lifecycle State Machine (Text View)
+- **DETECTED:** Initial state when Webhook is ingested.
+  - Transitions to **PLANNED** if AI plans & Policy Engine approves.
+  - Transitions to **STOPPED** if Policy Engine blocks it (e.g. Fraud, Cooldown).
+- **PLANNED:** Waiting for execution.
+  - Transitions to **EXECUTING** when Worker acquires the lock.
+- **EXECUTING:** Provider API is called.
+  - Transitions to **RECOVERED** if payment is captured successfully.
+  - Transitions to **FAILED** if payment fails or link expires.
+  - Transitions to **ESCALATED** if the max retry limit is exceeded.
+- **FAILED:** Resets back to **DETECTED** for a new AI retry strategy, provided attempts < maxAttempts.
+- **Terminal States:** RECOVERED, STOPPED, ESCALATED.
 
 ---
 
@@ -360,6 +393,15 @@ flowchart TD
     
     Approve --> Queue[(BullMQ Dispatch)]
 ```
+
+*(or in text format below)*
+
+### AI & Policy Decision Flow (Text View)
+1. **Inputs:** A case enters as `DETECTED`. The **LLM** diagnoses the root cause, while the **ML Model (T-Learner)** calculates causal propensity scores.
+2. **Plan Formulation:** Both AI signals combine into an AI Recovery Plan.
+3. **Deterministic Policy Gate:** The plan MUST pass through strict, hardcoded policy rules.
+4. **Rejection:** If the policy detects Fraud, Missing Consent, or Stale State, the plan is blocked and the case is **STOPPED**.
+5. **Approval:** If the policy validates it as safe, the plan is approved, state becomes **PLANNED**, and it is dispatched to the Queue (BullMQ) for execution.
 
 ---
 
