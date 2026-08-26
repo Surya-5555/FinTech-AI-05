@@ -442,7 +442,6 @@ importers:
       '@rr/utils':
         specifier: workspace:*
         version: link:../utils
-    devDependencies:
       prisma:
         specifier: ^5.22.0
         version: 5.22.0

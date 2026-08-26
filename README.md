@@ -334,7 +334,9 @@ stateDiagram-v2
 
 ---
 
-### Causal Machine Learning
+## 4. Dual-Engine AI Architecture (Causal ML + Agentic Workflow)
+
+### 4.1 Causal Machine Learning (T-Learner)
 
 **Architecture:** Multi-Treatment T-Learner (XGBoost metalearner)
 
@@ -362,7 +364,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 
 ---
 
-### Generative AI (LLM)
+### 4.2 Generative AI (LLM Agentic Workflow)
 
 **Failure Diagnosis:** The LLM reads the Razorpay decline code and case context, and produces a structured root-cause diagnosis (e.g., `"bank_timeout" → "Bank's payment gateway experienced a transient timeout — a retry is likely to succeed"`).
 
