@@ -69,7 +69,7 @@ export class AmountDto {
 
 
 @ValidatorConstraint({ name: 'metadataValidator', async: false })
-export class MetadataValidator implements ValidatorConstraintInterface {
+class MetadataValidator implements ValidatorConstraintInterface {
   validate(metadata: any) {
     if (!metadata || typeof metadata !== 'object') return false;
     const keys = Object.keys(metadata);

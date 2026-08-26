@@ -1,4 +1,4 @@
-export interface AppConfig {
+interface AppConfig {
   env: string;
   port: number;
   databaseUrl: string;
