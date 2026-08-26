@@ -13,11 +13,10 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "prisma": "^5.22.0",
     "@rr/contracts": "workspace:*",
     "@rr/domain": "workspace:*",
     "@rr/utils": "workspace:*"
   },
-  "devDependencies": {
-    "prisma": "^5.22.0"
-  }
+  "devDependencies": {}
 }

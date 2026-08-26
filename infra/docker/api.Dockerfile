@@ -43,6 +43,7 @@ FROM base AS prune
 COPY --from=build /app /app
 WORKDIR /app
 RUN CI=true pnpm install --prod --frozen-lockfile
+RUN pnpm --filter @rr/persistence exec prisma generate
 
 # ----- Production Stage -----
 FROM node:22-alpine AS production
