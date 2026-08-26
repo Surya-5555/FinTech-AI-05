@@ -3,6 +3,7 @@ import swc from 'unplugin-swc';
 
 process.env.RAZORPAY_MODE = 'test';
 process.env.API_AUTH_TOKEN = 'test-auth-token';
+process.env.DISABLE_CASE_ORCHESTRATOR_CRON = 'true';
 export default defineConfig({
   test: {
     name: 'integration',
@@ -13,6 +14,7 @@ export default defineConfig({
       API_AUTH_TOKEN: 'test-auth-token',
       QUEUE_ENABLED: 'true',
       REDIS_URL: 'redis://localhost:6379',
+      DISABLE_CASE_ORCHESTRATOR_CRON: 'true',
     },
   },
   plugins: [

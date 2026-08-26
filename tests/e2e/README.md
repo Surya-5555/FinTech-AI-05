@@ -18,13 +18,11 @@ Running these automatically in CI would:
 
 ## What E2E Testing Covers (Manual)
 
-End-to-end verification is performed manually using the `DEMO_SCRIPT.md`:
+End-to-end verification is performed manually:
 - Webhook delivery → idempotent case creation
 - Planning pipeline → policy gate → intervention queueing
 - Worker execution → Razorpay test-mode adapter → outcome persistence
 - Full audit trail inspection in the React dashboard
-
-See [`docs/demo/DEMO_SCRIPT.md`](../../docs/demo/DEMO_SCRIPT.md) for the full manual test procedure.
 
 ## Integration Tests (CI-Safe)
 

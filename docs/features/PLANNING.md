@@ -82,7 +82,7 @@ This is the only module where AI participates in decision-making. The involvemen
 | LLM API down | `getFallbackDecisionExplanation()` + `getFallbackMessageDraft()` used |
 | LLM returns malformed JSON | Zod parse failure → fallback template |
 | ML service unreachable | Deterministic heuristic fallback (failureCode → treatment mapping) |
-| Both LLM and ML unavailable | Fully deterministic plan using hardcoded heuristics; case progresses safely |
+| Both LLM and ML unavailable | Fully deterministic plan using rule-based heuristics; case progresses safely |
 | Planning takes > timeout | Timeout error caught; case marked for retry or escalation |
 
 ## Code References

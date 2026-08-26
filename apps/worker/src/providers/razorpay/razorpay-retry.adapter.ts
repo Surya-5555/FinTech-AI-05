@@ -10,9 +10,9 @@ export class RazorpayRetryAdapter implements ExecutionProvider {
   constructor() {
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    const mode = process.env.RAZORPAY_MODE;
+    const isTestMode = process.env.ENABLE_RAZORPAY_TEST_MODE === 'true' || process.env.RAZORPAY_MODE === 'test';
 
-    if (mode === 'test' && keyId && keySecret) {
+    if (isTestMode && keyId && keySecret) {
       this.razorpay = new Razorpay({
         key_id: keyId,
         key_secret: keySecret,

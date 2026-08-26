@@ -31,6 +31,8 @@ export function generateReport(outPath: string, manifest: EvaluationManifest, me
 - **System Gross Recovered**: ${metrics.systemRecoveredMinor}
 - **System Total Cost**: ${metrics.systemCostMinor} (including ${metrics.systemChargebacks} fraud chargebacks)
 - **System Net ROI**: ${metrics.systemNetRoiMinor}
+- **Incremental Risk-Adjusted Value (System vs B1)**: ${metrics.incrementalNetRoiVsBaseline1}
+
 
 ## Intervention Metrics
 - **Attempted**: ${metrics.interventionsAttempted}

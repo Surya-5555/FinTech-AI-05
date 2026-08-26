@@ -17,7 +17,7 @@ This document outlines the high-level threat model for the Razorpay AI Revenue R
 
 ### 1. Unauthorized Payment Execution (The "Rogue AI" Scenario)
 **Threat**: An LLM hallucinates or is manipulated into commanding the system to execute an unauthorized charge or repeated charges against a customer.
-**Mitigation**: Bounded AI Architecture. The LLM cannot directly call APIs. It only suggests a `RecoveryPlan`. The deterministic policy engine validates the plan against hardcoded rules (e.g., maximum attempts, minimum time between attempts, valid failure reasons). All state changes require deterministic idempotency checks.
+**Mitigation**: Bounded AI Architecture. The LLM cannot directly call APIs. It only suggests a `RecoveryPlan`. The deterministic policy engine validates the plan against strict rules (e.g., maximum attempts, minimum time between attempts, valid failure reasons). All state changes require deterministic idempotency checks.
 
 ### 2. Double Charging (Idempotency Failure)
 **Threat**: Network timeouts or concurrent requests result in the same recovery intervention executing twice, double-charging the customer.

@@ -14,10 +14,10 @@ export class RazorpayWebhookGuard implements CanActivate {
       throw new UnauthorizedException('Missing x-razorpay-signature header');
     }
 
-    const secret = this.configService.get<string>('RAZORPAY_WEBHOOK_SECRET') || 'test-secret';
+    const secret = this.configService.get<string>('RAZORPAY_WEBHOOK_SECRET');
     if (!secret) {
       // Fail securely if no secret is configured
-      throw new UnauthorizedException('Webhook verification misconfigured');
+      throw new Error('CRITICAL: RAZORPAY_WEBHOOK_SECRET is missing. Cannot start application securely.');
     }
 
     // Access the raw body buffer created by NestJS rawBody: true

@@ -32,14 +32,17 @@ async function ingestEvent(eventType: string, externalEventId: string, amount: n
   };
 
   const bodyStr = JSON.stringify(payload);
-  const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'test-secret';
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error('RAZORPAY_WEBHOOK_SECRET environment variable is not set');
+  }
   const signature = crypto.createHmac('sha256', secret).update(bodyStr).digest('hex');
 
   const response = await fetch(`${API_BASE}/events/ingest`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Idempotency-Key': idempotencyKey,
+      'x-razorpay-event-id': idempotencyKey,
       'x-razorpay-signature': signature
     },
     body: bodyStr

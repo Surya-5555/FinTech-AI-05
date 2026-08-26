@@ -15,11 +15,11 @@ export class StaleLockScannerProcessor {
   async handleCron() {
     this.logger.debug('Scanning for stale locks...');
     try {
-      // Release locks older than 5 minutes
-      const releasedCount = await this.executionRepo.releaseStaleLocks(5);
+      // Escalate stale locks to prevent double execution on crash
+      const escalatedCount = await this.executionRepo.escalateStaleLocks(5, 'WORKER_CRASH_AMBIGUOUS_STATE');
       
-      if (releasedCount > 0) {
-        this.logger.log(`Released ${releasedCount} stale locks from dead workers.`);
+      if (escalatedCount > 0) {
+        this.logger.log(`Escalated ${escalatedCount} stale locks from dead workers.`);
       }
     } catch (error) {
       this.logger.error('Failed to release stale locks', error);

@@ -24,4 +24,4 @@ Because BullMQ ensures at-least-once delivery, workers must be idempotent and ra
 If a worker node crashes abruptly while holding an execution lock, the job would traditionally be permanently stalled. The system employs a scheduled `StaleLockScannerProcessor` that periodically sweeps the database for locks held beyond their maximum TTL (e.g., 5 minutes) and atomically releases them, fully restoring the cases back to the retry pool without human intervention.
 
 ### 3. Graceful Degradation
-If the LLM or Causal ML models are completely offline and retries are exhausted, the worker catches the failure, transitions the `RecoveryPlan` to `FAILED`, and the domain model automatically falls back to a deterministic, hardcoded baseline policy to ensure revenue recovery attempts continue even during AI outages.
+If the LLM or Causal ML models are completely offline and retries are exhausted, the worker catches the failure, transitions the `RecoveryPlan` to `FAILED`, and the domain model automatically falls back to a deterministic, rule-based baseline policy to ensure revenue recovery attempts continue even during AI outages.

@@ -23,7 +23,7 @@ Every intervention passes through the deterministic policy engine before executi
 1. **Merchant Policy Check**: Verifies the intervention type is allowed for the merchant's configured recovery policy.
 2. **Customer Consent Check**: Validates that the customer has opted in to the communication channel (Email, SMS, Voice). Missing consent blocks the intervention with reason code `CONSENT_MISSING`.
 3. **Stopping Rules**: Enforces `maxAttemptsPerCase` thresholds. If the case has exceeded the maximum allowed attempts, the plan is rejected with `POLICY_REJECTED` and the case is escalated.
-4. **Fraud Guard**: Cases flagged as `SCN_FRAUD_SUSPECTED` are never retried — the policy engine blocks them deterministically.
+4. **Fraud Guard**: Cases flagged as `SCN_FRAUD_SUSPECTED` are blocked from retry — the policy engine blocks them deterministically.
 
 **Code**: `libs/domain/src/policy.ts`
 
