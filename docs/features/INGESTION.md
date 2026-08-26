@@ -14,46 +14,46 @@ Idempotency is a first-class financial safety requirement. The ingestion layer i
 
 ```mermaid
 flowchart TD
-    Req[POST /api/events] --> Auth[Auth Middleware API token validation]
+    Req[POST /api/v1/events/ingest] --> Auth[Auth/Signature Validation]
     Auth --> DTO[DTO Validation class-validator / Zod]
-    DTO --> Guard[Idempotency Guard]
+    DTO --> Guard[Strict x-razorpay-event-id Header Check]
+    Guard -- Missing Header --> Reject[Return 400 Bad Request]
+    Guard -- Valid --> Queue[Push to BullMQ 'ingestion' queue]
+    Queue --> Response[Return 200 OK Status: QUEUED]
     
-    subgraph Idempotency Logic
-        Guard --> Compute[Compute idempotency key: merchantId + externalEventId + eventType]
-        Compute --> Insert[Attempt INSERT with UNIQUE constraint]
-        Insert -- Conflict --> Return[Return existing caseId HTTP 200, not 201]
+    subgraph Async Worker
+        BullMQ[BullMQ 'ingestion' queue] --> Process[IngestionProcessor consumes job]
+        Process --> DB[Attempt DB Insert]
+        DB -- ConcurrencyConflictError --> Ignore[Log and Ignore duplicate]
+        DB -- Success --> State[State Machine: DETECTED]
     end
-    
-    Insert -- Success --> Create[Case Created]
-    Create --> State[State Machine: INITIAL to DETECTED]
-    State --> Dispatch[Async dispatch to Planning Service]
 ```
 
 *(or in text format below)*
 
 ### Ingestion Flow (Text View)
-1. Request arrives at `POST /api/events`.
-2. Validated by **Auth Middleware** (API token validation).
+1. Request arrives at `POST /api/v1/events/ingest`.
+2. Validated by **Auth Middleware** (HMAC-SHA256 signature).
 3. Validated by **DTO Validation** (class-validator / Zod).
 4. Enters the **Idempotency Guard**:
-   - Computes idempotency key: `merchantId` + `externalEventId` + `eventType`.
-   - Attempts `INSERT` with `UNIQUE` constraint on these fields.
-   - On conflict: returns existing caseId (HTTP 200, not 201).
-5. If new, **Case Created**.
-6. **State Machine** transitions from `INITIAL` to `DETECTED`.
-7. **Async dispatch** to Planning Service.
+   - Strictly requires the `x-razorpay-event-id` header. Rejects with 400 Bad Request if missing.
+5. Payload is pushed to the **BullMQ 'ingestion' queue**, using the `x-razorpay-event-id` as the `jobId` for immediate queue-level deduplication.
+6. The controller responds immediately with `200 OK` (Status: QUEUED), guaranteeing we meet Razorpay's strict 5-second timeout requirement.
+7. Asynchronously, the **IngestionProcessor** worker consumes the job.
+8. The worker attempts DB insertion. If a `ConcurrencyConflictError` occurs, the duplicate is safely ignored.
+9. If successful, the case transitions to `DETECTED` and orchestration begins.
 
 ### Idempotency Implementation
 
-The uniqueness enforcement is applied at the **database level**, not application level:
+Idempotency is rigorously enforced at two decoupled layers:
+
+1. **Queue Level (BullMQ)**: The `x-razorpay-event-id` is used as the `jobId`. BullMQ inherently prevents enqueuing duplicate jobs with the same ID, shedding duplicate webhooks before they even reach the database layer.
+2. **Database Level (Prisma)**: Uniqueness enforcement is applied unconditionally at the database level:
 ```sql
 -- Prisma schema
 @@unique([merchantId, externalEventId, eventType])
 ```
-
-This is critical: it makes idempotency *unconditional*. Even if two concurrent requests arrive simultaneously (race condition), only one will succeed at the database level. The other receives a unique constraint violation, which is caught and mapped to a 200 response with the existing case ID.
-
-Additionally, the HTTP layer supports an explicit `Idempotency-Key` header. If provided, it is stored alongside the case and used for response caching — the same key returns the same HTTP response body without re-processing.
+Even in race conditions where queue deduplication is bypassed, the database guarantees that only one case is created. The other receives a unique constraint violation (`ConcurrencyConflictError`), which the worker catches and ignores.
 
 ### Supported Event Types
 
