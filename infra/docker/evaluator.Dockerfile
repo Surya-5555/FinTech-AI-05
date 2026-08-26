@@ -15,7 +15,7 @@ COPY package.json pnpm-workspace.yaml ./
 COPY apps/ ./apps/
 COPY libs/ ./libs/
 
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store CI=true pnpm install --frozen-lockfile
 
 # ----- Build Stage -----
 FROM base AS build

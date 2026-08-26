@@ -42,7 +42,7 @@ RUN pnpm --filter @rr/api build
 FROM base AS prune
 COPY --from=build /app /app
 WORKDIR /app
-RUN pnpm install --prod --frozen-lockfile
+RUN CI=true pnpm install --prod --frozen-lockfile
 
 # ----- Production Stage -----
 FROM node:22-alpine AS production
