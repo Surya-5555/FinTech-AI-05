@@ -1,14 +1,17 @@
-import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, ConflictException, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common';
-import { EventsService } from './events.service';
+import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, UsePipes, ValidationPipe, UseGuards, Logger } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { IngestEventDto } from './dto/ingest-event.dto';
-import { generateStableHash } from '@rr/utils';
-import { ConcurrencyConflictError } from '@rr/persistence';
 
 import { RazorpayWebhookGuard } from '../../common/guards/razorpay-webhook.guard';
 
 @Controller('events')
 export class EventsController {
-  constructor(private readonly eventsService: EventsService) {}
+  private readonly logger = new Logger(EventsController.name);
+
+  constructor(
+    @InjectQueue('ingestion') private readonly ingestionQueue: Queue
+  ) {}
 
   @Post('ingest')
   @UseGuards(RazorpayWebhookGuard)
@@ -16,22 +19,22 @@ export class EventsController {
   @UsePipes(new ValidationPipe({ transform: true, whitelist: true, forbidNonWhitelisted: true }))
   async ingestEvent(
     @Body() dto: IngestEventDto,
-    @Headers('idempotency-key') idempotencyKeyHeader?: string
+    @Headers('x-razorpay-event-id') razorpayEventId: string
   ) {
-    let idempotencyKey = idempotencyKeyHeader;
-    if (!idempotencyKey || idempotencyKey.length > 100) {
-      // Deterministic fallback if invalid or missing
-      idempotencyKey = generateStableHash(`${dto.merchant.externalReference}-${dto.externalEventId}`);
+    if (!razorpayEventId) {
+      throw new BadRequestException('Missing x-razorpay-event-id header');
     }
 
-    try {
-      const result = await this.eventsService.ingestEvent(dto, idempotencyKey);
-      return result;
-    } catch (e: any) {
-      if (e instanceof ConcurrencyConflictError || e.message?.includes('Concurrent duplicate ingestion detected') || e.name === 'ConcurrencyConflictError') {
-        throw new ConflictException('Concurrent duplicate ingestion detected');
-      }
-      throw e;
-    }
+    // Decouple database writes via BullMQ to respect the 5s webhook timeout rule.
+    await this.ingestionQueue.add('process-ingestion', {
+      dto,
+      eventId: razorpayEventId
+    }, {
+      jobId: razorpayEventId // BullMQ level deduplication
+    });
+
+    this.logger.log(`Ingestion queued successfully for event: ${razorpayEventId}`);
+    
+    return { success: true, status: 'QUEUED' };
   }
 }

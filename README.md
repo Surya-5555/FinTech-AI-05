@@ -87,7 +87,9 @@ flowchart TB
 
     %% Connections
     Webhook --> Ingestion
-    Ingestion --> Idempotency
+    Ingestion --> BullMQ
+    BullMQ --> IngestionProcessor
+    IngestionProcessor --> Idempotency
     Idempotency --> Orchestrator
     
     Orchestrator <--> StateMachine
@@ -106,6 +108,7 @@ flowchart TB
     
     Orchestrator --> Postgres
     Worker --> Postgres
+    IngestionProcessor --> Postgres
     Policy --> AuditLog
     Worker --> AuditLog
     
@@ -121,7 +124,7 @@ flowchart TB
 - **API Layer:** Webhook Ingestion Controller, React Operations Dashboard
 - **Domain Layer:** Recovery Orchestrator, Idempotency Guards, Recovery Planning Service, Deterministic Policy Engine, Lifecycle State Machine
 - **AI & ML Services:** XGBoost Causal T-Learner (FastAPI), LangGraph Agentic Workflow (LLM), Offline ML Evaluation Pipeline
-- **Worker Execution Layer:** BullMQ (Redis Outbox), Execution Worker, Razorpay Execution Adapter
+- **Worker Execution Layer:** BullMQ (Redis Outbox), Ingestion Processor, Execution Worker, Razorpay Execution Adapter
 - **Persistence & Audit:** PostgreSQL (Prisma), Immutable Audit Trail
 
 ---
