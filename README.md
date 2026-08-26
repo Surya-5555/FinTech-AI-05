@@ -129,6 +129,7 @@ flowchart TB
 - **Webhook Ingestion:** NestJS controllers securely authenticate JSON payloads from Razorpay using HMAC-SHA256 signatures against the raw byte stream. To strictly respect the 5-second gateway timeout and prevent webhook disablement, the controller immediately pushes the validated payload to a BullMQ queue and returns a fast `200 OK`.
 - **Event Processing & Case Creation:** Background workers asynchronously parse the JSON payload, mapping it to typed `RecoveryCase` entities with strict BigInt arithmetic for all monetary values (no floating point).
 - **State Machine:** Enforces strict lifecycle transitions: `DETECTED` → `PLANNED` → `EXECUTING` → `RECOVERED` / `FAILED` / `STOPPED` / `ESCALATED`. Invalid transitions are rejected with a typed error.
+- **Case Orchestrator:** A highly resilient background cron service (`CaseOrchestratorService`) actively sweeps the database for new `DETECTED` cases. It autonomously batches them, executes the LangGraph AI Dunning Workflow to generate recovery plans, and securely pushes them into the Redis Outbox—completely eliminating manual case interventions.
 - **Terminal States:** `RECOVERED`, `STOPPED`, `ESCALATED` are terminal — any subsequent attempt to execute an intervention on a terminal case is rejected before touching the DB.
 
 ---
@@ -240,7 +241,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 <!-- EVALUATION_RESULTS_START -->
 ## Run Configuration
 - **Dataset Version**: 1.0.0
-- **Dataset Checksum**: cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b
+- **Dataset Checksum**: d659a33b911118706d5cc4e6c206a92ef12557d5dfe8f06e1d5aa056155decd8
 - **Held-Out Case Count**: 500
 
 ## Money Metrics
@@ -278,7 +279,7 @@ The system selects `argmax_t(NEIV_t)`. If all NEIV scores are negative, doing no
 - **Idempotent Replays**: 0
 
 ## Reliability & Errors
-- **Evaluation Runtime**: 1884ms
+- **Evaluation Runtime**: 6761ms
 - **Provider Timeouts**: 22
 - **Provider Final Failures**: 189
 - **Workflow Failures**: 0

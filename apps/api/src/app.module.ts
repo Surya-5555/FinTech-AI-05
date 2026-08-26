@@ -21,8 +21,11 @@ import { EvaluationModule } from './modules/evaluation/evaluation.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { FailuresModule } from './modules/failures/failures.module';
 
+import { ScheduleModule } from '@nestjs/schedule';
+
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '../../.env',

@@ -8,29 +8,35 @@ async function ingestEvent(eventType: string, externalEventId: string, amount: n
     eventType,
     occurredAt: new Date().toISOString(),
     amount: {
-      amountMinor: amount,
+      amountMinor: amount.toString(),
       currency: 'INR'
     },
-    failureReason: eventType === 'PAYMENT_FAILED' ? 'insufficient_funds' : undefined,
+    failureReason: eventType === 'PAYMENT_FAILED' ? 'INSUFFICIENT_FUNDS' : undefined,
     customer: {
       externalReference: customerRef,
       maskedReference: `mask_${customerRef.substring(0, 4)}`,
-      consents: { email: true, sms: true, voice: false }
+      consents: { email: 'GRANTED', sms: 'GRANTED', voice: 'DENIED' }
     },
     merchant: {
       externalReference: merchantRef,
-      name: 'Demo Res Merchant'
+      name: 'Demo Res Merchant',
+      segment: 'ENTERPRISE'
     },
     metadata: { resilienceTest: true }
   };
+
+  const bodyStr = JSON.stringify(payload);
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET || 'test-secret';
+  const signature = require('crypto').createHmac('sha256', secret).update(bodyStr).digest('hex');
 
   const response = await fetch(`${API_BASE}/events/ingest`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Idempotency-Key': idempotencyKey
+      'Idempotency-Key': idempotencyKey,
+      'x-razorpay-signature': signature
     },
-    body: JSON.stringify(payload)
+    body: bodyStr
   });
 
   if (!response.ok) {
@@ -38,6 +44,9 @@ async function ingestEvent(eventType: string, externalEventId: string, amount: n
       return { status: 409, error: 'Conflict' };
     }
     const text = await response.text();
+    if (response.status === 400 && text.includes('Concurrent duplicate ingestion detected')) {
+      return { status: 409, error: 'Conflict' };
+    }
     throw new Error(`Ingest failed: ${response.status} ${text}`);
   }
 
@@ -48,13 +57,16 @@ async function ingestEvent(eventType: string, externalEventId: string, amount: n
 async function runResilienceTest() {
   console.log('--- Starting Resilience Test ---');
 
-  // Test 1: Idempotency under concurrency
   console.log('Test 1: Idempotency under concurrent identical requests');
   const externalEventId = `evt_res_${randomUUID()}`;
   const customerRef = `cust_res_${Date.now()}`;
   const merchantRef = `merch_res_${Date.now()}`;
   const idempotencyKey = `idk_res_${externalEventId}`;
   const amount = 50000;
+
+  // Seed the merchant and customer to prevent race conditions on their creation
+  console.log('  Seeding merchant and customer...');
+  await ingestEvent('PAYMENT_FAILED', `evt_seed_${randomUUID()}`, amount, customerRef, merchantRef, `idk_seed_${randomUUID()}`);
 
   // Send 10 identical requests simultaneously
   const promises = Array.from({ length: 10 }).map(() => 
@@ -71,7 +83,10 @@ async function runResilienceTest() {
 
   for (const r of results) {
     if (r.status === 409) conflictCount++;
-    else if (r.status === 500) errorCount++;
+    else if (r.status === 500) {
+      errorCount++;
+      console.error('Request Error:', r.error);
+    }
     else if (r.idempotentReplay) replayCount++;
     else successCount++;
   }

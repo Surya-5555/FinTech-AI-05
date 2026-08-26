@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Headers, HttpCode, HttpStatus, BadRequestException, ConflictException, UsePipes, ValidationPipe, UseGuards } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { IngestEventDto } from './dto/ingest-event.dto';
 import { generateStableHash } from '@rr/utils';
+import { ConcurrencyConflictError } from '@rr/persistence';
 
 import { RazorpayWebhookGuard } from '../../common/guards/razorpay-webhook.guard';
 
@@ -27,8 +28,8 @@ export class EventsController {
       const result = await this.eventsService.ingestEvent(dto, idempotencyKey);
       return result;
     } catch (e: any) {
-      if (e.name === 'ConcurrencyConflictError') {
-        throw new BadRequestException('Concurrent duplicate ingestion detected');
+      if (e instanceof ConcurrencyConflictError || e.message?.includes('Concurrent duplicate ingestion detected') || e.name === 'ConcurrencyConflictError') {
+        throw new ConflictException('Concurrent duplicate ingestion detected');
       }
       throw e;
     }

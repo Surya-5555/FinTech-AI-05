@@ -79,17 +79,17 @@ export class PrismaIngestionRepository implements IngestionRepository {
         // 2. Resolve/create merchant (demo only)
         // Check if config allows demo creation. (assuming true for now or based on env)
         const allowDemoCreation = process.env.ALLOW_DEMO_ENTITY_CREATION === 'true';
-        let merchant = await tx.merchant.findUnique({
-          where: { externalReference: command.merchantReference }
-        });
-
-        if (!merchant) {
-          if (!allowDemoCreation) {
-            // we will let the application service handle NOT_FOUND but here we can throw or just throw custom error
-            throw new Error('MerchantNotFound');
-          }
-          merchant = await tx.merchant.create({
-            data: {
+        let merchant;
+        if (!allowDemoCreation) {
+          merchant = await tx.merchant.findUnique({
+            where: { externalReference: command.merchantReference }
+          });
+          if (!merchant) throw new Error('MerchantNotFound');
+        } else {
+          merchant = await tx.merchant.upsert({
+            where: { externalReference: command.merchantReference },
+            update: {},
+            create: {
               externalReference: command.merchantReference,
               name: 'Demo Merchant',
               segment: 'subscription',
@@ -107,34 +107,30 @@ export class PrismaIngestionRepository implements IngestionRepository {
         }
 
         // 3. Resolve/create masked customer
-        let customer = await tx.customer.findUnique({
+        const customer = await tx.customer.upsert({
           where: {
             merchantId_externalReference: {
               merchantId: merchant.id,
               externalReference: command.customerReference
             }
+          },
+          update: {},
+          create: {
+            merchantId: merchant.id,
+            externalReference: command.customerReference,
+            displayNameOrMaskedReference: command.customerMaskedReference,
+            consentEmail: String(command.customerConsents.email),
+            consentSms: String(command.customerConsents.sms),
+            consentVoice: String(command.customerConsents.voice),
+            emailEncrypted: command.customerEmail 
+              ? encryptPII(command.customerEmail, process.env.PII_ENCRYPTION_KEY || 'default-insecure-pii-key-32bytes!') 
+              : null,
+            phoneEncrypted: command.customerPhone 
+              ? encryptPII(command.customerPhone, process.env.PII_ENCRYPTION_KEY || 'default-insecure-pii-key-32bytes!') 
+              : null,
+            contactWindowMetadataJson: '{}'
           }
         });
-
-        if (!customer) {
-          customer = await tx.customer.create({
-            data: {
-              merchantId: merchant.id,
-              externalReference: command.customerReference,
-              displayNameOrMaskedReference: command.customerMaskedReference,
-              consentEmail: String(command.customerConsents.email),
-              consentSms: String(command.customerConsents.sms),
-              consentVoice: String(command.customerConsents.voice),
-              emailEncrypted: command.customerEmail 
-                ? encryptPII(command.customerEmail, process.env.PII_ENCRYPTION_KEY || 'default-insecure-pii-key-32bytes!') 
-                : null,
-              phoneEncrypted: command.customerPhone 
-                ? encryptPII(command.customerPhone, process.env.PII_ENCRYPTION_KEY || 'default-insecure-pii-key-32bytes!') 
-                : null,
-              contactWindowMetadataJson: '{}'
-            }
-          });
-        }
 
         // 4. Persist event
         const eventId = command.event.eventId || generateId('evt');

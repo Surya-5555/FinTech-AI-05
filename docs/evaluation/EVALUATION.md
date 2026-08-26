@@ -125,7 +125,7 @@ Output is rendered directly to the CLI stdout as a JSON report containing all me
 <!-- EVALUATION_RESULTS_START -->
 ## Run Configuration
 - **Dataset Version**: 1.0.0
-- **Dataset Checksum**: cc73ca9db37c16d51b68c563d73c1d0b38056b8115ab40af6b2174a7028ebd6b
+- **Dataset Checksum**: d659a33b911118706d5cc4e6c206a92ef12557d5dfe8f06e1d5aa056155decd8
 - **Held-Out Case Count**: 500
 
 ## Money Metrics
@@ -163,7 +163,7 @@ Output is rendered directly to the CLI stdout as a JSON report containing all me
 - **Idempotent Replays**: 0
 
 ## Reliability & Errors
-- **Evaluation Runtime**: 1884ms
+- **Evaluation Runtime**: 6761ms
 - **Provider Timeouts**: 22
 - **Provider Final Failures**: 189
 - **Workflow Failures**: 0
