@@ -22,7 +22,7 @@ export function qualifyRevenueEvent(event: RevenueEvent, config: MerchantConfig,
   }
 
   // 2. Supported Currencies
-  if (!config.supportedCurrencies.includes(amountAtRisk.currency)) {
+  if (!(config.supportedCurrencies || []).includes(amountAtRisk.currency)) {
     reasons.push('UNSUPPORTED_CURRENCY');
     eligible = false;
   }
@@ -37,7 +37,7 @@ export function qualifyRevenueEvent(event: RevenueEvent, config: MerchantConfig,
   }
 
   // 4. Supported Event Types
-  if (!config.supportedEventTypes.includes(event.eventType)) {
+  if (!(config.supportedEventTypes || []).includes(event.eventType)) {
     reasons.push('UNSUPPORTED_EVENT_TYPE');
     eligible = false;
   }

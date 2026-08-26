@@ -106,7 +106,7 @@ export function evaluateRecoveryPolicy(input: PolicyEvaluationInput): PolicyDeci
   }
 
   // 4. Allowed intervention type
-  if (!merchantPolicy.allowedInterventionTypes.includes(proposedIntervention)) {
+  if (!(merchantPolicy.allowedInterventionTypes || []).includes(proposedIntervention)) {
     reasonCodes.push(RecoveryReasonCode.CHANNEL_NOT_ALLOWED);
     return {
       approved: false,

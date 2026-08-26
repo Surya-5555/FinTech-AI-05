@@ -60,7 +60,7 @@ export function selectCandidateInterventions(
   }
 
   // Filter by merchant allowed intervention types
-  candidates = candidates.filter((type) => merchantPolicy.allowedInterventionTypes.includes(type));
+  candidates = candidates.filter((type) => (merchantPolicy.allowedInterventionTypes || []).includes(type));
 
   if (candidates.length === 0) {
     return [InterventionType.NO_ACTION];
