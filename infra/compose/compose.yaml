@@ -49,7 +49,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/v1/health/live"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/health/live"]
       interval: 10s
       timeout: 5s
       retries: 3
