@@ -132,9 +132,23 @@ describe('Phase 2: End-to-End Golden Path', () => {
     expect(response.status).toBe(200);
 
     expect(response.body).toHaveProperty('success', true);
-    expect(response.body.caseCreated).toBe(true);
+    expect(response.body.status).toBe('QUEUED');
 
-    const caseId = response.body.caseId;
+    // Poll for async case creation
+    let createdCase = null;
+    let ingestionAttempts = 0;
+    while (ingestionAttempts < 20) {
+      const event = await prisma.revenueEvent.findFirst({ where: { externalEventId: eventId } });
+      if (event) {
+        createdCase = await prisma.revenueCase.findUnique({ where: { sourceEventId: event.id } });
+        if (createdCase) break;
+      }
+      await new Promise(r => setTimeout(r, 500));
+      ingestionAttempts++;
+    }
+
+    expect(createdCase).toBeDefined();
+    const caseId = createdCase!.id;
     expect(caseId).toBeDefined();
 
     // 1.5 Create Plan via API
