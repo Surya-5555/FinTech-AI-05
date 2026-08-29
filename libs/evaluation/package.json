@@ -12,6 +12,6 @@
     "@rr/contracts": "workspace:*",
     "@rr/domain": "workspace:*",
     "@rr/utils": "workspace:*",
-    "zod": "^3.23.8"
+    "zod": "^4.4.3"
   }
 }
