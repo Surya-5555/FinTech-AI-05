@@ -16,11 +16,11 @@
     "@rr/domain": "workspace:*",
     "@rr/utils": "workspace:*",
     "@rr/observability": "workspace:*",
-    "zod": "^3.22.4"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
     "@rr/config": "workspace:*",
-    "typescript": "^5.3.3",
-    "vitest": "^1.3.1"
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.11"
   }
 }
