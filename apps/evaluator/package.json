@@ -11,14 +11,14 @@
   "dependencies": {
     "@rr/contracts": "workspace:*",
     "@rr/evaluation": "workspace:*",
-    "chalk": "^5.3.0",
-    "commander": "^12.0.0",
-    "dotenv": "^16.3.1",
-    "zod": "^3.23.8"
+    "chalk": "^6.0.0",
+    "commander": "^15.0.0",
+    "dotenv": "^17.4.2",
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "tsx": "^4.0.0",
-    "typescript": "^5.0.0"
+    "@types/node": "^26.5.0",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
   }
 }
