@@ -9,8 +9,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@langchain/core": "^1.2.9",
-    "@langchain/langgraph": "^1.4.12",
+    "@langchain/core": "^1.2.13",
+    "@langchain/langgraph": "^1.4.18",
     "@rr/contracts": "workspace:*",
     "@rr/persistence": "workspace:*",
     "@rr/utils": "workspace:*"
