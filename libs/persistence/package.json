@@ -12,8 +12,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
-    "prisma": "^5.22.0",
+    "@prisma/client": "^7.10.0",
+    "prisma": "^7.10.0",
     "@rr/contracts": "workspace:*",
     "@rr/domain": "workspace:*",
     "@rr/utils": "workspace:*"
